@@ -1,10 +1,5 @@
-import mrcfile
 import numpy as np
 import warnings 
-
-def read_mrc(file):
-    with warnings.catch_warnings(record=True) as w, mrcfile.open(file, permissive=True) as f:
-        return f.data
 
 def into_patches(image, patch_shape, patch_n):
     """
