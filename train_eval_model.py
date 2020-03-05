@@ -35,9 +35,6 @@ def main():
         config = yaml.safe_load(config_file)
 
         train_cfg = config["training"]
-        input_shape = config["general"]["patch_size"]
-        assert train_cfg["cv_folds"] > 1, "Cannot evaluate model with less than 2 cross-validation folds"
-
         timestamp = datetime.datetime.strftime(datetime.datetime.now(), "%y%m%d-%H%M")
         if not config["general"]["run_name"]:
             RUN_NAME = f"{timestamp}_training"
@@ -47,6 +44,11 @@ def main():
 
     dataset_paths = args.datasets
     np.random.shuffle(dataset_paths)
+
+    assert train_cfg["evaluation"]["cv_folds"] > 1, \
+        "Cannot evaluate model with less than 2 cross-validation folds"
+    assert train_cfg["evaluation"]["cv_folds"] <= len(dataset_paths), \
+        f"Cannot perform {train_cfg['evaluation']['cv_folds']}-fold cross-validation with only {len(dataset_paths)} datasets"
 
     print(f"{f' DATA PREPARATION ':#^50}")
     datasets = []
@@ -87,13 +89,13 @@ def main():
 
     cv_df = pd.DataFrame()
 
-    for cv_idx, cv_ids in enumerate(np.array_split(cv_sets, train_cfg["cv_folds"])):
-        ##### Cytoplasm ######    
+    for cv_idx, cv_ids in enumerate(np.array_split(cv_sets, train_cfg["evaluation"]["cv_folds"])):
+
         print(f"{f' CV fold {cv_idx} ':#^50}")
 
         # Data splitting
-        cv_mask = np.zeros(len(ids))
-        cv_mask[cv_ids] = 1
+        cv_mask = np.ones(len(ids), dtype=np.bool)
+        cv_mask[cv_ids] = False
 
         train_ids = ids[~cv_mask]
         train_features = comb_features[~np.isin(comb_idx, cv_ids)]
@@ -102,8 +104,8 @@ def main():
         train_labels[train_labels > 1] = 1
 
         # Filter out fraction of all-empty patches
-        if train_cfg["drop_empty"]:
-            drop_idx = np.array([np.any(slice) for slice in train_labels]) | (np.random.random(train_labels.shape[0]) > train_cfg["drop_empty"])
+        if train_cfg["general"]["drop_empty"]:
+            drop_idx = np.array([np.any(slice) for slice in train_labels]) | (np.random.random(train_labels.shape[0]) > train_cfg["general"]["drop_empty"])
             train_features = train_features[drop_idx]
             train_labels = train_labels[drop_idx]
 
@@ -118,7 +120,7 @@ def main():
 
         # Create model
         input_img = Input((comb_features.shape[1], comb_features.shape[2], 1), name='img')
-        model = get_unet(input_img, n_filters=4, target_shape=train_labels.shape)
+        model = get_unet(input_img, n_filters=train_cfg["general"]["n_filters"], target_shape=train_labels.shape)
         model.compile(
             optimizer=Adam(learning_rate=train_cfg["general"]["lr"]),
             loss=neg_dice_coefficient,
@@ -128,10 +130,10 @@ def main():
         # Saving the log and show it by tensorboard
         callbacks = []
 
-        if train_cfg["tensorboard"]:
+        if train_cfg['evaluation']["tensorboard"]:
             print("TensorBoard name:", RUN_NAME)
             callbacks.append(TensorBoard(log_dir=f"{train_cfg['evaluation']['logdir']}/{RUN_NAME}_CV-{cv_idx}"))
-        
+
         if train_cfg["evaluation"]["stopping_patience"]:
             callbacks.append(EarlyStopping(patience=train_cfg["evaluation"]["stopping_patience"]))
 
@@ -140,23 +142,32 @@ def main():
             train_features, 
             train_labels, 
             batch_size=train_cfg["general"]["batch_size"], 
-            epochs=train_cfg["general"]["epochs"],
+            epochs=train_cfg["evaluation"]["epochs"],
             callbacks=callbacks,
             validation_data=(test_features, test_labels)
         )
-        
+
         results.history["cv_fold"] = cv_idx
         results.history["train_ids"] = ",".join(train_ids)
         results.history["val_ids"] = ",".join(test_ids)
         results.history["epoch"] = np.arange(len(results.history["val_loss"]))
 
         hist_df = pd.DataFrame(results.history)
-        
+
         cv_df = cv_df.append(hist_df)
+
+    print(f"{f' GATHERING METRICS ':#^50}")
 
     cv_df.to_csv(f"{train_cfg['evaluation']['logdir']}/{RUN_NAME}_metrics.csv", index=False, header=True)
 
+    def select_best_row(df):
+        return df.sort_values("val_dice_coefficient", ascending=False).iloc[0,:][["val_dice_coefficient", "epoch"]]
 
+    metrics = cv_df.groupby("cv_fold").apply(select_best_row).reset_index()
+    metrics = metrics.agg({"val_dice_coefficient": ["mean", "std"], "epoch": ["mean", "std"]})
+
+    print(f"Mean validation score: {metrics.iloc[0, 0]:.2} ± {metrics.iloc[1, 0]:.2}")
+    print(f"Mean epochs required to reach maximum validation score: {metrics.iloc[0, 1]:.2} ± {metrics.iloc[1, 1]:.2}")
 
 def conv2d_block(input_tensor, n_filters, kernel_size=3):
     # first layer
