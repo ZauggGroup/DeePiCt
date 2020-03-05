@@ -15,11 +15,11 @@ def main():
     labels = args.labels
     out_file = args.output
 
-    z_stride = args.z_stride # 5 Z-distance between slices
-    crop = args.crop # 64 # Crop image before extracting patches
-    patch_size = args.patch_size # 288 # arg
-    patch_n = args.patch_n # 25 # replace w/ patch_n
-    rotate = args.rotate # True # Arg
+    z_stride = args.z_stride
+    crop = args.crop
+    patch_size = args.patch_size
+    patch_n = args.patch_n 
+    rotate = args.rotate
     flip_y = args.flip_y
 
     dataset_id = os.path.splitext(os.path.basename(features))[0]
@@ -33,10 +33,8 @@ def main():
     if len(patch_size) == 1:
         patch_size *=2
 
-    assert (len(patch_n) == 2) & (all(isinstance(i, int) for i in patch_n)), \
-        "patch_n needs to be a single int or comma-separated pair of ints"
-    assert (len(patch_size) == 2) & (all(isinstance(i, int) for i in patch_size)), \
-        "patch_size needs to be a single int or comma-separated pair of ints"
+    assert len(patch_n) == 2, "patch_n needs to be a single int or comma-separated pair of ints"
+    assert len(patch_size) == 2, "patch_size needs to be a single int or comma-separated pair of ints"
 
     # Load data + labels
     features = read_mrc(features)
