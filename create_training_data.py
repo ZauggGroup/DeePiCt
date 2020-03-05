@@ -73,7 +73,7 @@ def main():
     processed_features = patch_stack[...,0]
     processed_labels = patch_stack[...,1]
 
-    print(f"Created {patch_stack.shape[0]} chunks across {stack.shape[0]} slices.")
+    print(f"Created {patch_stack.shape[0]} patches across {stack.shape[0]} z-slices.")
 
     with h5py.File(out_file, "w") as h:
         h.attrs["sample_id"] = dataset_id
