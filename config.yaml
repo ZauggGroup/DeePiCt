@@ -1,0 +1,15 @@
+general:
+  mode: evaluation # [evaluation, prediction]
+  sample-metadata: metadata.csv
+  patch_size: [288, 288]
+  out_basepath: yadda/yadda/yadda
+preprocessing:
+  filtering: pass
+  slicing:
+    patch_dim: [5, 5]
+    rotate: true
+  
+training:
+  mode: evaluate
+prediction:
+  crop: 48
