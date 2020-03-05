@@ -24,7 +24,7 @@ training:
   production:
     active: true
     epochs: 30
-    model_output: ./model.ckpt
+    model_output: ./model.h5
 prediction:
   active: true
   model: null
