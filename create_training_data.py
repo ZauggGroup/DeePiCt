@@ -24,15 +24,14 @@ def main():
 
     dataset_id = os.path.splitext(os.path.basename(features))[0]
 
-    if isinstance(patch_n, int):
-        patch_n = (patch_n,)*2
-    else:
-        patch_n = tuple(int(dim) for dim in patch_n.split(","))
 
-    if isinstance(patch_size, int):
-        patch_size = (patch_size,)*2
-    else:
-        patch_size = tuple(int(dim) for dim in patch_size.split(","))
+    patch_n = tuple(int(dim) for dim in patch_n.split(","))
+    if len(patch_n) == 1:
+        patch_n *=2
+
+    patch_size = tuple(int(dim) for dim in patch_size.split(","))
+    if len(patch_size) == 1:
+        patch_size *=2
 
     assert (len(patch_n) == 2) & (all(isinstance(i, int) for i in patch_n)), \
         "patch_n needs to be a single int or comma-separated pair of ints"
