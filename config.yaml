@@ -1,11 +1,10 @@
-general:
-  sample-metadata: metadata.csv
-  patch_size: [288, 288]
-  run_name: null
+data:
+  training_data: ./meta/metadata.csv
+  prediction_data: ./meta/metadata.csv
 preprocessing:
-  workdir: yadda/yadda/yadda
   filtering: pass # TODO: implement smoothing
   slicing:
+    patch_size: [288, 288]
     patch_dim: [5, 5]
     rotate: true
 training:
@@ -18,18 +17,20 @@ training:
     active: true
     cv_folds: 5
     epochs: 30
-    stopping_patience: 0
+    stopping_patience: 0 # FIX: no early stopping
     tensorboard: true
+    run_name: null
     logdir: ./logs
   production:
-    active: true
+    active: false
     epochs: 30
     model_output: ./model.h5
 prediction:
   active: true
-  model: null
-  input_meta: pass.csv
+  model: null # meta/some_other_model.h5
   output_dir: out/
   crop: 48
   compensate_crop: true
+  patch_size: [288, 288]
   patch_dim: [5, 5]
+  z_cutoff: 200
