@@ -5,9 +5,11 @@ preprocessing:
   filtering: 
     active: false # TODO: implement filtering
   slicing:
+    crop: false
     patch_size: [288, 288]
     patch_dim: [5, 5]
     rotate: true
+    flip_y: true
 training:
   general:
     lr: 0.0001

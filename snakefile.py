@@ -10,6 +10,7 @@ user_config_file = cli_config["config"]
 with open(user_config_file, 'r') as user_config:
     config = yaml.safe_load(user_config)
 
+srcdir = workflow.basedir
 
 # Training data management
 if (
@@ -79,12 +80,18 @@ rule filter_tomogram:
 
 rule slice_tomogram:
     input:
-        tomo = filtered_pattern,
+        tomo = filtered_pattern if config["preprocessing"]["filtering"]["active"] else lambda wildcards: training_meta.loc[wildcards.prefix, "data"],
         labels = lambda wildcards: training_meta.loc[wildcards.prefix, "labels"] # This way the names can differ between tomo and labels
     output:
         sliced_tomo = slices_pattern
     shell:
-        "echo 'wildcard:{wildcards}'"
+        f"""
+        python {srcdir}/scripts/create_training_data.py 
+        --features {{input.tomo}}
+        --labels {{input.labels}}
+        --out_file {{output.sliced_tomo}}
+        --config {user_config_file}
+        """
 
 rule train_evaluation_model:
     input:
@@ -92,7 +99,12 @@ rule train_evaluation_model:
     output:
         eval_done_file = eval_done_file
     shell:
-        "echo 'wildcard:{wildcards}' && touch {output.eval_done_file}"
+        f"""
+        python {srcdir}/scripts/train_eval_model.py 
+        --config {user_config_file}
+        --features {{input.training_data}}
+        && touch {{output.eval_done_file}}
+        """
 
 rule train_production_model:
     input:
@@ -104,7 +116,7 @@ rule train_production_model:
 
 rule predict:
     input:
-        tomo = filtered_pattern,
+        tomo = filtered_pattern if config["preprocessing"]["filtering"]["active"] else lambda wildcards: prediction_meta.loc[wildcards.prefix, "data"],
         model = config["training"]["production"]["model_output"] if config["prediction"]["model"] is None else config["prediction"]["model"]
     output:
         prediction = prediction_pattern

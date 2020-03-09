@@ -5,36 +5,51 @@ import h5py
 import os
 
 from PatchUtil import into_patches
+from ConfigUtil import assemble_config
 
 def main():
 
+    # Configuration
+    srcdir = os.path.dirname(os.path.realpath(__file__))
     parser = get_cli()
     args = parser.parse_args()
+
+    config = assemble_config(
+        f"{srcdir}/defaults.yaml",
+        args.config,
+        subconfig_paths = [("preprocessing", "slicing")],
+        cli_args = args
+    )
 
     features = args.features
     labels = args.labels
     out_file = args.output
 
-    z_stride = args.z_stride
-    crop = args.crop
-    patch_size = args.patch_size
-    patch_n = args.patch_n 
-    rotate = args.rotate
-    flip_y = args.flip_y
+    z_stride = config["z_stride"]
+    crop = config["crop"]
+    patch_size = config["patch_size"]
+    patch_dim = config["patch_dim"]
+    rotate = config["rotate"]
+    flip_y = config["flip_y"]
 
     dataset_id = os.path.splitext(os.path.basename(features))[0]
 
+    if isinstance(patch_dim, str):
+        patch_dim = tuple(int(dim) for dim in patch_dim.split(","))
+        if len(patch_dim) == 1:
+            patch_dim *=2
 
-    patch_n = tuple(int(dim) for dim in patch_n.split(","))
-    if len(patch_n) == 1:
-        patch_n *=2
+    if isinstance(patch_size, str):
+        patch_size = tuple(int(dim) for dim in patch_size.split(","))
+        if len(patch_size) == 1:
+            patch_size *=2
 
-    patch_size = tuple(int(dim) for dim in patch_size.split(","))
-    if len(patch_size) == 1:
-        patch_size *=2
-
-    assert len(patch_n) == 2, "patch_n needs to be a single int or comma-separated pair of ints"
+    assert len(patch_dim) == 2, "patch_dim needs to be a single int or comma-separated pair of ints"
     assert len(patch_size) == 2, "patch_size needs to be a single int or comma-separated pair of ints"
+
+
+    print(config)
+
 
     # Load data + labels
     features = read_mrc(features)
@@ -56,7 +71,7 @@ def main():
         stack = stack[:, crop:-crop, crop:-crop] # Crop images
 
     # Process image into patches
-    patch_stack = [into_patches(image, patch_size, patch_n) for image in stack]
+    patch_stack = [into_patches(image, patch_size, patch_dim) for image in stack]
 
     # Stack slice patches
     patch_stack = np.vstack(patch_stack)
@@ -94,7 +109,7 @@ def get_cli():
     )
 
     parser.add_argument( 
-        "-f",
+        "-l",
         "--labels",
         required=True
     )
@@ -105,6 +120,12 @@ def get_cli():
         required=True
     )
 
+    parser.add_argument( 
+        "-c",
+        "--config",
+        required=False
+    )
+
     parser.add_argument(
         "-z",
         "--z_stride",
@@ -112,7 +133,7 @@ def get_cli():
     )
 
     parser.add_argument(
-        "-c",
+        "-x",
         "--crop",
         default=0
     )
@@ -120,13 +141,13 @@ def get_cli():
     parser.add_argument(
         "-s",
         "--patch_size",
-        required=True
+        required=False
     )
 
     parser.add_argument(
         "-n",
-        "--patch_n",
-        required=True
+        "--patch_dim",
+        required=False
     )
 
     parser.add_argument(
@@ -136,7 +157,7 @@ def get_cli():
     )
 
     parser.add_argument(
-        "-f",
+        "-y",
         "--flip_y",
         action="store_true"
     )

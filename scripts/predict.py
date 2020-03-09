@@ -5,10 +5,29 @@ import numpy as np
 import mrcfile
 
 from PatchUtil import *
+from ConfigUtil import assemble_config
+
+from UNet import dice_coefficient, neg_dice_coefficient
+
+# TODO: main()
+
+srcdir = os.path.dirname(os.path.realpath(__file__))
+parser = get_cli()
+args = parser.parse_args()
+
+config = assemble_config(
+    f"{srcdir}/defaults.yaml",
+    args.config,
+    subconfig_paths = [("prediction")],
+    cli_args = args
+)
+
 
 # TODO CLI
+tomo_file = args.input
+out_file = args.output
 
-tomo_file
+# TODO from config:
 patch_size = (288, 288)
 pad = 48
 compensate_pad
@@ -17,13 +36,8 @@ patch_n = (5,5)
 out_file
 model_file
 
-
-
-
-
-
 model = load_model(
-    model_file,
+    model_file
     custom_objects={
         'neg_dice_coefficient':neg_dice_coefficient,
         "dice_coefficient":dice_coefficient
@@ -56,27 +70,10 @@ def read_mrc(file):
     with mrcfile.open(file, permissive=True) as f:
         return f.data
 
-
-def dice_coefficient(y_true, y_pred):
-    eps = 1e-6
-    y_true_f = K.flatten(y_true)
-    y_pred_f = K.flatten(y_pred)
-    intersection = K.sum(y_true_f * y_pred_f)
-    return (2. * intersection) / (K.sum(y_true_f * y_true_f) + K.sum(y_pred_f * y_pred_f) + eps)
-
-
-def neg_dice_coefficient(y_true, y_pred):
-    eps = 1e-6
-    y_true_f = K.flatten(y_true)
-    y_pred_f = K.flatten(y_pred)
-    intersection = K.sum(y_true_f * y_pred_f)
-    return -((2. * intersection) / (K.sum(y_true_f * y_true_f) + K.sum(y_pred_f * y_pred_f) + eps))
-
-
 def get_cli():
     # TODO: CLI documentation
     parser = argparse.ArgumentParser(
-        description="Process tomogram-label pairs into 2D training datasets."
+        description="Predict organelle segmentation from tomogram data."
     )
 
     parser.add_argument( 
