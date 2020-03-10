@@ -1,9 +1,13 @@
 data:
   training_data: ./meta/metadata.csv
   prediction_data: ./meta/metadata.csv
+  output_dir: ./out/
 preprocessing:
-  filtering: 
-    active: false # TODO: implement filtering
+  filtering: # e2proc3d parameters
+    active: true # TODO: implement filtering
+    lowpass_cutoff: .25
+    highpass_cutoff: 5 # highpass cutoff in fourier space
+    clamp_nsigma: 3
   slicing:
     patch_size: [288, 288]
     patch_dim: [5, 5]
@@ -29,9 +33,9 @@ training:
 prediction:
   active: false
   model: null # meta/some_other_model.h5
-  output_dir: out/
   crop: 48
   compensate_crop: true
   patch_size: [288, 288]
   patch_dim: [5, 5]
   z_cutoff: 200
+

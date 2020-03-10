@@ -6,6 +6,8 @@ def recursive_get(d, k):
     else:
         return recursive_get(d[k[0]], k[1:])
 
+def csv_list(csv_str):
+    return [int(i) for i in csv_str.split(",")]
 
 def assemble_config(defaults, user_config = None, subconfig_paths = None, cli_args = None):
     """

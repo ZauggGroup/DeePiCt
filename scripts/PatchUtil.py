@@ -26,11 +26,11 @@ def from_patches(patches, patch_n, target_shape, pad=0):
     y_stride = (target_shape[0] - patches.shape[1]) / (patch_n[0] - 1) if patch_n[0] > 1 else 0
     x_stride = (target_shape[1] - patches.shape[2]) / (patch_n[1] - 1) if patch_n[1] > 1 else 0
      
-    target_shape = list(target_shape)+[2]
+    canvas_shape = list(target_shape)+[2]
     if pad:
         patches = patches[:, pad:-pad, pad:-pad]
-        target_shape[0] -= 2*pad
-        target_shape[1] -= 2*pad
+        canvas_shape[0] -= 2*pad
+        canvas_shape[1] -= 2*pad
 
     coords = [
         (
@@ -39,7 +39,7 @@ def from_patches(patches, patch_n, target_shape, pad=0):
         ) for x in range(patch_n[1]) for y in range(patch_n[0]) 
     ]
         
-    canvas = np.zeros(target_shape)
+    canvas = np.zeros(canvas_shape)
     
     for patch, coord in zip(patches, coords):
         canvas[coord] += np.stack([patch, np.ones(patch.shape)], -1)
@@ -79,29 +79,29 @@ def from_patches_3d(patches, patch_n, target_shape, pad=0):
     
     y_stride = (target_shape[1] - patches.shape[1]) / (patch_n[0] - 1) if patch_n[0] > 1 else 0
     x_stride = (target_shape[2] - patches.shape[2]) / (patch_n[1] - 1) if patch_n[1] > 1 else 0
-     
-    target_shape = list(target_shape)+[2]
+    
+    canvas_shape = list(target_shape)+[2]
     if pad:
         patches = patches[:, pad:-pad, pad:-pad]
-        target_shape[1] -= 2*pad
-        target_shape[2] -= 2*pad
+        canvas_shape[1] -= 2*pad
+        canvas_shape[2] -= 2*pad
     
     unstacked = np.split(patches, patch_n[0]*patch_n[1])
         
     coords = [
         (
-            slice(0, target_shape[0]),
+            slice(0, canvas_shape[0]),
             slice(int(y*y_stride), int(y*y_stride) + patches.shape[1]),
             slice(int(x*x_stride), int(x*x_stride) + patches.shape[2])
         ) for x in range(patch_n[1]) for y in range(patch_n[0]) 
     ]
     
-    canvas = np.zeros(target_shape)
+    canvas = np.zeros(canvas_shape)
     
     for patch, coord in zip(unstacked, coords):
         canvas[coord] += np.stack([patch, np.ones(patch.shape)], -1)
     
     if np.any(canvas[...,-1] == 0):
         warnings.warn("zero-coverage regions detected")
-    
+
     return canvas[...,~-1]/canvas[...,-1]

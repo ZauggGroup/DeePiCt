@@ -1,3 +1,6 @@
 scratch.py
 .snakemake
 *.pyc
+*.rec
+*.mrc
+*.h5

@@ -19,7 +19,12 @@ if (
     (config["prediction"]["active"] and config["prediction"]["model"] is None)
 ):
     training_meta = pd.read_csv(config["data"]["training_data"])
-    training_meta["prefix"] = training_meta["data"].apply(lambda x: os.path.splitext(x)[0])
+    
+    if config["data"]["output_dir"]:
+        training_meta["prefix"] = config["data"]["output_dir"] + '/' + training_meta["data"].apply(lambda x: os.path.basename(os.path.splitext(x)[0]))
+    else:
+        training_meta["prefix"] = training_meta["data"].apply(lambda x: os.path.splitext(x)[0])
+    
     training_meta["filtered"] = training_meta["prefix"] + "_filtered.mrc"
     training_meta["slices"] = training_meta["prefix"] + "_slices.h5"
     training_meta.set_index("prefix", inplace=True)
@@ -32,7 +37,12 @@ else:
 # Prediction data management
 if config["prediction"]["active"]:
     prediction_meta = pd.read_csv(config["data"]["prediction_data"])
-    prediction_meta["prefix"] = prediction_meta["data"].apply(lambda x: os.path.splitext(x)[0])
+
+    if config["data"]["output_dir"]:
+        prediction_meta["prefix"] = config["data"]["output_dir"] + '/' + prediction_meta["data"].apply(lambda x: os.path.basename(os.path.splitext(x)[0]))
+    else:
+        prediction_meta["prefix"] = prediction_meta["data"].apply(lambda x: os.path.splitext(x)[0])
+    
     prediction_meta["filtered"] = prediction_meta["prefix"] + "_filtered.mrc"
     prediction_meta["prediction"] = prediction_meta["prefix"] + "_pred.mrc"
     prediction_meta.set_index("prefix", inplace=True)
@@ -64,18 +74,40 @@ rule all:
     input: 
         targets
 
-rule filter_tomogram:
+rule filter_training_tomogram:
     input:
         tomo = lambda wildcards: training_meta.loc[wildcards.prefix, "data"] # This approach allows to use both .mrc and .rec
     output:
         filtered_tomo = filtered_pattern
+    params:
+        lowpass_cutoff  = config["preprocessing"]["filtering"]["lowpass_cutoff"],
+        highpass_cutoff = config["preprocessing"]["filtering"]["highpass_cutoff"],
+        clamp_nsigma    = config["preprocessing"]["filtering"]["clamp_nsigma"]
     shell:
         """
-        e2proc3d.py {input.tomo} {output.filtered_tomo} 
-        --process filter.lowpass.gauss:cutoff_abs=.25 
-        --process filter.highpass.gauss:cutoff_pixels=5 
-        --process normalize 
-        --process threshold.clampminmax.nsigma:nsigma=3
+        e2proc3d.py {input.tomo} {output.filtered_tomo} \
+        --process filter.lowpass.gauss:cutoff_abs={params.lowpass_cutoff} \
+        --process filter.highpass.gauss:cutoff_pixels={params.highpass_cutoff} \
+        --process normalize \
+        --process threshold.clampminmax.nsigma:nsigma={params.clamp_nsigma} \
+        """
+
+rule filter_prediction_tomogram:
+    input:
+        tomo = lambda wildcards: prediction_meta.loc[wildcards.prefix, "data"] # This approach allows to use both .mrc and .rec
+    output:
+        filtered_tomo = filtered_pattern
+    params:
+        lowpass_cutoff  = config["preprocessing"]["filtering"]["lowpass_cutoff"],
+        highpass_cutoff = config["preprocessing"]["filtering"]["highpass_cutoff"],
+        clamp_nsigma    = config["preprocessing"]["filtering"]["clamp_nsigma"]
+    shell:
+        """
+        e2proc3d.py {input.tomo} {output.filtered_tomo} \
+        --process filter.lowpass.gauss:cutoff_abs={params.lowpass_cutoff} \
+        --process filter.highpass.gauss:cutoff_pixels={params.highpass_cutoff} \
+        --process normalize \
+        --process threshold.clampminmax.nsigma:nsigma={params.clamp_nsigma} \
         """
 
 rule slice_tomogram:
@@ -89,7 +121,7 @@ rule slice_tomogram:
         flip_y = lambda wildcards: training_meta.loc[wildcards.prefix, "flip_y"] * "--flip_y"
     shell:
         f"""
-        python {srcdir}/scripts/create_training_data.py \
+        python3 {srcdir}/scripts/create_training_data.py \
         --features {{input.tomo}} \
         --labels {{input.labels}} \
         --output {{output.sliced_tomo}} \
@@ -105,7 +137,7 @@ rule train_evaluation_model:
         eval_done_file = eval_done_file
     shell:
         f"""
-        python {srcdir}/scripts/train_eval_model.py \
+        python3 {srcdir}/scripts/train_eval_model.py \
         --config {{input.config}} \
         --datasets {{input.training_data}} \
         && touch {{output.eval_done_file}} \
@@ -116,15 +148,15 @@ rule train_production_model:
         config = user_config_file,
         training_data = all_training_slices
     output:
-        model = config["training"]["production"]["model_output"]
+        model = config["training"]["production"]["model_output"] if config["training"]["production"]["active"] else []
     shell:
         f"""
-        python {srcdir}/scripts/train_prod_model.py \
+        python3 {srcdir}/scripts/train_prod_model.py \
         --config {{input.config}} \
-        --datasets {{input.training_data}}
+        --datasets {{input.training_data}} \
         """
 
-rule predict:
+rule predict_organelles:
     input:
         config = user_config_file,
         tomo = filtered_pattern if config["preprocessing"]["filtering"]["active"] else lambda wildcards: prediction_meta.loc[wildcards.prefix, "data"],
@@ -132,5 +164,10 @@ rule predict:
     output:
         prediction = prediction_pattern
     shell:
-        "echo 'wildcard:{wildcards}'"
-
+        f"""
+        python3 {srcdir}/scripts/predict_organelles.py \
+        --features {{input.tomo}} \
+        --output {{output.prediction}} \
+        --model {{input.model}} \
+        --config {{input.config}} \
+        """

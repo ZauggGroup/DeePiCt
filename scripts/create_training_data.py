@@ -5,7 +5,7 @@ import h5py
 import os
 
 from PatchUtil import into_patches
-from ConfigUtil import assemble_config
+from ConfigUtil import assemble_config, csv_list
 
 def main():
 
@@ -34,15 +34,11 @@ def main():
 
     dataset_id = os.path.splitext(os.path.basename(features))[0]
 
-    if isinstance(patch_dim, str):
-        patch_dim = tuple(int(dim) for dim in patch_dim.split(","))
-        if len(patch_dim) == 1:
-            patch_dim *=2
+    if len(patch_dim) == 1:
+        patch_dim*=2
 
-    if isinstance(patch_size, str):
-        patch_size = tuple(int(dim) for dim in patch_size.split(","))
-        if len(patch_size) == 1:
-            patch_size *=2
+    if len(patch_size) == 1:
+        patch_size*=2
 
     assert len(patch_dim) == 2, "patch_dim needs to be a single int or comma-separated pair of ints"
     assert len(patch_size) == 2, "patch_size needs to be a single int or comma-separated pair of ints"
@@ -138,12 +134,14 @@ def get_cli():
     parser.add_argument(
         "-s",
         "--patch_size",
+        type=csv_list,
         required=False
     )
 
     parser.add_argument(
         "-n",
         "--patch_dim",
+        type=csv_list,
         required=False
     )
 
