@@ -49,6 +49,8 @@ def main():
     # Preprocess tomogram
     tomo = read_mrc(tomo_file).astype(np.float32)
 
+    orig_shape = tomo.shape
+
     if config["z_cutoff"]:
         config["z_cutoff"] = min(tomo.shape[0], config["z_cutoff"])
         z_center = tomo.shape[0] // 2
@@ -69,7 +71,7 @@ def main():
     rec = from_patches_3d(tomo_pred[...,0], (5, 5), tomo.shape, pad=config["crop"])
 
     if config["compensate_crop"]:
-        padding = [((i - o)//2,)*2 for i, o in zip(tomo.shape, rec.shape)]
+        padding = [((i - o)//2,)*2 for i, o in zip(orig_shape, rec.shape)]
         rec = np.pad(rec, padding)
 
     # Save output
@@ -119,7 +121,16 @@ def get_cli():
     parser.add_argument(
         "-C",
         "--compensate_crop",
-        action="store_true"
+        action="store_true",
+        default=None
+    )
+
+    parser.add_argument(
+        "-N",
+        "--dont_compensate_crop",
+        action="store_true",
+        default=None,
+        dest="compensate_crop"
     )
 
     parser.add_argument(

@@ -148,13 +148,29 @@ def get_cli():
     parser.add_argument(
         "-r",
         "--rotate",
-        action="store_true"
+        action="store_true",
+        default=None
+    )
+
+    parser.add_argument(
+        "--dont_rotate",
+        action="store_false",
+        dest="rotate",
+        default=None
     )
 
     parser.add_argument(
         "-y",
         "--flip_y",
-        action="store_true"
+        action="store_true",
+        default=None
+    )
+
+    parser.add_argument(
+        "--dont_flip_y",
+        action="store_false",
+        dest="flip_y",
+        default=None
     )
 
     return parser
