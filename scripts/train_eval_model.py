@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 import h5py
 
-from tf.test import is_gpu_available
+from tensorflow import test as tft
 from keras.callbacks import TensorBoard
 from keras.layers import Input
 from keras.callbacks import EarlyStopping
@@ -47,7 +47,7 @@ def main():
         f"Cannot perform {config['cv_folds']}-fold cross-validation with only {len(dataset_paths)} datasets"
 
     # Check GPU
-    if is_gpu_available():
+    if tft.is_gpu_available():
         print("GPU is available 😩👌")
     else:
         print("GPU is not available 💩")

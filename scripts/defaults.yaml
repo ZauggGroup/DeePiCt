@@ -1,6 +1,3 @@
-data:
-  training_data: ./meta/metadata.csv
-  prediction_data: ./meta/metadata.csv
 preprocessing:
   filtering: 
     active: false # TODO: implement filtering
@@ -36,4 +33,4 @@ prediction:
   compensate_crop: true
   patch_size: [288, 288]
   patch_dim: [5, 5]
-  z_cutoff: 200
+  z_mask: 200

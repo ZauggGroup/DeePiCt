@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 import h5py
 
-from tf.test import is_gpu_available
+from tensorflow import test as tft
 from keras.callbacks import TensorBoard
 from keras.layers import Input
 from keras.callbacks import EarlyStopping
@@ -31,17 +31,11 @@ def main():
         subconfig_paths = [("training", "general"), ("training", "production")],
         cli_args = args
     )
-    timestamp = datetime.datetime.strftime(datetime.datetime.now(), "%y%m%d-%H%M")
-    if not config["run_name"]:
-        RUN_NAME = f"{timestamp}_training"
-    else:
-        RUN_NAME = config["run_name"].format(timestamp = timestamp)
-    print("RUN NAME:", RUN_NAME)
 
     dataset_paths = args.datasets
 
     # Check GPU
-    if is_gpu_available():
+    if tft.is_gpu_available():
         print("GPU is available 😩👌")
     else:
         print("GPU is not available 💩")

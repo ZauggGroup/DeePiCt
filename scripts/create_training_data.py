@@ -48,9 +48,6 @@ def main():
     assert len(patch_size) == 2, "patch_size needs to be a single int or comma-separated pair of ints"
 
 
-    print(config)
-
-
     # Load data + labels
     features = read_mrc(features)
     labels = read_mrc(labels)
@@ -129,13 +126,13 @@ def get_cli():
     parser.add_argument(
         "-z",
         "--z_stride",
-        default=1
+        required=False
     )
 
     parser.add_argument(
         "-x",
         "--crop",
-        default=0
+        required=False
     )
 
     parser.add_argument(

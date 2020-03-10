@@ -47,7 +47,7 @@ if config["training"]["evaluation"]["active"]:
     targets.append(eval_done_file)
 
 if config["training"]["production"]["active"]:
-    targets.append(config["training"]["production"]["model_file"])
+    targets.append(config["training"]["production"]["model_output"])
 
 if config["prediction"]["active"]:
     targets += prediction_meta["prediction"].to_list()
@@ -80,42 +80,53 @@ rule filter_tomogram:
 
 rule slice_tomogram:
     input:
+        config = user_config_file,
         tomo = filtered_pattern if config["preprocessing"]["filtering"]["active"] else lambda wildcards: training_meta.loc[wildcards.prefix, "data"],
         labels = lambda wildcards: training_meta.loc[wildcards.prefix, "labels"] # This way the names can differ between tomo and labels
     output:
         sliced_tomo = slices_pattern
+    params:
+        flip_y = lambda wildcards: training_meta.loc[wildcards.prefix, "flip_y"] * "--flip_y"
     shell:
         f"""
-        python {srcdir}/scripts/create_training_data.py 
-        --features {{input.tomo}}
-        --labels {{input.labels}}
-        --out_file {{output.sliced_tomo}}
-        --config {user_config_file}
+        python {srcdir}/scripts/create_training_data.py \
+        --features {{input.tomo}} \
+        --labels {{input.labels}} \
+        --output {{output.sliced_tomo}} \
+        --config {{input.config}} \
+        {{params.flip_y}} \
         """
 
 rule train_evaluation_model:
     input:
+        config = user_config_file,
         training_data = all_training_slices
     output:
         eval_done_file = eval_done_file
     shell:
         f"""
-        python {srcdir}/scripts/train_eval_model.py 
-        --config {user_config_file}
-        --features {{input.training_data}}
-        && touch {{output.eval_done_file}}
+        python {srcdir}/scripts/train_eval_model.py \
+        --config {{input.config}} \
+        --datasets {{input.training_data}} \
+        && touch {{output.eval_done_file}} \
         """
 
 rule train_production_model:
     input:
+        config = user_config_file,
         training_data = all_training_slices
     output:
         model = config["training"]["production"]["model_output"]
     shell:
-        "echo 'wildcard:{wildcards}'"
+        f"""
+        python {srcdir}/scripts/train_prod_model.py \
+        --config {{input.config}} \
+        --datasets {{input.training_data}}
+        """
 
 rule predict:
     input:
+        config = user_config_file,
         tomo = filtered_pattern if config["preprocessing"]["filtering"]["active"] else lambda wildcards: prediction_meta.loc[wildcards.prefix, "data"],
         model = config["training"]["production"]["model_output"] if config["prediction"]["model"] is None else config["prediction"]["model"]
     output:

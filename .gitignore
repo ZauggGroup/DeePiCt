@@ -1,2 +1,3 @@
 scratch.py
 .snakemake
+*.pyc
