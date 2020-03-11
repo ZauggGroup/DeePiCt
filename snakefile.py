@@ -112,12 +112,12 @@ rule filter_prediction_tomogram:
 
 rule slice_tomogram:
     input:
-        config = user_config_file,
         tomo = filtered_pattern if config["preprocessing"]["filtering"]["active"] else lambda wildcards: training_meta.loc[wildcards.prefix, "data"],
         labels = lambda wildcards: training_meta.loc[wildcards.prefix, "labels"] # This way the names can differ between tomo and labels
     output:
         sliced_tomo = slices_pattern
     params:
+        config = user_config_file,
         flip_y = lambda wildcards: training_meta.loc[wildcards.prefix, "flip_y"] * "--flip_y"
     shell:
         f"""
@@ -125,49 +125,52 @@ rule slice_tomogram:
         --features {{input.tomo}} \
         --labels {{input.labels}} \
         --output {{output.sliced_tomo}} \
-        --config {{input.config}} \
+        --config {{params.config}} \
         {{params.flip_y}} \
         """
 
 rule train_evaluation_model:
     input:
-        config = user_config_file,
         training_data = all_training_slices
     output:
         eval_done_file = eval_done_file
+    params:
+        config = user_config_file
     shell:
         f"""
         python3 {srcdir}/scripts/train_eval_model.py \
-        --config {{input.config}} \
+        --config {{params.config}} \
         --datasets {{input.training_data}} \
         && touch {{output.eval_done_file}} \
         """
 
 rule train_production_model:
     input:
-        config = user_config_file,
         training_data = all_training_slices
     output:
         model = config["training"]["production"]["model_output"] if config["training"]["production"]["active"] else []
+    params:
+        config = user_config_file
     shell:
         f"""
         python3 {srcdir}/scripts/train_prod_model.py \
-        --config {{input.config}} \
+        --config {{params.config}} \
         --datasets {{input.training_data}} \
         """
 
 rule predict_organelles:
     input:
-        config = user_config_file,
         tomo = filtered_pattern if config["preprocessing"]["filtering"]["active"] else lambda wildcards: prediction_meta.loc[wildcards.prefix, "data"],
         model = config["training"]["production"]["model_output"] if config["prediction"]["model"] is None else config["prediction"]["model"]
     output:
         prediction = prediction_pattern
+    params:
+        config = user_config_file
     shell:
         f"""
         python3 {srcdir}/scripts/predict_organelles.py \
         --features {{input.tomo}} \
         --output {{output.prediction}} \
         --model {{input.model}} \
-        --config {{input.config}} \
+        --config {{params.config}} \
         """
