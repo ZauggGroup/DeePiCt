@@ -59,11 +59,11 @@ def main():
         tomo = tomo[z_idx]
 
     # Normalization
-    mean = tomo.mean()
-    std = tomo.std()
+    # mean = tomo.mean()
+    # std = tomo.std()
 
-    tomo -= mean
-    tomo /= std
+    # tomo -= mean
+    # tomo /= std
 
     # Slice & predict
     tomo_patches = np.expand_dims(into_patches_3d(tomo, config["patch_size"], config["patch_dim"]), -1) # Add channel dim

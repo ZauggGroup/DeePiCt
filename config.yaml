@@ -4,14 +4,15 @@ data:
   output_dir: ./out/
 preprocessing:
   filtering: # e2proc3d parameters
-    active: true # TODO: implement filtering
-    lowpass_cutoff: .25
+    active: true
+    lowpass_cutoff: .25 # lowpass cutoff in fourier space
     highpass_cutoff: 5 # highpass cutoff in fourier space
-    clamp_nsigma: 3
+    clamp_nsigma: 3 # n sigma cutoff after normalization
   slicing:
     patch_size: [288, 288]
     patch_dim: [5, 5]
     rotate: true
+    z_stride: 5
 training:
   general:
     lr: 0.0001
@@ -21,14 +22,14 @@ training:
   evaluation:
     active: true
     cv_folds: 5
-    epochs: 30
-    stopping_patience: 0 # FIX: no early stopping
+    epochs: 50
+    stopping_patience: 5 # Disable by setting to 0
     tensorboard: true
     run_name: null
     logdir: ./logs
   production:
     active: false
-    epochs: 30
+    epochs: 50
     model_output: ./model.h5
 prediction:
   active: false
