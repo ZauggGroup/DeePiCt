@@ -12,6 +12,9 @@ with open(user_config_file, 'r') as user_config:
 
 srcdir = workflow.basedir
 
+# Workaround so filter rule can be applied to both training and pred tomos
+filter_meta = pd.DataFrame({"prefix":[], "data":[]}) 
+
 # Training data management
 if (
     config["training"]["evaluation"]["active"] or
@@ -27,7 +30,11 @@ if (
     
     training_meta["filtered"] = training_meta["prefix"] + "_filtered.mrc"
     training_meta["slices"] = training_meta["prefix"] + "_slices.h5"
+
+    filter_meta = filter_meta.merge(training_meta[["data", "prefix"]], how="outer")
+
     training_meta.set_index("prefix", inplace=True)
+
 
     all_training_slices = training_meta["slices"].to_list()
 else:
@@ -45,8 +52,12 @@ if config["prediction"]["active"]:
     
     prediction_meta["filtered"] = prediction_meta["prefix"] + "_filtered.mrc"
     prediction_meta["prediction"] = prediction_meta["prefix"] + "_pred.mrc"
+
+    filter_meta = filter_meta.merge(prediction_meta[["data", "prefix"]], how="outer")
+
     prediction_meta.set_index("prefix", inplace=True)
 
+filter_meta.set_index("prefix", inplace=True)
 
 # Pipeline targets
 targets = []
@@ -74,27 +85,9 @@ rule all:
     input: 
         targets
 
-rule filter_training_tomogram:
+rule filter_tomogram:
     input:
-        tomo = lambda wildcards: training_meta.loc[wildcards.prefix, "data"] # This approach allows to use both .mrc and .rec
-    output:
-        filtered_tomo = filtered_pattern
-    params:
-        lowpass_cutoff  = config["preprocessing"]["filtering"]["lowpass_cutoff"],
-        highpass_cutoff = config["preprocessing"]["filtering"]["highpass_cutoff"],
-        clamp_nsigma    = config["preprocessing"]["filtering"]["clamp_nsigma"]
-    shell:
-        """
-        e2proc3d.py {input.tomo} {output.filtered_tomo} \
-        --process filter.lowpass.gauss:cutoff_abs={params.lowpass_cutoff} \
-        --process filter.highpass.gauss:cutoff_pixels={params.highpass_cutoff} \
-        --process normalize \
-        --process threshold.clampminmax.nsigma:nsigma={params.clamp_nsigma} \
-        """
-
-rule filter_prediction_tomogram:
-    input:
-        tomo = lambda wildcards: prediction_meta.loc[wildcards.prefix, "data"] # This approach allows to use both .mrc and .rec
+        tomo = lambda wildcards: filter_meta.loc[wildcards.prefix, "data"] # This approach allows to use both .mrc and .rec
     output:
         filtered_tomo = filtered_pattern
     params:

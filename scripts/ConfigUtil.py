@@ -1,4 +1,5 @@
 import yaml
+import pprint
 
 def recursive_get(d, k):
     if len(k) == 1:
@@ -22,6 +23,7 @@ def assemble_config(defaults, user_config = None, subconfig_paths = None, cli_ar
     for s in subconfig_paths:
         subconfig = recursive_get(defaults, s)
         config.update(subconfig)
+    config["debug"] = defaults["debug"]
 
     if user_config:
         with open(user_config, 'r') as f:
@@ -29,9 +31,13 @@ def assemble_config(defaults, user_config = None, subconfig_paths = None, cli_ar
         for s in subconfig_paths:
             subconfig = recursive_get(user_config, s)
             config.update(subconfig)
+        config["debug"] = user_config.get("debug", config["debug"])
 
     if cli_args:
         args_dict = {k:v for k, v in vars(cli_args).items() if v is not None}
         config.update(args_dict)
+
+    if config["debug"]:
+        pprint.pprint(config)
 
     return config

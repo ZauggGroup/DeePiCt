@@ -1,0 +1,3 @@
+data,labels
+meta/tomo_1.mrc,meta/tomo_1_labels.mrc
+meta/tomo_2.rec,meta/tomo_2_anno.mrc

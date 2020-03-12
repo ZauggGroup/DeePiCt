@@ -13,6 +13,8 @@ preprocessing:
     patch_dim: [5, 5]
     rotate: true
     z_stride: 5
+    crop: 0
+    flip_y: false
 training:
   general:
     lr: 0.0001
