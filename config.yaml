@@ -1,44 +1,44 @@
 data:
   training_data: ./meta/metadata.csv
   prediction_data: ./meta/metadata.csv
-  output_dir: ./out/
+  output_dir: ./out/          # 'null' to save at input file location
 preprocessing:
-  filtering: # e2proc3d parameters
+  filtering:                  # e2proc3d parameters
     active: true
-    lowpass_cutoff: .25 # lowpass cutoff in fourier space
-    highpass_cutoff: 5 # highpass cutoff in fourier space
-    clamp_nsigma: 3 # n sigma cutoff after normalization
+    lowpass_cutoff: .25       # Lowpass cutoff in fourier space
+    highpass_cutoff: 5        # Highpass cutoff in fourier space
+    clamp_nsigma: 3           # n sigma cutoff after normalization
   slicing:
-    patch_size: [288, 288]
-    patch_dim: [5, 5]
-    rotate: true
-    z_stride: 5
-    crop: 0
-    flip_y: false
+    patch_size: [288, 288]    # Size of 2D patches used for training
+    patch_dim: [5, 5]         # Number of rows and columns patches spaced out across slices
+    rotate: true              # Randomly rotate patches in 90-degree increments
+    z_stride: 5               # Pick every n-th z slice
+    crop: 0                   # Crop input data before processing into patches
+    flip_y: false             # Flip labels along y-axis (sometimes caused by conversion from .em files)
 training:
   general:
-    lr: 0.0001
-    drop_empty: 0
-    batch_size: 8
-    n_filters: 4
+    lr: 0.0001                # Learning rate
+    drop_empty: 0             # Fraction of all-empty slices to drop
+    batch_size: 8             # Batch size
+    n_filters: 4              # Number of filters on first UNet layer
   evaluation:
     active: true
-    cv_folds: 5
-    epochs: 50
-    stopping_patience: 5 # Disable by setting to 0
-    tensorboard: true
-    run_name: null
-    logdir: ./logs
+    cv_folds: 5               # Cross validation folds (>=2)
+    epochs: 50                # Number of epochs / max. number of epochs if using early stopping
+    stopping_patience: 5      # Early stpooing if val_loss does not improve after n epochs, disable by setting to 0
+    tensorboard: true         # Log metrics to tensorboard
+    run_name: null            # Run name used in tensorboard, set to 'null' to use a timestamp instead
+    logdir: ./logs            # Tensorboard log / output metrics save location
   production:
     active: false
-    epochs: 50
-    model_output: ./model.h5
+    epochs: 50                # Number of epochs
+    model_output: ./model.h5  # Location for production model hdf5 file
 prediction:
   active: false
-  model: null # meta/some_other_model.h5
-  crop: 48
-  compensate_crop: true
-  patch_size: [288, 288]
-  patch_dim: [5, 5]
-  z_cutoff: 200
+  model: null                 # Model hdf5 file to use, set to null to use model from train_prod_model
+  crop: 48                    # Crop patches before reassembly to avoid artifacts
+  patch_size: [288, 288]      # Must be the same used for trainingg
+  patch_dim: [5, 5]           # Number of rows and columns patches spaced out across slices
+  z_cutoff: 200               # Only predict n/2 slices above and below z center
+  compensate_crop: true       # Compensate patch cropping and z cutoff to result in same size as input tomogram
 

@@ -66,14 +66,14 @@ def main():
             features = np.expand_dims(features, -1)
             labels = np.expand_dims(labels, -1)
 
-            # print("Normalizing...")
-            # mean = features.mean()
-            # std = features.std()
-            # print(f"Before normalization: {mean: .2} +/-{std:.2}", end="\t")
+            print("Normalizing...")
+            mean = features.mean()
+            std = features.std()
+            print(f"Before normalization: {mean: .2} +/-{std:.2}", end="\t")
 
-            # features -= mean
-            # features /= std
-            # print(f"After normalization: {features.mean(): .2} +/-{features.std():.2}")
+            features -= mean
+            features /= std
+            print(f"After normalization: {features.mean(): .2} +/-{features.std():.2}")
 
             datasets.append([sample_id, features, labels])
 
