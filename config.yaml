@@ -1,6 +1,7 @@
 data:
   training_data: ./meta/metadata.csv
   prediction_data: ./meta/metadata.csv
+  train_workdir: ./work/          # 'null' to save at input file location
   output_dir: ./out/          # 'null' to save at input file location
 preprocessing:
   filtering:                  # e2proc3d parameters
@@ -17,6 +18,7 @@ preprocessing:
     flip_y: false             # Flip labels along y-axis (sometimes caused by conversion from .em files)
 training:
   general:
+    normalize: true
     lr: 0.0001                # Learning rate
     drop_empty: 0             # Fraction of all-empty slices to drop
     batch_size: 8             # Batch size

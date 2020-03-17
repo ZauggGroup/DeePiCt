@@ -23,8 +23,8 @@ if (
 ):
     training_meta = pd.read_csv(config["data"]["training_data"])
     
-    if config["data"]["output_dir"]:
-        training_meta["prefix"] = config["data"]["output_dir"] + '/' + training_meta["data"].apply(lambda x: os.path.basename(os.path.splitext(x)[0]))
+    if config["data"]["train_workdir"]:
+        training_meta["prefix"] = config["data"]["train_workdir"] + '/' + training_meta["data"].apply(lambda x: os.path.basename(os.path.splitext(x)[0]))
     else:
         training_meta["prefix"] = training_meta["data"].apply(lambda x: os.path.splitext(x)[0])
     
