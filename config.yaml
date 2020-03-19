@@ -1,14 +1,17 @@
 data:
-  training_data: ./meta/metadata.csv
-  prediction_data: ./meta/metadata.csv
-  train_workdir: ./work/          # 'null' to save at input file location
-  output_dir: ./out/          # 'null' to save at input file location
+  training_data: meta/metadata.csv
+  prediction_data: meta/metadata.csv
+  train_workdir: work/        # 'null' to save at input file location
+  output_dir: out/            # 'null' to save at input file location
 preprocessing:
   filtering:                  # e2proc3d parameters
     active: true
     lowpass_cutoff: .25       # Lowpass cutoff in fourier space
     highpass_cutoff: 5        # Highpass cutoff in fourier space
     clamp_nsigma: 3           # n sigma cutoff after normalization
+  remapping:
+    active: true
+    mapping: meta/remap.yaml
   slicing:
     patch_size: [288, 288]    # Size of 2D patches used for training
     patch_dim: [5, 5]         # Number of rows and columns patches spaced out across slices

@@ -79,9 +79,7 @@ def main():
 
     train_features = comb_features
     train_labels = comb_labels
-    train_labels[train_labels == 1] = 0
-    train_labels[train_labels > 1] = 1
-
+    
     # Filter out fraction of all-empty patches
     if config["drop_empty"]:
         drop_idx = np.array([np.any(slice) for slice in train_labels]) | (np.random.random(train_labels.shape[0]) > config["drop_empty"])

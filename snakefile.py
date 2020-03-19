@@ -29,6 +29,7 @@ if (
         training_meta["prefix"] = training_meta["data"].apply(lambda x: os.path.splitext(x)[0])
     
     training_meta["filtered"] = training_meta["prefix"] + "_filtered.mrc"
+    training_meta["labels_remapped"] = training_meta["prefix"] + "_labels_remapped.mrc"
     training_meta["slices"] = training_meta["prefix"] + "_slices.h5"
 
     filter_meta = filter_meta.merge(training_meta[["data", "prefix"]], how="outer")
@@ -76,8 +77,10 @@ if config["prediction"]["active"]:
 
 # Intermediate file patterns
 filtered_pattern = "{prefix}_filtered.mrc"
+remapped_labels_pattern = "{prefix}_labels_remapped.mrc"
 slices_pattern = "{prefix}_slices.h5"
 prediction_pattern = "{prefix}_pred.mrc"
+
 
 
 # Rules
@@ -103,10 +106,26 @@ rule filter_tomogram:
         --process threshold.clampminmax.nsigma:nsigma={params.clamp_nsigma} \
         """
 
+rule remap_labels:
+    input:
+        labels = lambda wildcards: training_meta.loc[wildcards.prefix, "labels"],
+    params:
+        mapping = config["preprocessing"]["remapping"]["mapping"]
+    output:
+        remapped_labels = remapped_labels_pattern,
+    shell:
+        f"""
+        python3 {srcdir}/scripts/remap_labels.py \
+        --input {{input.labels}} \
+        --output {{output.remapped_labels}} \
+        --mapping {{params.mapping}}
+        """
+
 rule slice_tomogram:
     input:
         tomo = filtered_pattern if config["preprocessing"]["filtering"]["active"] else lambda wildcards: training_meta.loc[wildcards.prefix, "data"],
-        labels = lambda wildcards: training_meta.loc[wildcards.prefix, "labels"] # This way the names can differ between tomo and labels
+        labels = (lambda wildcards: training_meta.loc[wildcards.prefix, "labels_remapped"]) if config["preprocessing"]["remapping"]["active"] else (lambda wildcards: training_meta.loc[wildcards.prefix, "labels"])
+        # This way the names can differ between tomo and labels
     output:
         sliced_tomo = slices_pattern
     params:

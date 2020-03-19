@@ -104,9 +104,7 @@ def main():
         train_ids = ids[~cv_mask]
         train_features = comb_features[~np.isin(comb_idx, cv_ids)]
         train_labels = comb_labels[~np.isin(comb_idx, cv_ids)]
-        train_labels[train_labels == 1] = 0
-        train_labels[train_labels > 1] = 1
-
+        
         # Filter out fraction of all-empty patches
         if config["drop_empty"]:
             drop_idx = np.array([np.any(slice) for slice in train_labels]) | (np.random.random(train_labels.shape[0]) > config["drop_empty"])
@@ -116,9 +114,7 @@ def main():
         test_ids = ids[cv_mask]
         test_features = comb_features[np.isin(comb_idx, cv_ids)]
         test_labels = comb_labels[np.isin(comb_idx, cv_ids)]
-        test_labels[test_labels == 1] = 0
-        test_labels[test_labels > 1] = 1
-
+        
         print("Datasets for training:", *train_ids)
         print("Datasets for testing:", *test_ids)
 
