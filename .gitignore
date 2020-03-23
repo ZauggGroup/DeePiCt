@@ -1,5 +1,6 @@
 scratch.py
 .snakemake
+.vscode
 *.pyc
 *.rec
 *.mrc
