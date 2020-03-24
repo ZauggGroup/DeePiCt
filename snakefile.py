@@ -24,6 +24,7 @@ if (
     training_meta = pd.read_csv(config["data"]["training_data"])
     
     if config["data"]["train_workdir"]:
+        os.makedirs(config["data"]["train_workdir"], exist_ok=True)
         training_meta["prefix"] = config["data"]["train_workdir"] + '/' + training_meta["data"].apply(lambda x: os.path.basename(os.path.splitext(x)[0]))
     else:
         training_meta["prefix"] = training_meta["data"].apply(lambda x: os.path.splitext(x)[0])
@@ -43,16 +44,18 @@ else:
 
 
 # Prediction data management
-if config["prediction"]["active"]:
+if config["prediction"]["active"] | config["postprocessing"]["active"]:
     prediction_meta = pd.read_csv(config["data"]["prediction_data"])
 
     if config["data"]["output_dir"]:
+        os.makedirs(config["data"]["output_dir"], exist_ok=True)
         prediction_meta["prefix"] = config["data"]["output_dir"] + '/' + prediction_meta["data"].apply(lambda x: os.path.basename(os.path.splitext(x)[0]))
     else:
         prediction_meta["prefix"] = prediction_meta["data"].apply(lambda x: os.path.splitext(x)[0])
     
     prediction_meta["filtered"] = prediction_meta["prefix"] + "_filtered.mrc"
     prediction_meta["prediction"] = prediction_meta["prefix"] + "_pred.mrc"
+    prediction_meta["polished"] = prediction_meta["prefix"] + "_pred_polished.mrc"
 
     filter_meta = filter_meta.merge(prediction_meta[["data", "prefix"]], how="outer")
 
@@ -74,12 +77,15 @@ if config["training"]["production"]["active"]:
 if config["prediction"]["active"]:
     targets += prediction_meta["prediction"].to_list()
 
+if config["postprocessing"]["active"]:
+    targets += prediction_meta["polished"].to_list()
 
 # Intermediate file patterns
 filtered_pattern = "{prefix}_filtered.mrc"
 remapped_labels_pattern = "{prefix}_labels_remapped.mrc"
 slices_pattern = "{prefix}_slices.h5"
 prediction_pattern = "{prefix}_pred.mrc"
+postprocessed_pattern = "{prefix}_pred_polished.mrc"
 
 
 
@@ -184,5 +190,20 @@ rule predict_organelles:
         --features {{input.tomo}} \
         --output {{output.prediction}} \
         --model {{input.model}} \
+        --config {{params.config}} \
+        """
+
+rule postprocess_organelles:
+    input:
+        pred = prediction_pattern
+    output:
+        polished_pred = postprocessed_pattern
+    params:
+        config = user_config_file
+    shell:
+        f"""
+        python3 {srcdir}/scripts/postprocess.py \
+        --input {{input.pred}} \
+        --output {{output.polished_pred}} \
         --config {{params.config}} \
         """

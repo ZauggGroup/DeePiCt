@@ -5,7 +5,7 @@ data:
   output_dir: out/            # 'null' to save at input file location
 preprocessing:
   filtering:                  # e2proc3d parameters
-    active: true
+    active: false
     lowpass_cutoff: .25       # Lowpass cutoff in fourier space
     highpass_cutoff: 5        # Highpass cutoff in fourier space
     clamp_nsigma: 3           # n sigma cutoff after normalization
@@ -43,8 +43,12 @@ prediction:
   model: null                 # Model hdf5 file to use, set to null to use model from train_prod_model
   normalize: true             # Normalize the data to have zero mean and unit variance
   crop: 48                    # Crop patches before reassembly to avoid artifacts
+  compensate_crop: true       # Compensate patch cropping and z cutoff to result in same size as input tomogram
   patch_size: [288, 288]      # Must be the same used for training
   patch_dim: [5, 5]           # Number of rows and columns patches spaced out across slices
   z_cutoff: 200               # Only predict n/2 slices above and below z center
-  compensate_crop: true       # Compensate patch cropping and z cutoff to result in same size as input tomogram
+postprocessing:
+  active: false
+  sigma: 5
+  threshold: 0.75
 

@@ -39,5 +39,9 @@ prediction:
   patch_size: [288, 288]
   patch_dim: [5, 5]
   z_cutoff: 0
+postprocessing:
+  active: true
+  sigma: 5
+  threshold: 0.75
 debug: false
 
