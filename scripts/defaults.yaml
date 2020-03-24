@@ -33,6 +33,7 @@ training:
 prediction:
   active: false
   model: null
+  normalize: true
   crop: 0
   compensate_crop: true
   patch_size: [288, 288]

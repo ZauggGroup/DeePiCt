@@ -21,7 +21,7 @@ preprocessing:
     flip_y: false             # Flip labels along y-axis (sometimes caused by conversion from .em files)
 training:
   general:
-    normalize: true
+    normalize: true           # Normalize the data to have zero mean and unit variance
     lr: 0.0001                # Learning rate
     drop_empty: 0             # Fraction of all-empty slices to drop
     batch_size: 8             # Batch size
@@ -41,8 +41,9 @@ training:
 prediction:
   active: false
   model: null                 # Model hdf5 file to use, set to null to use model from train_prod_model
+  normalize: true             # Normalize the data to have zero mean and unit variance
   crop: 48                    # Crop patches before reassembly to avoid artifacts
-  patch_size: [288, 288]      # Must be the same used for trainingg
+  patch_size: [288, 288]      # Must be the same used for training
   patch_dim: [5, 5]           # Number of rows and columns patches spaced out across slices
   z_cutoff: 200               # Only predict n/2 slices above and below z center
   compensate_crop: true       # Compensate patch cropping and z cutoff to result in same size as input tomogram
