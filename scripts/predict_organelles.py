@@ -48,7 +48,6 @@ def main():
 
     # Preprocess tomogram
     tomo = read_mrc(tomo_file).astype(np.float32)
-
     orig_shape = tomo.shape
 
     if config["z_cutoff"]:
@@ -65,6 +64,10 @@ def main():
 
         tomo -= mean
         tomo /= std
+
+    if config["crop"]:
+        padding = [(0, 0)] + [(config["crop"],)*2]*2
+        tomo = np.pad(tomo, padding, mode="reflect")
 
     # Slice & predict
     tomo_patches = np.expand_dims(into_patches_3d(tomo, config["patch_size"], config["patch_dim"]), -1) # Add channel dim
