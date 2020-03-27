@@ -3,6 +3,8 @@ data:
   prediction_data: meta/metadata.csv
   train_workdir: work/        # 'null' to save at input file location
   output_dir: out/            # 'null' to save at input file location
+cluster:
+  logdir: logs/
 preprocessing:
   filtering:                  # e2proc3d parameters
     active: false
@@ -34,7 +36,7 @@ training:
     stopping_patience: 5      # Early stpooing if val_loss does not improve after n epochs, disable by setting to 0
     tensorboard: true         # Log metrics to tensorboard
     run_name: null            # Run name used in tensorboard, set to 'null' to use a timestamp instead
-    logdir: ./logs            # Tensorboard log / output metrics save location
+    tf_logdir: logs           # Tensorboard log / output metrics save location
   production:
     active: false
     epochs: 50                # Number of epochs

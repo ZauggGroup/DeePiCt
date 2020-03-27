@@ -132,7 +132,7 @@ def main():
 
         if config["tensorboard"]:
             print("TensorBoard name:", RUN_NAME)
-            callbacks.append(TensorBoard(log_dir=f"{config['logdir']}/{RUN_NAME}_CV-{cv_idx}"))
+            callbacks.append(TensorBoard(log_dir=f"{config['tf_logdir']}/{RUN_NAME}_CV-{cv_idx}"))
 
         if config["stopping_patience"]:
             callbacks.append(EarlyStopping(patience=config["stopping_patience"]))
@@ -158,7 +158,7 @@ def main():
 
     print(f"{f' GATHERING METRICS ':#^50}")
 
-    cv_df.to_csv(f"{config['logdir']}/{RUN_NAME}_metrics.csv", index=False, header=True)
+    cv_df.to_csv(f"{config['tf_logdir']}/{RUN_NAME}_metrics.csv", index=False, header=True)
 
     def select_best_row(df):
         return df.sort_values("val_dice_coefficient", ascending=False).iloc[0,:][["val_dice_coefficient", "epoch"]]

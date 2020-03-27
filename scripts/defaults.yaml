@@ -1,3 +1,5 @@
+cluster:
+  logdir: logs/
 preprocessing:
   filtering: # e2proc3d parameters
     active: true
@@ -26,7 +28,7 @@ training:
     stopping_patience: 0 # Disable by setting to 0
     tensorboard: true
     run_name: null
-    logdir: ./logs
+    tf_logdir: logs/
   production:
     active: false
     epochs: 50

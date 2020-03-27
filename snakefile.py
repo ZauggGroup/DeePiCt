@@ -103,7 +103,7 @@ rule filter_tomogram:
         lowpass_cutoff  = config["preprocessing"]["filtering"]["lowpass_cutoff"],
         highpass_cutoff = config["preprocessing"]["filtering"]["highpass_cutoff"],
         clamp_nsigma    = config["preprocessing"]["filtering"]["clamp_nsigma"],
-        logdir      = config["logdir"],
+        logdir      = config["cluster"]["logdir"],
         walltime    = "0:30:00",
         nodes       = 1,
         cores       = 8,
@@ -153,7 +153,7 @@ rule slice_tomogram:
     params:
         config = user_config_file,
         flip_y = lambda wildcards: training_meta.loc[wildcards.prefix, "flip_y"] * "--flip_y",
-        logdir      = config["logdir"],
+        logdir      = config["cluster"]["logdir"],
         walltime    = "0:10:00",
         nodes       = 1,
         cores       = 2,
@@ -178,7 +178,7 @@ rule train_evaluation_model:
         "envs/keras-env.yaml"
     params:
         config      = user_config_file,
-        logdir      = config["logdir"],
+        logdir      = config["cluster"]["logdir"],
         walltime    = "8:00:00",
         nodes       = 1,
         cores       = 4,
@@ -201,7 +201,7 @@ rule train_production_model:
         "envs/keras-env.yaml"
     params:
         config      = user_config_file,
-        logdir      = config["logdir"],
+        logdir      = config["cluster"]["logdir"],
         walltime    = "2:00:00",
         nodes       = 1,
         cores       = 4,
@@ -224,7 +224,7 @@ rule predict_organelles:
         "envs/keras-env.yaml"
     params:
         config      = user_config_file,
-        logdir      = config["logdir"],
+        logdir      = config["cluster"]["logdir"],
         walltime    = "0:30:00",
         nodes       = 1,
         cores       = 4,
@@ -248,7 +248,7 @@ rule postprocess_organelles:
         "envs/keras-env.yaml"
     params:
         config      = user_config_file,
-        logdir      = config["logdir"],
+        logdir      = config["cluster"]["logdir"],
         walltime    = "0:10:00",
         nodes       = 1,
         cores       = 4,
