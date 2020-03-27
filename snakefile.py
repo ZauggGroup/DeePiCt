@@ -103,8 +103,15 @@ rule filter_tomogram:
         lowpass_cutoff  = config["preprocessing"]["filtering"]["lowpass_cutoff"],
         highpass_cutoff = config["preprocessing"]["filtering"]["highpass_cutoff"],
         clamp_nsigma    = config["preprocessing"]["filtering"]["clamp_nsigma"]
+        logdir      = config["logdir"]
+        walltime    = "0:30:00",
+        nodes       = 1,
+        cores       = 8,
+        memory      = "16G",
+        gres        = ''
     shell:
         """
+        module load EMAN2
         e2proc3d.py {input.tomo} {output.filtered_tomo} \
         --process filter.lowpass.gauss:cutoff_abs={params.lowpass_cutoff} \
         --process filter.highpass.gauss:cutoff_pixels={params.highpass_cutoff} \
@@ -117,8 +124,15 @@ rule remap_labels:
         labels = lambda wildcards: training_meta.loc[wildcards.prefix, "labels"],
     params:
         mapping = config["preprocessing"]["remapping"]["mapping"]
+    conda:
+        "envs/keras-env.yaml"
     output:
         remapped_labels = remapped_labels_pattern,
+        walltime    = "0:10:00",
+        nodes       = 1,
+        cores       = 2,
+        memory      = "16G",
+        gres        = ''
     shell:
         f"""
         python3 {srcdir}/scripts/remap_labels.py \
@@ -134,9 +148,17 @@ rule slice_tomogram:
         # This way the names can differ between tomo and labels
     output:
         sliced_tomo = slices_pattern
+    conda:
+        "envs/keras-env.yaml"
     params:
         config = user_config_file,
         flip_y = lambda wildcards: training_meta.loc[wildcards.prefix, "flip_y"] * "--flip_y"
+        logdir      = config["logdir"]
+        walltime    = "0:10:00",
+        nodes       = 1,
+        cores       = 2,
+        memory      = "16G",
+        gres        = ''
     shell:
         f"""
         python3 {srcdir}/scripts/create_training_data.py \
@@ -152,8 +174,16 @@ rule train_evaluation_model:
         training_data = all_training_slices
     output:
         eval_done_file = eval_done_file
+    conda:
+        "envs/keras-env.yaml"
     params:
-        config = user_config_file
+        config      = user_config_file
+        logdir      = config["logdir"]
+        walltime    = "8:00:00",
+        nodes       = 1,
+        cores       = 4,
+        memory      = "32G",
+        gres        = '#SBATCH -p gpu\n#SBATCH --gres=gpu:2'
     shell:
         f"""
         python3 {srcdir}/scripts/train_eval_model.py \
@@ -167,8 +197,16 @@ rule train_production_model:
         training_data = all_training_slices
     output:
         model = config["training"]["production"]["model_output"] if config["training"]["production"]["active"] else []
+    conda:
+        "envs/keras-env.yaml"
     params:
-        config = user_config_file
+        config      = user_config_file
+        logdir      = config["logdir"]
+        walltime    = "2:00:00",
+        nodes       = 1,
+        cores       = 4,
+        memory      = "32G",
+        gres        = '#SBATCH -p gpu\n#SBATCH --gres=gpu:2'
     shell:
         f"""
         python3 {srcdir}/scripts/train_prod_model.py \
@@ -182,8 +220,16 @@ rule predict_organelles:
         model = config["training"]["production"]["model_output"] if config["prediction"]["model"] is None else config["prediction"]["model"]
     output:
         prediction = prediction_pattern
+    conda:
+        "envs/keras-env.yaml"
     params:
-        config = user_config_file
+        config      = user_config_file
+        logdir      = config["logdir"]
+        walltime    = "0:30:00",
+        nodes       = 1,
+        cores       = 4,
+        memory      = "16G",
+        gres        = '#SBATCH -p gpu\n#SBATCH --gres=gpu:1'
     shell:
         f"""
         python3 {srcdir}/scripts/predict_organelles.py \
@@ -198,8 +244,16 @@ rule postprocess_organelles:
         pred = prediction_pattern
     output:
         polished_pred = postprocessed_pattern
+    conda:
+        "envs/keras-env.yaml"
     params:
-        config = user_config_file
+        config      = user_config_file
+        logdir      = config["logdir"]
+        walltime    = "0:10:00",
+        nodes       = 1,
+        cores       = 4,
+        memory      = "8G",
+        gres        = ''
     shell:
         f"""
         python3 {srcdir}/scripts/postprocess.py \

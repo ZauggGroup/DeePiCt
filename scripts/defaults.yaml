@@ -8,6 +8,7 @@ preprocessing:
     patch_size: [288, 288]
     patch_dim: [5, 5]
     rotate: true
+    z_cutoff: 200
     z_stride: 5
     crop: 0
     flip_y: false

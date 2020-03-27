@@ -54,8 +54,15 @@ def main():
 
     # Stack features and labels, trim unlabeled slices, select n-th slices
     stack = np.stack([features, labels])
-    nonzero_idx = np.array([np.any(slice) for slice in stack[1]])
-    stack = stack[:,nonzero_idx]
+
+    if config["z_cutoff"]:
+        config["z_cutoff"] = min(stack.shape[1], config["z_cutoff"])
+        z_center = stack.shape[1] // 2
+        z_idx = slice(z_center-(config["z_cutoff"] // 2), z_center+(config["z_cutoff"] // 2))    
+    else:
+        z_idx = np.array([np.any(slice) for slice in stack[1]])
+
+    stack = stack[:,z_idx]
     stack = np.moveaxis(stack, 0, -1)
     stack = stack[::z_stride]
 

@@ -16,6 +16,7 @@ preprocessing:
     patch_size: [288, 288]    # Size of 2D patches used for training
     patch_dim: [5, 5]         # Number of rows and columns patches spaced out across slices
     rotate: true              # Randomly rotate patches in 90-degree increments
+    z_cutoff: 200             # Use n/2 slices above and below z center. If null, select all labeled slices
     z_stride: 5               # Pick every n-th z slice
     crop: 0                   # Crop input data before processing into patches
     flip_y: false             # Flip labels along y-axis (sometimes caused by conversion from .em files)
