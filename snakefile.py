@@ -102,7 +102,7 @@ rule filter_tomogram:
     params:
         lowpass_cutoff  = config["preprocessing"]["filtering"]["lowpass_cutoff"],
         highpass_cutoff = config["preprocessing"]["filtering"]["highpass_cutoff"],
-        clamp_nsigma    = config["preprocessing"]["filtering"]["clamp_nsigma"]
+        clamp_nsigma    = config["preprocessing"]["filtering"]["clamp_nsigma"],
         logdir      = config["logdir"],
         walltime    = "0:30:00",
         nodes       = 1,
@@ -152,7 +152,7 @@ rule slice_tomogram:
         "envs/keras-env.yaml"
     params:
         config = user_config_file,
-        flip_y = lambda wildcards: training_meta.loc[wildcards.prefix, "flip_y"] * "--flip_y"
+        flip_y = lambda wildcards: training_meta.loc[wildcards.prefix, "flip_y"] * "--flip_y",
         logdir      = config["logdir"],
         walltime    = "0:10:00",
         nodes       = 1,
