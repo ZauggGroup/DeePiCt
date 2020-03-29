@@ -1,4 +1,4 @@
-name: keras
+name: snakemake-keras
 channels:
   - bioconda
   - anaconda
