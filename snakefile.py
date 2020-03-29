@@ -80,6 +80,11 @@ if config["prediction"]["active"]:
 if config["postprocessing"]["active"]:
     targets += prediction_meta["polished"].to_list()
 
+if config.get("debug"):
+    print("TARGETS:\n", targets)
+    print("FILTER_META:\n", filter_meta)
+    print("PREDICTION_META:\n", prediction_meta)
+
 # Intermediate file patterns
 filtered_pattern = "{prefix}_filtered.mrc"
 remapped_labels_pattern = "{prefix}_labels_remapped.mrc"
