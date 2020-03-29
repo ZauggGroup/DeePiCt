@@ -22,7 +22,6 @@ dependencies:
     - h5py==2.10.0
     - keras==2.3.1
     - mrcfile==1.1.2
-    - pyyaml==5.3
     - tensorboard==2.0.2
     - tensorflow==2.0.0
     - tensorflow-estimator==2.0.1
