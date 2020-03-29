@@ -82,7 +82,7 @@ if config["postprocessing"]["active"]:
 
 if config.get("debug"):
     print("TARGETS:\n", targets)
-    print("FILTER_META:\n", filter_meta)
+    print("TRAINING_META:\n", training_meta)
     print("PREDICTION_META:\n", prediction_meta)
 
 # Intermediate file patterns
