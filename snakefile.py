@@ -133,6 +133,7 @@ rule remap_labels:
         "envs/keras-env.yaml"
     output:
         remapped_labels = remapped_labels_pattern,
+    params:
         walltime    = "0:10:00",
         nodes       = 1,
         cores       = 2,
