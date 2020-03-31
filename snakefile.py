@@ -134,6 +134,7 @@ rule remap_labels:
     output:
         remapped_labels = remapped_labels_pattern,
     params:
+        logdir      = config["cluster"]["logdir"],
         walltime    = "0:10:00",
         nodes       = 1,
         cores       = 2,
