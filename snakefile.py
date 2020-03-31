@@ -80,7 +80,7 @@ if config["prediction"]["active"]:
 if config["postprocessing"]["active"]:
     targets += prediction_meta["polished"].to_list()
 
-if config.get("debug"):
+if cli_config.get("debug"):
     print("TARGETS:\n", targets)
     print("TRAINING_META:\n", training_meta)
     print("PREDICTION_META:\n", prediction_meta)
@@ -127,13 +127,12 @@ rule filter_tomogram:
 rule remap_labels:
     input:
         labels = lambda wildcards: training_meta.loc[wildcards.prefix, "labels"],
-    params:
-        mapping = config["preprocessing"]["remapping"]["mapping"]
     conda:
         "envs/keras-env.yaml"
     output:
         remapped_labels = remapped_labels_pattern,
     params:
+        mapping     = config["preprocessing"]["remapping"]["mapping"]
         logdir      = config["cluster"]["logdir"],
         walltime    = "0:10:00",
         nodes       = 1,
