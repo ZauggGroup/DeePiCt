@@ -132,7 +132,7 @@ rule remap_labels:
     output:
         remapped_labels = remapped_labels_pattern,
     params:
-        mapping     = config["preprocessing"]["remapping"]["mapping"]
+        mapping     = config["preprocessing"]["remapping"]["mapping"],
         logdir      = config["cluster"]["logdir"],
         walltime    = "0:10:00",
         nodes       = 1,
