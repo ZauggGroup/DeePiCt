@@ -236,6 +236,8 @@ rule predict_organelles:
         cores       = 4,
         memory      = "16G",
         gres        = '#SBATCH -p gpu\n#SBATCH --gres=gpu:1'
+    resources: 
+        gpu=1
     shell:
         f"""
         python3 {srcdir}/scripts/predict_organelles.py \
