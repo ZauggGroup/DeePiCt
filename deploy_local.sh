@@ -9,5 +9,5 @@ snakemake \
     --forceall \
     --use-conda \
     --printshellcmds \
-    --cores 8 \
+    --cores 8 --gpu 1 \
     --dryrun
