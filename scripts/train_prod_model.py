@@ -100,7 +100,8 @@ def main():
         train_features, 
         train_labels, 
         batch_size=config["batch_size"],
-        epochs=config["epochs"]
+        epochs=config["epochs"],
+        verbose=2
     )
 
     print(f"{f' SAVING MODEL ':#^50}")

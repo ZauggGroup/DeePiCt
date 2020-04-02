@@ -144,7 +144,8 @@ def main():
             batch_size=config["batch_size"], 
             epochs=config["epochs"],
             callbacks=callbacks,
-            validation_data=(test_features, test_labels)
+            validation_data=(test_features, test_labels),
+            verbose=2
         )
 
         results.history["cv_fold"] = cv_idx
