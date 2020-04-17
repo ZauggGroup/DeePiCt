@@ -65,11 +65,16 @@ filter_meta.set_index("prefix", inplace=True)
 
 # Pipeline targets
 targets = []
-timestamp = datetime.strftime(datetime.now(), "%y%m%d-%H%M%S")
-eval_done_file = '.snakemake/' + timestamp + "_eval.done"
+
+if config["training"]["evaluation"]["run_name"] is None:
+    run_name = datetime.strftime(datetime.now(), "%y%m%d-%H%M%S")
+else:
+    run_name = config["training"]["evaluation"]["run_name"]
+
+eval_done_file_pattern = '.snakemake/{run_name}_eval.done'
 
 if config["training"]["evaluation"]["active"]:
-    targets.append(eval_done_file)
+    targets.append(eval_done_file.format(run_name=run_name))
 
 if config["training"]["production"]["active"]:
     targets.append(config["training"]["production"]["model_output"])
@@ -179,7 +184,7 @@ rule train_evaluation_model:
     input:
         training_data = all_training_slices
     output:
-        eval_done_file = eval_done_file
+        eval_done_file = eval_done_file_pattern
     conda:
         "envs/keras-env.yaml"
     params:
