@@ -74,7 +74,7 @@ else:
 eval_done_file_pattern = '.snakemake/{run_name}_eval.done'
 
 if config["training"]["evaluation"]["active"]:
-    targets.append(eval_done_file.format(run_name=run_name))
+    targets.append(eval_done_file_pattern.format(run_name=run_name))
 
 if config["training"]["production"]["active"]:
     targets.append(config["training"]["production"]["model_output"])
