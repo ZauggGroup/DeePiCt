@@ -101,7 +101,7 @@ def main():
         cv_mask = np.ones(len(ids), dtype=np.bool)
         cv_mask[cv_ids] = False
 
-        train_ids = ids[~cv_mask]
+        train_ids = ids[cv_mask]
         train_features = comb_features[~np.isin(comb_idx, cv_ids)]
         train_labels = comb_labels[~np.isin(comb_idx, cv_ids)]
         
@@ -111,7 +111,7 @@ def main():
             train_features = train_features[drop_idx]
             train_labels = train_labels[drop_idx]
 
-        test_ids = ids[cv_mask]
+        test_ids = ids[~cv_mask]
         test_features = comb_features[np.isin(comb_idx, cv_ids)]
         test_labels = comb_labels[np.isin(comb_idx, cv_ids)]
         
