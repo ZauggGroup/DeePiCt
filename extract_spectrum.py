@@ -4,7 +4,7 @@ import pandas as pd
 
 import argparse
 
-from FilterUtils import *
+from FilterUtils import rad_avg, read_mrc
 
 
 def extract_spectrum(tomo):

@@ -84,7 +84,7 @@ def rot_kernel(arr, shape):
     kernel = func(kernel).astype("f4")
     for idx, s in enumerate(shape):
         padding = [(0,0)]*len(shape)
-        padding[idx] = (np.floor(s/2).astype(np.int), 0)
+        padding[idx] = (int(np.floor(s/2)), 0)
         
         mode = "reflect" if s % 2 else "symmetric"
         
