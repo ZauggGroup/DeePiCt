@@ -27,7 +27,7 @@ def main():
     parser = get_cli()
     args = parser.parse_args()
     
-    tomo = args.tomo
+    tomo = args.input
 
     spectrum = extract_spectrum(tomo)
 
