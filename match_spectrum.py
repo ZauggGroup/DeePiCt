@@ -46,7 +46,7 @@ def main():
         tomo = m.data.astype("f4")
         tomo_h = m.header
 
-    target_spectrum = pd.read_csv(args.target, sep="\t")["intensity"].values()
+    target_spectrum = pd.read_csv(args.target, sep="\t")["intensity"].values
 
     filtered_tomo = match_spectrum(tomo, target_spectrum)
 
