@@ -31,8 +31,10 @@ def match_spectrum(tomo, target_spectrum):
     equal_kernel = rot_kernel(equal_v, t.shape)
     
     t *= equal_kernel
+    del equal_kernel
+    
     t = fft.ifftn(t)
-    t = np.abs(t)
+    t = np.abs(t).astype("f4")
 
     return t
 
