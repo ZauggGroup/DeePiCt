@@ -52,7 +52,7 @@ def main():
 
     filtered_tomo = match_spectrum(tomo, target_spectrum)
 
-    m = mrcfile.new(args.output)
+    m = mrcfile.new(args.output, overwrite=True)
     m.set_data(filtered_tomo)
     m.set_extended_header(tomo_h)
     m.close()
