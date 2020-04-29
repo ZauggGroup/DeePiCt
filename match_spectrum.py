@@ -10,6 +10,7 @@ from FilterUtils import rad_avg, rot_kernel
 
 def match_spectrum(tomo, target_spectrum):
     
+    target_spectrum = target_spectrum.copy()
     tomo -= tomo.min()
     tomo /= tomo.max()
 
