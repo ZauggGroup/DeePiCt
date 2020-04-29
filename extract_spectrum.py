@@ -43,14 +43,15 @@ def get_cli():
         "-i",
         "--input",
         required=True,
-        type=read_mrc
+        type=read_mrc,
+        help="Tomogram to extract spectrum from (.mrc/.rec format)"
     )
 
     parser.add_argument( 
         "-o",
         "--output",
         required=True,
-        type=str
+        help="Output destination for extracted spectrum (.tsv format)"
     )
     
     return parser

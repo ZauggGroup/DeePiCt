@@ -58,25 +58,28 @@ def main():
 
 def get_cli():
     parser = argparse.ArgumentParser(
-        description="Extract radially averaged amplitude spectrum from cryo-ET data."
+        description="Match tomogram to another tomogram's amplitude spectrum."
     )
 
     parser.add_argument( 
         "-i",
         "--input",
-        required=True
+        required=True,
+        help="Tomogram to match (.mrc/.rec)"
     )
 
     parser.add_argument( 
         "-t",
         "--target",
-        required=True
+        required=True,
+        help="Target spectrum to match the input tomogram to (.tsv)"
     )
 
     parser.add_argument( 
         "-o",
         "--output",
-        required=True
+        required=True,
+        help="Output location for matched tomogram"
     )
     
     return parser
