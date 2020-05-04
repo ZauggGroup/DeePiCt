@@ -8,9 +8,9 @@ cluster:
 preprocessing:
   filtering:                  # e2proc3d parameters
     active: false
-    lowpass_cutoff: .25       # Lowpass cutoff in fourier space
-    highpass_cutoff: 5        # Highpass cutoff in fourier space
-    clamp_nsigma: 3           # n sigma cutoff after normalization
+    target_spectrum: null     # Target spectrum to match tomograms to. Create using extract_spectrum.py
+    lowpass_cutoff: 350       # Lowpass cutoff in fourier space. Set to 0 to disable
+    smoothen_cutoff: 20       # Smoothen cutoff into a sigmoid cuve. Set to 0 to disable
   remapping:
     active: true
     mapping: meta/remap.yaml
@@ -33,7 +33,7 @@ training:
     active: true
     cv_folds: 5               # Cross validation folds (>=2)
     epochs: 50                # Number of epochs / max. number of epochs if using early stopping
-    stopping_patience: 5      # Early stpooing if val_loss does not improve after n epochs, disable by setting to 0
+    stopping_patience: 5      # Early stpooing if val_loss does not improve after n epochs, set to 0 to disable
     tensorboard: true         # Log metrics to tensorboard
     run_name: null            # Run name used in tensorboard, set to 'null' to use a timestamp instead
     tf_logdir: logs           # Tensorboard log / output metrics save location
@@ -50,8 +50,8 @@ prediction:
   patch_size: [288, 288]      # Must be the same used for training
   patch_dim: [5, 5]           # Number of rows and columns patches spaced out across slices
   z_cutoff: 200               # Only predict n/2 slices above and below z center
-postprocessing:
+postprocessing:               # 3D postprocessing of predictions
   active: false
-  sigma: 5
-  threshold: 0.75
+  sigma: 5                    # Sigma for 1D gaussian filter along z-axis
+  threshold: 0.75             # Threshold to apply. Set to 0 to disable.
 

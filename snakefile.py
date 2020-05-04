@@ -106,34 +106,34 @@ rule all:
 
 rule filter_tomogram:
     input:
-        tomo = lambda wildcards: filter_meta.loc[wildcards.prefix, "data"] # This approach allows to use both .mrc and .rec
+        tomo   = lambda wildcards: filter_meta.loc[wildcards.prefix, "data"], # This approach allows to use both .mrc and .rec
+        target = config["preprocessing"]["filtering"]["target_spectrum"]
     output:
         filtered_tomo = filtered_pattern
+    conda:
+        "envs/keras-env.yaml"
     params:
-        lowpass_cutoff  = config["preprocessing"]["filtering"]["lowpass_cutoff"],
-        highpass_cutoff = config["preprocessing"]["filtering"]["highpass_cutoff"],
-        clamp_nsigma    = config["preprocessing"]["filtering"]["clamp_nsigma"],
+        cutoff      = config["preprocessing"]["filtering"]["lowpass_cutoff"],
+        smoothen    = config["preprocessing"]["filtering"]["smoothen_cutoff"],
         logdir      = config["cluster"]["logdir"],
         walltime    = "0:30:00",
         nodes       = 1,
-        cores       = 8,
-        memory      = "16G",
+        cores       = 2,
+        memory      = "48G",
         gres        = ''
     shell:
         """
-        module load EMAN2
-        e2proc3d.py {input.tomo} {output.filtered_tomo} \
-        --process filter.lowpass.gauss:cutoff_abs={params.lowpass_cutoff} \
-        --process filter.highpass.gauss:cutoff_pixels={params.highpass_cutoff} \
-        --process normalize \
-        --process threshold.clampminmax.nsigma:nsigma={params.clamp_nsigma} \
+        python3 {srcdir}/scripts/match_spectrum.py \
+        --input {input.tomo} \
+        --target {input.target_spectrum} \
+        --output {output.filtered_tomo} \
+        --cutoff {params.cutoff} \
+        --smoothen {params.smoothen} \
         """
 
 rule remap_labels:
     input:
         labels = lambda wildcards: training_meta.loc[wildcards.prefix, "labels"],
-    conda:
-        "envs/keras-env.yaml"
     output:
         remapped_labels = remapped_labels_pattern,
     params:
