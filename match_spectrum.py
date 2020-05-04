@@ -24,7 +24,7 @@ def match_spectrum(tomo, target_spectrum, cutoff=None, smooth=0):
     target_spectrum.resize(len(input_spectrum))
     equal_v = target_spectrum / input_spectrum
 
-    if cutoff is not None:
+    if cutoff:
         if smooth:
             slope = len(equal_v)/smooth
             offset = 2 * slope * ((cutoff - len(equal_v) / 2) / len(equal_v))
@@ -100,7 +100,7 @@ def get_cli():
         "-c",
         "--cutoff",
         required=False,
-        default=None,
+        default=False,
         type=int,
         help="Lowpass cutoff to apply"
     )
