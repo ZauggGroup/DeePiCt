@@ -77,7 +77,7 @@ def rad_avg(image):
 
 def rot_kernel(arr, shape):
 
-    func = interp1d(np.arange(len(arr)), arr, bounds_error=False, fill_value=arr[-1])
+    func = interp1d(np.arange(len(arr)), arr, bounds_error=False, fill_value=0)
 
     axes = np.ogrid[tuple(slice(0, np.ceil(s/2)) for s in shape)]
     kernel = hypot_nd(axes, offset=0).astype("f4")
