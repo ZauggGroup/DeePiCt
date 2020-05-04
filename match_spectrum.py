@@ -2,13 +2,14 @@ import numpy as np
 import numpy.fft as fft
 import pandas as pd
 import mrcfile
+import warnings
 
 import argparse
 
 from FilterUtils import rad_avg, rot_kernel
 
 
-def match_spectrum(tomo, target_spectrum):
+def match_spectrum(tomo, target_spectrum, cutoff=None, smooth=0):
     
     target_spectrum = target_spectrum.copy()
     tomo -= tomo.min()
@@ -23,12 +24,22 @@ def match_spectrum(tomo, target_spectrum):
     target_spectrum.resize(len(input_spectrum))
     equal_v = target_spectrum / input_spectrum
 
-    # TODO: make this adjustable!!
-    slope = 20
-    offset = 10
-    sigmoid = 1/(1 + np.exp(np.linspace(-slope, slope, len(equal_v)) - offset))
+    if cutoff is not None:
+        if smooth:
+            slope = len(equal_v)/smooth
+            offset = 2 * slope * ((cutoff - len(equal_v) / 2) / len(equal_v))
+        
+            cutoff_v = 1/(1 + np.exp(np.linspace(-slope, slope, len(equal_v)) - offset))
 
-    equal_v *= sigmoid
+        else:
+            cutoff_v = np.ones_like(equal_v)
+            try:
+                equal_v[cutoff:] = 0
+            except IndexError:
+                warnings.warn("Flat cutoff is higher than maximum frequency")
+            
+        equal_v *= cutoff_v
+
     equal_kernel = rot_kernel(equal_v, t.shape)
     
     t *= equal_kernel
@@ -51,7 +62,7 @@ def main():
 
     target_spectrum = pd.read_csv(args.target, sep="\t")["intensity"].values
 
-    filtered_tomo = match_spectrum(tomo, target_spectrum)
+    filtered_tomo = match_spectrum(tomo, target_spectrum, args.cutoff, args.smoothen)
 
     m = mrcfile.new(args.output, overwrite=True)
     m.set_data(filtered_tomo)
@@ -83,6 +94,24 @@ def get_cli():
         "--output",
         required=True,
         help="Output location for matched tomogram"
+    )
+
+    parser.add_argument( 
+        "-c",
+        "--cutoff",
+        required=False,
+        default=None,
+        type=int,
+        help="Lowpass cutoff to apply"
+    )
+
+    parser.add_argument( 
+        "-s",
+        "--smoothen",
+        required=False,
+        default=0,
+        type=float,
+        help="Smoothening to apply to lowpass filter. Value roughly resembles sigmoid width in pixels"
     )
     
     return parser
