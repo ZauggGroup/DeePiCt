@@ -136,6 +136,8 @@ rule remap_labels:
         labels = lambda wildcards: training_meta.loc[wildcards.prefix, "labels"],
     output:
         remapped_labels = remapped_labels_pattern,
+    conda:
+        "envs/keras-env.yaml"
     params:
         mapping     = config["preprocessing"]["remapping"]["mapping"],
         logdir      = config["cluster"]["logdir"],
