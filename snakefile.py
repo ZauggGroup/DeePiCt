@@ -107,7 +107,7 @@ rule all:
 rule filter_tomogram:
     input:
         tomo   = lambda wildcards: filter_meta.loc[wildcards.prefix, "data"], # This approach allows to use both .mrc and .rec
-        target = config["preprocessing"]["filtering"]["target_spectrum"]
+        target_spectrum = config["preprocessing"]["filtering"]["target_spectrum"]
     output:
         filtered_tomo = filtered_pattern
     conda:
