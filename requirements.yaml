@@ -1,0 +1,10 @@
+name: tsm
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - numpy=1.18.1
+  - pandas=1.0.3
+  - scipy=1.4.1
+  - pip:
+    - mrcfile==1.1.2
