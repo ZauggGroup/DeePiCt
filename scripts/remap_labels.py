@@ -9,8 +9,8 @@ def main():
 
     input_mrc = mrcfile.open(args.input, permissive=True)
     input_tomo = input_mrc.data
-    
-    mapping = yaml.safe_load(open(args.mapping))
+
+    mapping = eval(args.mapping)
 
     output_tomo = np.zeros_like(input_tomo)
 
@@ -38,18 +38,24 @@ def get_cli():
     parser.add_argument( 
         "-i",
         "--input",
+        help="Input annotations",
         required=True
     )
 
     parser.add_argument( 
         "-o",
         "--output",
+        help="Output location for relabeled annotations",
         required=True
     )
 
     parser.add_argument( 
         "-m",
         "--mapping",
+        help="Mapping string in python dict format: \
+{<from_label>:<to_label>,...}. \
+Passing '.' as from_label will remap all labels, \
+excluding 0 and other individually specified labels",
         required=True
     )
     

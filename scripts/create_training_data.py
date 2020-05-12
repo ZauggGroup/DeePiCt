@@ -29,7 +29,6 @@ def main():
     crop = config["crop"]
     patch_size = config["patch_size"]
     patch_dim = config["patch_dim"]
-    rotate = config["rotate"]
     flip_y = config["flip_y"]
 
     dataset_id = os.path.splitext(os.path.basename(features))[0]
@@ -76,10 +75,6 @@ def main():
     # Stack slice patches
     patch_stack = np.vstack(patch_stack)
     patch_stack = patch_stack.astype(np.float32)
-
-    # Rotate patches
-    if rotate:
-        patch_stack = np.stack([np.rot90(patch, np.random.randint(4)) for patch in patch_stack])
 
     # Split data into features and labels again
     processed_features = patch_stack[...,0]
@@ -150,20 +145,6 @@ def get_cli():
         "--patch_dim",
         type=csv_list,
         required=False
-    )
-
-    parser.add_argument(
-        "-r",
-        "--rotate",
-        action="store_true",
-        default=None
-    )
-
-    parser.add_argument(
-        "--dont_rotate",
-        action="store_false",
-        dest="rotate",
-        default=None
     )
 
     parser.add_argument(

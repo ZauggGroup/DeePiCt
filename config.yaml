@@ -6,19 +6,21 @@ data:
 cluster:
   logdir: logs/
 preprocessing:
-  filtering:                  # e2proc3d parameters
+  filtering:                  # Tomogram spectrum matching parameters
     active: false
     target_spectrum: null     # Target spectrum to match tomograms to. Create using extract_spectrum.py
     lowpass_cutoff: 350       # Lowpass cutoff in fourier space. Set to 0 to disable
     smoothen_cutoff: 20       # Smoothen cutoff into a sigmoid cuve. Set to 0 to disable
-  remapping:
+  remapping:                  # Remap labels for multiclass annotations
     active: true
-    mapping: meta/remap.yaml
+    mapping:
+      1:  0                   # Excludes cytoplasm
+      12: 0                   # Excludes FAS
+      .:  1                   # Labels all other annotations (apart from 0 label) as 1
   slicing:
     patch_size: [288, 288]    # Size of 2D patches used for training
     patch_dim: [5, 5]         # Number of rows and columns patches spaced out across slices
-    rotate: true              # Randomly rotate patches in 90-degree increments
-    z_cutoff: 200             # Use n/2 slices above and below z center. If null, select all labeled slices
+    z_cutoff: null            # Use n/2 slices above and below z center. If null, select all labeled slices
     z_stride: 5               # Pick every n-th z slice
     crop: 0                   # Crop input data before processing into patches
     flip_y: false             # Flip labels along y-axis (sometimes caused by conversion from .em files)
@@ -26,14 +28,16 @@ training:
   general:
     normalize: true           # Normalize the data to have zero mean and unit variance
     lr: 0.0001                # Learning rate
-    drop_empty: 0             # Fraction of all-empty slices to drop
+    drop_empty: 1             # Fraction of all-empty slices to drop
     batch_size: 8             # Batch size
     n_filters: 4              # Number of filters on first UNet layer
+    flip: true                # Randomly flip tomograms along X/Y axis
+    rotate: true              # Randomly rotate tomograms in 90-degree increments
   evaluation:
     active: true
     cv_folds: 5               # Cross validation folds (>=2)
     epochs: 50                # Number of epochs / max. number of epochs if using early stopping
-    stopping_patience: 5      # Early stpooing if val_loss does not improve after n epochs, set to 0 to disable
+    stopping_patience: 20     # Early stopping if val_loss does not improve after n epochs, set to 0 to disable
     tensorboard: true         # Log metrics to tensorboard
     run_name: null            # Run name used in tensorboard, set to 'null' to use a timestamp instead
     tf_logdir: logs           # Tensorboard log / output metrics save location
@@ -54,4 +58,5 @@ postprocessing:               # 3D postprocessing of predictions
   active: false
   sigma: 5                    # Sigma for 1D gaussian filter along z-axis
   threshold: 0.75             # Threshold to apply. Set to 0 to disable.
+debug: false                  # Print some debuggin output
 

@@ -1,3 +1,5 @@
+import numpy as np
+
 from keras.callbacks import TensorBoard
 import tensorflow as tf
 from keras.models import Model, load_model
@@ -9,6 +11,7 @@ from keras.layers.merge import concatenate, add
 from keras.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau
 from keras.optimizers import Adam
 from keras import backend as K
+from keras.preprocessing.image import ImageDataGenerator
 
 
 def conv2d_block(input_tensor, n_filters, kernel_size=3):
@@ -75,3 +78,24 @@ def neg_dice_coefficient(y_true, y_pred):
     y_pred_f = K.flatten(y_pred)
     intersection = K.sum(y_true_f * y_pred_f)
     return -((2. * intersection) / (K.sum(y_true_f * y_true_f) + K.sum(y_pred_f * y_pred_f) + eps))
+
+
+class IDGWithLabels():
+    def __init__(self, flip=True, rot90=True, **kwargs):
+        self.generator = ImageDataGenerator(**kwargs)
+        self.flip = flip
+        self.rot90 = rot90
+
+    def flow(self, *args, **kwargs):
+        for X, y in self.generator.flow(*args, **kwargs):
+            if self.flip:
+                k = np.random.binomial(1, 0.5, size=2) * 2 - 1
+                X = X[:, ::k[0], ::k[1]]
+                y = y[:, ::k[0], ::k[1]]
+
+            if self.rot90:
+                k = np.random.randint(4)
+                X = np.rot90(X, k, (1, 2))
+                y = np.rot90(y, k, (1, 2))
+
+            yield X[..., None], y[..., None]

@@ -1,15 +1,17 @@
 cluster:
   logdir: logs/
 preprocessing:
-  filtering: # e2proc3d parameters
-    active: true
-    lowpass_cutoff: .25 # lowpass cutoff in fourier space
-    highpass_cutoff: 5 # highpass cutoff in fourier space
-    clamp_nsigma: 3 # n sigma cutoff after normalization
+  filtering:
+    active: false
+    target_spectrum: null
+    lowpass_cutoff: 350
+    smoothen_cutoff: 20
+  remapping:
+    active: false
+    mapping: null
   slicing:
     patch_size: [288, 288]
     patch_dim: [5, 5]
-    rotate: true
     z_cutoff: 200
     z_stride: 5
     crop: 0
@@ -21,11 +23,13 @@ training:
     drop_empty: 0
     batch_size: 8
     n_filters: 4
+    flip: true
+    rotate: true
   evaluation:
     active: true
     cv_folds: 5
-    epochs: 25
-    stopping_patience: 0 # Disable by setting to 0
+    epochs: 50
+    stopping_patience: 0
     tensorboard: true
     run_name: null
     tf_logdir: logs/

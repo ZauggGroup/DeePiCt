@@ -137,12 +137,20 @@ def main():
         if config["stopping_patience"]:
             callbacks.append(EarlyStopping(patience=config["stopping_patience"]))
 
+        generator = IDGWithLabels(
+            flip=config["flip"], 
+            rot90=config["rotate"],
+        )
+
         # Fitting the model 
-        results = model.fit(
-            train_features, 
-            train_labels, 
-            batch_size=config["batch_size"], 
+        results = model.fit_generator(
+            generator.flow(
+                train_features, 
+                train_labels,
+                batch_size=config["batch_size"]
+            ),
             epochs=config["epochs"],
+            steps_per_epoch=len(train_features) / config["batch_size"],
             callbacks=callbacks,
             validation_data=(test_features, test_labels),
             verbose=2

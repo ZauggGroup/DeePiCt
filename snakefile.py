@@ -1,6 +1,7 @@
 import os, yaml
 import os.path as op
 import pandas as pd
+from json import dumps
 from datetime import datetime
 
 
@@ -139,7 +140,7 @@ rule remap_labels:
     conda:
         "envs/keras-env.yaml"
     params:
-        mapping     = config["preprocessing"]["remapping"]["mapping"],
+        mapping     = str(config["preprocessing"]["remapping"]["mapping"]),
         logdir      = config["cluster"]["logdir"],
         walltime    = "0:10:00",
         nodes       = 1,
@@ -151,7 +152,7 @@ rule remap_labels:
         python3 {srcdir}/scripts/remap_labels.py \
         --input {{input.labels}} \
         --output {{output.remapped_labels}} \
-        --mapping {{params.mapping}}
+        --mapping \"{{params.mapping}}\"
         """
 
 rule slice_tomogram:
