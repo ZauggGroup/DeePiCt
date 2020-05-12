@@ -98,4 +98,4 @@ class IDGWithLabels():
                 X = np.rot90(X, k, (1, 2))
                 y = np.rot90(y, k, (1, 2))
 
-            yield X[..., None], y[..., None]
+            yield X, y
