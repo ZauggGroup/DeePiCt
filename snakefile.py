@@ -26,7 +26,10 @@ if (
     
     if config["data"]["train_workdir"]:
         os.makedirs(config["data"]["train_workdir"], exist_ok=True)
-        training_meta["prefix"] = config["data"]["train_workdir"] + '/' + training_meta["data"].apply(lambda x: os.path.basename(os.path.splitext(x)[0]))
+        if training_meta.get("id") is None:
+            training_meta["prefix"] = config["data"]["train_workdir"] + '/' + training_meta["data"].apply(lambda x: os.path.basename(os.path.splitext(x)[0]))
+        else:
+            training_meta["prefix"] = config["data"]["train_workdir"] + '/' + training_meta["id"]
     else:
         training_meta["prefix"] = training_meta["data"].apply(lambda x: os.path.splitext(x)[0])
     
@@ -50,7 +53,11 @@ if config["prediction"]["active"] | config["postprocessing"]["active"]:
 
     if config["data"]["output_dir"]:
         os.makedirs(config["data"]["output_dir"], exist_ok=True)
-        prediction_meta["prefix"] = config["data"]["output_dir"] + '/' + prediction_meta["data"].apply(lambda x: os.path.basename(os.path.splitext(x)[0]))
+        if prediction_meta.get("id") is None:
+            prediction_meta["prefix"] = config["data"]["output_dir"] + '/' + prediction_meta["data"].apply(lambda x: os.path.basename(os.path.splitext(x)[0]))
+        else:
+            prediction_meta["prefix"] = config["data"]["train_workdir"] + '/' + prediction_meta["id"]
+
     else:
         prediction_meta["prefix"] = prediction_meta["data"].apply(lambda x: os.path.splitext(x)[0])
     
