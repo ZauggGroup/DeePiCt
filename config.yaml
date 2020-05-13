@@ -23,7 +23,6 @@ preprocessing:
     z_cutoff: null            # Use n/2 slices above and below z center. If null, select all labeled slices
     z_stride: 5               # Pick every n-th z slice
     crop: 0                   # Crop input data before processing into patches
-    flip_y: false             # Flip labels along y-axis (sometimes caused by conversion from .em files)
 training:
   general:
     normalize: true           # Normalize the data to have zero mean and unit variance
