@@ -38,14 +38,14 @@ def get_cli():
     parser.add_argument( 
         "-i",
         "--input",
-        help="Input annotations",
+        help="Input annotations in MRC or REC format.",
         required=True
     )
 
     parser.add_argument( 
         "-o",
         "--output",
-        help="Output location for relabeled annotations",
+        help="Output location for relabeled annotations.",
         required=True
     )
 

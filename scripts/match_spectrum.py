@@ -10,16 +10,27 @@ from FilterUtil import rad_avg, rot_kernel
 
 
 def match_spectrum(tomo, target_spectrum, cutoff=None, smooth=0):
+    """
+    Adjust a tomogram's amplitude spectrum to match the extracted spectrum of another tomogram.
+    Arguments:
+        tomo: the input tomogram as a 3D numpy array.
+        target_spectrum: the target spectrum as a 1D numpy array.
+        cutoff: apply a cutoff at this frequency (default: no cutoff)
+        smooth: smoothen the cutoff into a sigmoid. Value roughly resembles width of sigmoid.
+    """
     
+    # Normalize tomogram
     target_spectrum = target_spectrum.copy()
     tomo -= tomo.min()
     tomo /= tomo.max()
 
+    # Do FFT
     t = fft.fftn(tomo)
     t = fft.fftshift(t)
 
     del tomo
 
+    # Get input tomogram's radially averaged amplitude spectrum, get equalization vector
     input_spectrum = rad_avg(np.abs(t))
     target_spectrum.resize(len(input_spectrum))
     equal_v = target_spectrum / input_spectrum
@@ -40,11 +51,13 @@ def match_spectrum(tomo, target_spectrum, cutoff=None, smooth=0):
             
         equal_v *= cutoff_v
 
+    # Create and apply equalization kernel
     equal_kernel = rot_kernel(equal_v, t.shape)
     
     t *= equal_kernel
     del equal_kernel
     
+    # Inverse FFT
     t = fft.ifftn(t)
     t = np.abs(t).astype("f4")
 
@@ -79,21 +92,21 @@ def get_cli():
         "-i",
         "--input",
         required=True,
-        help="Tomogram to match (.mrc/.rec)"
+        help="Tomogram to match (.mrc/.rec)."
     )
 
     parser.add_argument( 
         "-t",
         "--target",
         required=True,
-        help="Target spectrum to match the input tomogram to (.tsv)"
+        help="Target spectrum to match the input tomogram to (.tsv)."
     )
 
     parser.add_argument( 
         "-o",
         "--output",
         required=True,
-        help="Output location for matched tomogram"
+        help="Output location for matched tomogram."
     )
 
     parser.add_argument( 
@@ -102,7 +115,7 @@ def get_cli():
         required=False,
         default=False,
         type=int,
-        help="Lowpass cutoff to apply"
+        help="Lowpass cutoff to apply."
     )
 
     parser.add_argument( 
@@ -111,7 +124,7 @@ def get_cli():
         required=False,
         default=0,
         type=float,
-        help="Smoothening to apply to lowpass filter. Value roughly resembles sigmoid width in pixels"
+        help="Smoothening to apply to lowpass filter by turning it into a sigmoid curve. Value roughly resembles sigmoid width in pixels."
     )
     
     return parser

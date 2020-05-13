@@ -3,7 +3,15 @@ import warnings
 
 def into_patches(image, patch_shape, patch_n):
     """
-    Process an image into evenly spaced-out patches.
+    Process a 2D image into evenly spaced-out 2D patches.
+    
+    Arguments:
+        image: image to process into patches as a 2D numpy array.
+        patch_size: target size of patches: (height, width).
+        patch_n: number of rows and columns of patches: (rows, columns).
+    
+    Returns:
+        A stack of patches as a numpy array of shape (patch_n[0]*patch_n[1], y, x).
     """
     
     y_stride = (image.shape[0] - patch_shape[0]) / (patch_n[0] - 1) if patch_n[0] > 1 else 0
@@ -19,8 +27,17 @@ def into_patches(image, patch_shape, patch_n):
 
 def from_patches(patches, patch_n, target_shape, pad=0):
     """
-    Assemble an image from evenly spaced-out patches.
+    Assemble a 2D image stack from evenly spaced-out 2D patches.
     Overlapping areas will be averaged.
+
+    Arguments:
+        patches: stack of patches as a numpy array of shape (patch_n[0]*patch_n[1], y, x).
+        patch_n: number of rows and columns of patches: (rows, columns).
+        target_shape: target shape in which the patches shall be assembled into.
+        pad: cropping to apply to patches on all sides.
+
+    Returns:
+        A "D assembly of the patches as a numpy array in the target shape.
     """
     
     y_stride = (target_shape[0] - patches.shape[1]) / (patch_n[0] - 1) if patch_n[0] > 1 else 0
@@ -51,8 +68,17 @@ def from_patches(patches, patch_n, target_shape, pad=0):
 
 def into_patches_3d(image, patch_shape, patch_n):
     """
-    Process a 3d image stack into evenly spaced-out 2d patches.
+    Process a 3D image stack into evenly spaced-out 2D patches.
+    
+    Arguments:
+        image: image stack to process into patches as a 3D numpy array.
+        patch_size: target size of patches: (height, width).
+        patch_n: number of rows and columns of patches: (rows, columns).
+    
+    Returns:
+        A stack of patches as a numpy array of shape (patch_n[0]*patch_n[1]*z, y, x).
     """
+
     assert len(patch_shape) == len(patch_n), "Rank of patch shape and patch number need to match number of selected axis"
     
     y_stride = (image.shape[1] - patch_shape[0]) / (patch_n[0] - 1) if patch_n[0] > 1 else 0
@@ -69,13 +95,21 @@ def into_patches_3d(image, patch_shape, patch_n):
 
 def from_patches_3d(patches, patch_n, target_shape, pad=0):
     """
-    Assemble a 3d image stack from evenly spaced-out 2d patches.
+    Assemble a 3D image stack from evenly spaced-out 2D patches.
     Patches need to be grouped along first array axis by patch position, not by Z-slice; 
     this can be ensured by using PatchUtil.into_patches_3d to create patches.
     Overlapping areas will be averaged.
-    
-    TODO: check whether optimizing this function is viable, counter channel could also just be 2D.
+
+    Arguments:
+        patches: stack of patches as a numpy array of shape (patch_n[0]*patch_n[1]*z, y, x).
+        patch_n: number of rows and columns of patches: (rows, columns).
+        target_shape: target shape in which the patches shall be assembled into.
+        pad: cropping to apply to patches on all sides.
+
+    Returns:
+        A 3D assembly of the patches as a numpy array in the target shape.
     """
+    # TODO: check whether optimizing this function is viable, counter channel could also just be 2D.
     
     y_stride = (target_shape[1] - patches.shape[1]) / (patch_n[0] - 1) if patch_n[0] > 1 else 0
     x_stride = (target_shape[2] - patches.shape[2]) / (patch_n[1] - 1) if patch_n[1] > 1 else 0

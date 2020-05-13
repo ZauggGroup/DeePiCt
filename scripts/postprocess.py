@@ -30,39 +30,43 @@ def main():
 
 
 def get_cli():
-    # TODO: CLI documentation
     parser = argparse.ArgumentParser(
-        description="Post-process organelle segmentation by using a 1D gaussian filter."
+        description="Post-process organelle segmentation by using a 1D gaussian filter along the z-axis."
     )
 
     parser.add_argument( 
         "-i",
         "--input",
-        required=True
+        required=True,
+        help="Input segmentation."
     )
 
     parser.add_argument(
         "-o",
         "--output",
-        required=True
+        required=True,
+        help="Save location for processed segmentation."
     )
 
     parser.add_argument( 
         "-s",
         "--sigma",
-        required=False
+        required=False,
+        help="Sigma for 1D gaussian filter."
     )
 
     parser.add_argument( 
         "-t",
         "--threshold",
-        required=False
+        required=False,
+        help="Threshold to apply to convert probabilities into binary labels."
     )
 
     parser.add_argument( 
         "-c",
         "--config",
-        required=False
+        required=False,
+        help="Configuration YAML file. Overrides defaults, overridden by CLI arguments."
     )
 
     return parser

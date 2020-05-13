@@ -81,6 +81,10 @@ def neg_dice_coefficient(y_true, y_pred):
 
 
 class IDGWithLabels():
+    """
+    Extension of Keras' ImageDataGenerator that allows flipping/rotating the labels as well.
+    Kwargs are forwarded to the ImageDataGenerator.
+    """
     def __init__(self, flip=True, rot90=True, **kwargs):
         self.generator = ImageDataGenerator(**kwargs)
         self.flip = flip

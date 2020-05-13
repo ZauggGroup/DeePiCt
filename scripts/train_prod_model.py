@@ -108,22 +108,23 @@ def main():
     model.save(config["model_output"])
 
 def get_cli():
-    # TODO: CLI documentation
     parser = argparse.ArgumentParser(
-        description="Process tomogram-label pairs into 2D training datasets."
+        description="Train a new UNet to be used to create segmentations for new data."
     )
 
     parser.add_argument( 
         "-c",
         "--config",
-        required=True
+        required=True,
+        help="Configuration YAML file."
     )
 
     parser.add_argument( 
         "-d",
         "--datasets",
         required=True,
-        nargs="+"
+        nargs="+",
+        help="Datasets used for training in HDF5 format."
     )
     
     return parser

@@ -92,73 +92,82 @@ def read_mrc(file):
         return f.data
 
 def get_cli():
-    # TODO: CLI documentation
     parser = argparse.ArgumentParser(
-        description="Process tomogram-label pairs into 2D training datasets."
+        description="Process a tomogram-label pair into a 2D training dataset."
     )
 
     parser.add_argument( 
         "-f",
         "--features",
-        required=True
+        required=True,
+        help="Tomogram in MRC or REC format."
     )
 
     parser.add_argument( 
         "-l",
         "--labels",
-        required=True
+        required=True,
+        help="Tomogram annotations in MRC or REC format."
     )
 
     parser.add_argument( 
         "-o",
         "--output",
-        required=True
+        required=True,
+        help="Save location of output HDF5 dataset."
     )
 
     parser.add_argument( 
         "-c",
         "--config",
-        required=False
+        required=False,
+        help="Configuration YAML file. Overrides defaults, overridden by CLI arguments."
     )
 
     parser.add_argument(
         "-z",
         "--z_stride",
-        required=False
+        required=False,
+        help="Only select every n-th slice."
     )
 
     parser.add_argument(
         "-x",
         "--crop",
-        required=False
+        required=False,
+        help="Crop tomogram before processing into patches."
     )
 
     parser.add_argument(
         "-s",
         "--patch_size",
         type=csv_list,
-        required=False
+        required=False,
+        help="Comma-separated height and width of patches."
     )
 
     parser.add_argument(
         "-n",
         "--patch_dim",
         type=csv_list,
-        required=False
+        required=False,
+        help="Comma-separated number of rows and columns of patches."
     )
 
     parser.add_argument(
         "-y",
         "--flip_y",
         action="store_true",
-        default=None
+        default=None,
+        help="Flip labels along y axis."
     )
 
     parser.add_argument(
         "--dont_flip_y",
         action="store_false",
         dest="flip_y",
-        default=None
+        default=None,
+        help="Don't flip labels along y axis (default behavior, used to override config file)."
     )
 
     return parser

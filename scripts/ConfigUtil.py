@@ -2,12 +2,18 @@ import yaml
 import pprint
 
 def recursive_get(d, k):
+    """
+    Recursive function to retrieve values from nested dictionaries.
+    """
     if len(k) == 1:
         return d[k[0]]
     else:
         return recursive_get(d[k[0]], k[1:])
 
 def csv_list(csv_str):
+    """
+    Parser function to turn a string of comma-separated values into a list.
+    """
     return [int(i) for i in csv_str.split(",")]
 
 def assemble_config(defaults, user_config = None, subconfig_paths = None, cli_args = None):

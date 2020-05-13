@@ -8,6 +8,9 @@ from FilterUtil import rad_avg, read_mrc
 
 
 def extract_spectrum(tomo):
+    """
+    Extract radially averaged amplitude spectrum from a tomogram
+    """
     # Scale intensitites pre-fft
     tomo -= tomo.min()
     tomo /= tomo.max()
@@ -44,14 +47,14 @@ def get_cli():
         "--input",
         required=True,
         type=read_mrc,
-        help="Tomogram to extract spectrum from (.mrc/.rec format)"
+        help="Tomogram to extract spectrum from (.mrc/.rec format)."
     )
 
     parser.add_argument( 
         "-o",
         "--output",
         required=True,
-        help="Output destination for extracted spectrum (.tsv format)"
+        help="Output destination for extracted spectrum (.tsv format)."
     )
     
     return parser

@@ -87,46 +87,51 @@ def read_mrc(file):
         return f.data
 
 def get_cli():
-    # TODO: CLI documentation
     parser = argparse.ArgumentParser(
-        description="Predict organelle segmentation from tomogram data."
+        description="Predict organelle segmentation from tomogram data using a trained model."
     )
 
     parser.add_argument( 
         "-f",
         "--features",
-        required=True
+        required=True,
+        help="Input features to predict from."
     )
 
     parser.add_argument(
         "-o",
         "--output",
-        required=True
+        required=True,
+        help="save location for predicted segmentation."
     )
 
     parser.add_argument( 
         "-m",
         "--model",
-        required=False
+        required=False,
+        help="Location of pretrained model in HDF5 format."
     )
 
     parser.add_argument( 
         "-c",
         "--config",
-        required=False
+        required=False,
+        help="Configuration YAML file. Overrides defaults, overridden by CLI arguments."
     )
 
     parser.add_argument(
         "-x",
         "--crop",
-        required=False
+        required=False,
+        help="Crop patches on reassembly to counter artifacts around patch edges."
     )
 
     parser.add_argument(
         "-C",
         "--compensate_crop",
         action="store_true",
-        default=None
+        default=None,
+        help="Compensate patch cropping and z-axis cutoff to preserve the source tomogram's shape."
     )
 
     parser.add_argument(
@@ -134,27 +139,32 @@ def get_cli():
         "--dont_compensate_crop",
         action="store_true",
         default=None,
-        dest="compensate_crop"
+        dest="compensate_crop",
+        help="Don't compensate patch cropping and z-axis cutoff. Used to override config file."
     )
 
     parser.add_argument(
         "-p",
         "--patch_size",
         type=csv_list,
-        required=False
+        required=False,
+        help="Comma-separated height and width for patches (has to be consistent with patch size used for training the model)."
     )
 
     parser.add_argument(
         "-d",
         "--patch_dim",
         type=csv_list,
-        required=False
+        required=False,
+        help="Comma-separated numbers of row and columns of patches to be evenly-spaced out along tomogram slices."
     )
 
     parser.add_argument(
         "-z",
         "--z_cutoff",
-        required=False
+        required=False,
+        type=int,
+        help="Only predict for this many z-slices from z center."
     )
 
     return parser
