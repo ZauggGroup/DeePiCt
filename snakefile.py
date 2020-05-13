@@ -1,3 +1,14 @@
+
+"""
+Modular pipeline for Deep Learning-powered detection of organelles in CryoET data using the U-Net architecture by Ronneberger et al.
+"""
+
+__author__      = "Alexander Mattausch"
+__version__     = "0.1.0"
+__maintainer__  = "Alexander Mattausch"
+__email__       = "alexander.mattausch@embl.de"
+
+
 import os, yaml
 import os.path as op
 import pandas as pd
