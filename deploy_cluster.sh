@@ -12,5 +12,4 @@ srun -t 4:00:00 -c 1 --mem 2G \
     --jobs 20 \
     --use-conda \
     --printshellcmds \
-    --latency-wait 30 \
-    --dryrun
+    --latency-wait 30
