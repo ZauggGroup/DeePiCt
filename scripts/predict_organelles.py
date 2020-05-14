@@ -47,7 +47,11 @@ def main():
     )
 
     # Preprocess tomogram
-    tomo = read_mrc(tomo_file).astype(np.float32)
+
+    with mrcfile.open(tomo_file, permissive=True) as f:
+        tomo = f.data.astype(np.float32)
+        tomo_header = f.header
+    
     orig_shape = tomo.shape
 
     if config["z_cutoff"]:
@@ -79,7 +83,10 @@ def main():
         rec = np.pad(rec, padding)
 
     # Save output
-    mrcfile.new(out_file, data=rec.astype(np.float32), overwrite=True).close()
+    m = mrcfile.new(out_file, overwrite=True)
+    m.set_data(rec.astype(np.float32))
+    m.set_extended_header(tomo_header)
+    m.close()
 
 
 def read_mrc(file):
