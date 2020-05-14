@@ -14,6 +14,7 @@ import os.path as op
 import pandas as pd
 from json import dumps
 from datetime import datetime
+from warnings import warn
 
 
 # Load user config ffile
@@ -85,6 +86,15 @@ filter_meta.set_index("prefix", inplace=True)
 # Pipeline targets
 targets = []
 
+if config["cluster"]["logdir"]:
+    os.makedirs(config["cluster"]["logdir"], exist_ok=True)
+
+if config["preprocessing"]["filtering"]["active"] and (config["preprocessing"]["filtering"]["spectrum"] is None):
+    warn(
+        f"Filtering is enabled but no target spectrum file has been stated in the configuration! \
+        \nUse {srcdir}/scripts/extract_spectrum.py to create a target spectrum."
+    )
+
 if config["training"]["evaluation"]["run_name"] is None:
     run_name = datetime.strftime(datetime.now(), "%y%m%d-%H%M%S")
 else:
@@ -104,7 +114,7 @@ if config["prediction"]["active"]:
 if config["postprocessing"]["active"]:
     targets += prediction_meta["polished"].to_list()
 
-if cli_config.get("debug"):
+if config["debug"]:
     print("TARGETS:\n", targets)
     print("TRAINING_META:\n", training_meta)
     print("PREDICTION_META:\n", prediction_meta)
@@ -141,13 +151,13 @@ rule filter_tomogram:
         memory      = "48G",
         gres        = ''
     shell:
-        """
+        f"""
         python3 {srcdir}/scripts/match_spectrum.py \
-        --input {input.tomo} \
-        --target {input.target_spectrum} \
-        --output {output.filtered_tomo} \
-        --cutoff {params.cutoff} \
-        --smoothen {params.smoothen} \
+        --input {{input.tomo}} \
+        --target {{input.target_spectrum}} \
+        --output {{output.filtered_tomo}} \
+        --cutoff {{params.cutoff}} \
+        --smoothen {{params.smoothen}}
         """
 
 rule remap_labels:

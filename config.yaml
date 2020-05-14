@@ -1,13 +1,13 @@
 data:
   training_data: meta/metadata.csv
   prediction_data: meta/metadata.csv
-  train_workdir: work/        # 'null' to save at input file location
-  output_dir: out/            # 'null' to save at input file location
+  train_workdir: work         # 'null' to save at input file location
+  output_dir: out             # 'null' to save at input file location
 cluster:
-  logdir: logs/
+  logdir: logs
 preprocessing:
   filtering:                  # Tomogram spectrum matching parameters
-    active: true
+    active: false
     target_spectrum: null     # Target spectrum to match tomograms to. Create using extract_spectrum.py
     lowpass_cutoff: 350       # Lowpass cutoff in fourier space. Set to 0 to disable
     smoothen_cutoff: 20       # Smoothen cutoff into a sigmoid cuve. Set to 0 to disable
