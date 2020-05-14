@@ -35,14 +35,14 @@ training:
   evaluation:
     active: true
     cv_folds: 5               # Cross validation folds (>=2)
-    epochs: 50                # Number of epochs / max. number of epochs if using early stopping
+    epochs: 100               # Number of epochs / max. number of epochs if using early stopping
     stopping_patience: 20     # Early stopping if val_loss does not improve after n epochs, set to 0 to disable
     tensorboard: true         # Log metrics to tensorboard
     run_name: null            # Run name used in tensorboard, set to 'null' to use a timestamp instead
     tf_logdir: logs           # Tensorboard log / output metrics save location
   production:
     active: false
-    epochs: 50                # Number of epochs
+    epochs: 25                # Number of epochs
     model_output: ./model.h5  # Location for production model hdf5 file
 prediction:
   active: false
@@ -57,5 +57,5 @@ postprocessing:               # 3D postprocessing of predictions
   active: false
   sigma: 5                    # Sigma for 1D gaussian filter along z-axis
   threshold: 0.75             # Threshold to apply. Set to 0 to disable.
-debug: false                  # Print some debuggin output
+debug: false                  # Print some debugging output
 
