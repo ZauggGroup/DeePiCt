@@ -68,7 +68,7 @@ if config["prediction"]["active"] | config["postprocessing"]["active"]:
         if prediction_meta.get("id") is None:
             prediction_meta["prefix"] = config["data"]["output_dir"] + '/' + prediction_meta["data"].apply(lambda x: os.path.basename(os.path.splitext(x)[0]))
         else:
-            prediction_meta["prefix"] = config["data"]["train_workdir"] + '/' + prediction_meta["id"]
+            prediction_meta["prefix"] = config["data"]["output_dir"] + '/' + prediction_meta["id"]
 
     else:
         prediction_meta["prefix"] = prediction_meta["data"].apply(lambda x: os.path.splitext(x)[0])
