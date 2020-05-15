@@ -3,7 +3,7 @@
 srcdir=$(dirname ${BASH_SOURCE[0]})
 config_file=$1
 
-srun -t 4:00:00 -c 1 --mem 2G \
+srun -t 6:00:00 -c 1 --mem 4G \
     snakemake \
     --snakefile "${srcdir}/snakefile.py" \
     --cluster "sbatch" \
