@@ -83,6 +83,13 @@ if config["prediction"]["active"] | config["postprocessing"]["active"]:
 
 filter_meta.set_index("prefix", inplace=True)
 
+# Ensure all IDs are unique
+filter_meta_count = filter_meta.groupby(["prefix"]).count()
+filter_meta_count = filter_meta_count.loc[filter_meta_count["data"] > 1, "data"]
+if filter_meta_count.any():
+    raise ValueError(f"Data IDs {filter_meta_count.index.tolist()} occur multiple times across your training and prediction data! \
+Please make sure to assign unique identifiers to each sample.")
+
 # Pipeline targets
 targets = []
 

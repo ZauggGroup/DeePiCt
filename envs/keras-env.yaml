@@ -11,6 +11,7 @@ dependencies:
   - numpy=1.18.1=py36h95a1406_0
   - pandas=1.0.1=py36hb3f55d8_0
   - python=3.6.10=h0371630_0
+  - pip=20.0.2=py36_1
   - scikit-image=0.16.2=py36h0573a6f_0
   - scikit-learn=0.22.1=py36h22eb022_0
   - scipy=1.4.1=py36habc2bb6_0
