@@ -36,9 +36,9 @@ def main():
 
     # Check GPU
     if tft.is_gpu_available():
-        print("GPU is available 😩👌")
+        print("GPU is available! :)")
     else:
-        print("GPU is not available 💩")
+        print("GPU is not available! >:(")
 
     print(f"{f' DATA PREPARATION ':#^50}")
     datasets = []
