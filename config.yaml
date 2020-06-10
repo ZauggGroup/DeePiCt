@@ -51,7 +51,7 @@ prediction:
   crop: 48                    # Crop patches before reassembly to avoid artifacts
   compensate_crop: true       # Compensate patch cropping and z cutoff to result in same size as input tomogram
   patch_size: [288, 288]      # Must be the same used for training
-  patch_dim: [5, 5]           # Number of rows and columns patches spaced out across slices
+  patch_dim: [5, 5]           # Number of rows and columns of patches spaced out across slices
   z_cutoff: 200               # Only predict n/2 slices above and below z center
 postprocessing:               # 3D postprocessing of predictions
   active: false
