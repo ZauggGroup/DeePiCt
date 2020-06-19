@@ -96,7 +96,7 @@ targets = []
 if config["cluster"]["logdir"]:
     os.makedirs(config["cluster"]["logdir"], exist_ok=True)
 
-if config["preprocessing"]["filtering"]["active"] and (config["preprocessing"]["filtering"]["spectrum"] is None):
+if config["preprocessing"]["filtering"]["active"] and (config["preprocessing"]["filtering"]["target_spectrum"] is None):
     warn(
         f"Filtering is enabled but no target spectrum file has been stated in the configuration! \
         \nUse {srcdir}/scripts/extract_spectrum.py to create a target spectrum."
