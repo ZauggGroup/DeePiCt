@@ -1,0 +1,23 @@
+name: 3d-unet
+channels:
+  - bioconda
+  - anaconda
+  - conda-forge
+  - default
+dependencies:
+  - python=3.7
+  - jupyter
+  - imageio
+  - pytorch
+  - torchvision
+  - scikit-learn
+  - scikit-image
+  - scipy
+  - numpy
+  - tensorboardX
+  - tqdm
+  - pandas
+  - pyaml
+  - pip:
+      - h5py==2.10.0
+      - mrcfile==1.1.2

@@ -1,0 +1,6 @@
+PARTICLES_DIR_NAME = "particles"
+POS_DIR_NAME = "positive_raw"
+POS_SEG_DIR_NAME = "positive_label"
+NEG_DIR_NAME = "negative"
+HDF_DIR_NAME = "hdf"
+TXT_DIR_NAME = "txt"

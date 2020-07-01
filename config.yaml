@@ -1,0 +1,60 @@
+# General parameters for training and prediction:
+dataset_table: "/struct/mahamid/Irene/3d-unet/yeast_metadata.csv" # Path to metadata csv file
+output_dir: "/struct/mahamid/Irene/scratch/trueba/test_3d_unet"   # Output directory
+model_name: "test_model2.pkl"                                     # Output model using .pkl extension
+
+# Tomogram sets used for training or prediction
+tomos_sets:
+  training_list: [ "190301/001"]   # Tomograms in dataset_table for training
+  prediction_list: ["190301/006"]        # Tomograms in dataset_table for testing
+
+training:
+  active: True
+  semantic_classes: ['ribo']             # List of k semantic classes that the network will learn to recognize
+  processing_tomo: "tomo"                # Column name in dataset_table corresponding to raw tomo used for training
+  partition_name: "train_partition"      # Under this column in dataset_table the training partition path will be stored
+  box_shape: 64                          # Box side of the partition
+  min_label_fraction: 0.002              # Minimum label required in each box considered for the training partition
+  max_label_fraction: 1                  # Maximum, usually 1 works
+  edge_tolerance: 20                     # edge ignored for semantic class masks
+  overlap: 12                            # Thickness of overlap for training partition
+
+  # Unet architecture parameters
+  unet_hyperparameters:
+    depth: 1                             # unet depth
+    initial_features: 1                  # number of initial convolutions
+    epochs: 1                            # training epochs
+    split: 0.8                           # proportion of training (vs. validation) set, always between 0 and 1
+    BatchNorm: False                     # boolean value
+    encoder_dropout: 0                   # dropout for encoder path
+    decoder_dropout: 0                   # dropout for decoder path
+    batch_size: 4                        # batch size, integer
+
+prediction:
+  active: True
+  processing_tomo: "tomo"                # Column name in dataset table corresp. to tomogram that will be segmented
+  partition_name: "test_partition"       # Column name that'll be created in dataset table to store partition path for pred.
+  class_number: 0                        # The index of the semantic class that will be predicted (0, 1, ..., k-1)
+
+# Thresholding clustering and motl generation
+postprocessing:
+  clustering_parameters:
+    active: True
+    threshold: 0.5                          # Threshold for the probability score to make the predicted segmentation
+    min_cluster_size: 100                   # Minimum number of voxels per cluster
+    max_cluster_size: 35000                 # Maximum number of voxels per cluster
+    calculate_motl: True                    # Get the motl of centroids for each cluster
+    ignore_border_thickness: 10             # ignore border for motl generation if calculate_motl is True
+    filtering_mask: 'lamella_file'          # masking lamella for motl generation
+
+# For precision recall in particle picking
+evaluation:
+  active: true
+  pr_tolerance_radius: 10                 # radius in voxels for considering two coordinate corresp. to same particle
+  statistics_file: null #"statistics.csv" # statistics file where area under pr curve will be stored
+
+
+
+
+
+
