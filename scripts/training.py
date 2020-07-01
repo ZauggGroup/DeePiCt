@@ -2,28 +2,17 @@ import argparse
 import sys
 
 parser = argparse.ArgumentParser()
-parser.add_argument("-tomo_name", "--tomo_name", type=str)
-parser.add_argument("-overlap", "--overlap", type=int)
 parser.add_argument("-pythonpath", "--pythonpath", type=str)
 parser.add_argument("-partition_name", "--partition_name", type=str)
-# parser.add_argument("-segmentation_names", "--segmentation_names", nargs='+', type=str)
+parser.add_argument("-segmentation_names", "--segmentation_names", nargs='+', type=str)
 parser.add_argument("-dataset_table", "--dataset_table", type=str)
 parser.add_argument("-output_dir", "--output_dir", type=str)
-# parser.add_argument("-processing_tomo", "--processing_tomo", type=str)
 parser.add_argument("-box_shape", "--box_shape", type=int)
-# parser.add_argument("-min_label_fraction", "--min_label_fraction", type=float)
-# parser.add_argument("-max_label_fraction", "--max_label_fraction", type=float)
 parser.add_argument("-gpu", "--gpu", help="cuda visible devices", type=str)
-
-
-# parser.add_argument("dataset_table", "--dataset_table", type=str)
 parser.add_argument("logging_dir", "--logging_dir", type=str)
 parser.add_argument("model_dir", "--model_dir", type=str)
 parser.add_argument("models_table", "--models_table", type=str)
 parser.add_argument("tomo_training_list", "--tomo_training_list", type=str)
-# parser.add_argument("partition_name", "--partition_name", type=str)
-# parser.add_argument("segmentation_names", "--segmentation_names", type=str)
-# parser.add_argument("unet_hyperparameters", "--unet_hyperparameters", type=str)
 parser.add_argument("split", "--split", type=str)
 parser.add_argument("n_epochs", "--n_epochs", type=str)
 parser.add_argument("depth", "--depth", type=str)
@@ -32,11 +21,9 @@ parser.add_argument("encoder_dropout", "--encoder_dropout", type=str)
 parser.add_argument("batch_size", "--batch_size", type=str)
 parser.add_argument("batch_norm", "--batch_norm", type=str)
 parser.add_argument("initial_features", "--initial_features", type=str)
-parser.add_argument("output_classes", "--output_classes", type=str)
 parser.add_argument("overlap", "--overlap", type=str)
 parser.add_argument("processing_tomo", "--processing_tomo", type=str)
 parser.add_argument("partition_name", "--partition_name", type=str)
-# parser.add_argument("box_size", "--box_size", type=str)
 
 args = parser.parse_args()
 pythonpath = args.pythonpath
@@ -74,27 +61,26 @@ else:
     print("CUDA_VISIBLE_DEVICES = {}".format(gpu))
     os.environ["CUDA_VISIBLE_DEVICES"] = gpu
 
-dataset_table
-logging_dir
-model_dir
-models_table
-tomo_training_list
-partition_name
-segmentation_names
-unet_hyperparameters
-split
-n_epochs
-depth
-decoder_dropout
-encoder_dropout
-batch_size
-batch_norm
-initial_features
-output_classes
-overlap
-processing_tomo
-partition_name
-box_size
+dataset_table = args.dataset_table
+logging_dir = args.logging_dir
+model_dir = args.model_dir
+models_table = args.models_table
+tomo_training_list = args.tomo_training_list
+partition_name = args.partition_name
+segmentation_names = args.segmentation_names
+split = args.split
+n_epochs = args.n_epochs
+depth = args.depth
+decoder_dropout = args.decoder_dropout
+encoder_dropout = args.encoder_dropout
+batch_size = args.batch_size
+batch_norm = args.batch_norm
+initial_features = args.initial_features
+output_classes = len(segmentation_names)
+overlap = args.overlap
+processing_tomo = args.processing_tomo
+partition_name = args.partition_name
+box_size = args.box_shape
 
 # 
 # box_shape = [box_size, box_size, box_size]
