@@ -6,14 +6,13 @@ parser.add_argument("-tomo_name", "--tomo_name", type=str)
 parser.add_argument("-overlap", "--overlap", type=int)
 parser.add_argument("-pythonpath", "--pythonpath", type=str)
 parser.add_argument("-partition_name", "--partition_name", type=str)
-parser.add_argument("-segmentation_names", "--segmentation_names", nargs='+', type=str)
+parser.add_argument("-segmentation_names", "--segmentation_names", nargs='+', type=str)  # todo change to list!!
 parser.add_argument("-dataset_table", "--dataset_table", type=str)
 parser.add_argument("-output_dir", "--output_dir", type=str)
 parser.add_argument("-processing_tomo", "--processing_tomo", type=str)
 parser.add_argument("-box_shape", "--box_shape", type=int)
 parser.add_argument("-min_label_fraction", "--min_label_fraction", type=float)
 parser.add_argument("-max_label_fraction", "--max_label_fraction", type=float)
-
 
 args = parser.parse_args()
 pythonpath = args.pythonpath
@@ -28,6 +27,7 @@ box_shape = args.box_shape
 min_label_fraction = args.min_label_fraction
 max_label_fraction = args.max_label_fraction
 sys.path.append(pythonpath)
+
 import os
 from os import makedirs
 from os.path import join
@@ -40,26 +40,25 @@ from tomogram_utils.volume_actions.actions import \
     generate_strongly_labeled_partition
 
 
-
-# print("tomo_name", tomo_name)
-# print("overlap", overlap)
-# print("partition_name", partition_name)
-# print("segmentation_names", segmentation_names)
-# print("dataset_table", dataset_table)
-# print("output_dir", output_dir)
-# print("processing_tomo", processing_tomo)
-# print("box_shape", box_shape)
-# print("min_label_fraction", min_label_fraction)
-# print("max_label_fraction", max_label_fraction)
 output_dir = os.path.join(output_dir, "training_data")
 
+print("tomo_name", tomo_name)
+print("overlap", overlap)
+print("partition_name", partition_name)
+print("segmentation_names", segmentation_names)
+print("dataset_table", dataset_table)
+print("output_dir", output_dir)
+print("processing_tomo", processing_tomo)
+print("box_shape", box_shape)
+print("min_label_fraction", min_label_fraction)
+print("max_label_fraction", max_label_fraction)
 df = pd.read_csv(dataset_table)
 df['tomo_name'] = df['tomo_name'].astype(str)
 
-print("Generating training data from tomogram {}".format(tomo_name))
+print(tomo_name)
 tomo_df = df[df['tomo_name'] == tomo_name]
 path_to_raw = tomo_df.iloc[0][processing_tomo]
-
+print(path_to_raw)
 labels_dataset_list = list()
 for semantic_class in segmentation_names:
     mask_name = semantic_class + '_mask'
@@ -67,8 +66,8 @@ for semantic_class in segmentation_names:
     print("path_to_mask = {}".format(path_to_mask))
     labels_dataset_list.append(path_to_mask)
 
-print("Path to tomogram: {}".format(path_to_raw))
-print("List to label files: {}".format(labels_dataset_list))
+print("labels_dataset_list = ")
+print(labels_dataset_list)
 
 subtomogram_shape = (box_shape, box_shape, box_shape)
 output_h5_file_name = partition_name + ".h5"

@@ -80,8 +80,8 @@ statistics_file = config["evaluation"]["statistics_file"]
 tomo_name_training = expand(["{tomo_name}"], tomo_name=training_tomos)
 done_training_set_generation_pattern = expand([".snakemake/{run_name}_training_set_generation_{tomo}.done"],
                                               tomo=training_tomos, run_name=run_name)
-# done_training_pattern = expand([".snakemake/{run_name}_3d_training_{tomo}.done"], tomo=training_tomos,
-#                                run_name=run_name)
+done_training_pattern = expand([".snakemake/{run_name}_3d_training_{tomo}.done"], tomo=training_tomos,
+                               run_name=run_name)
 # done_prediction_set_generation_pattern = expand([".snakemake/{run_name}_prediction_set_generation_{tomo}.done"],
 #                                                 tomo=training_tomos, run_name=run_name)
 # done_segmenting_pattern = expand([".snakemake/{run_name}_segmenting_{tomo}.done"], tomo=training_tomos,
@@ -121,4 +121,48 @@ rule training_set_generation:
         --tomo_name {{tomo_name_training}} \
         && touch {{done_training_set_generation_pattern}}
         """
-#
+
+# rule training_3dunet:
+#     conda:
+#         "environment.yaml"
+#     # log: "test.log"
+#     output:
+#           done_training_pattern
+#     shell:
+#          f"""
+#         python3 {scriptdir}/generate_training_data.py \
+#         --pythonpath {srcdir} \
+#         --overlap {{overlap}}  \
+#         --partition_name {{partition_name}} \
+#         --segmentation_names {{str_segmentation_names}} \
+#         --dataset_table {{dataset_table}} \
+#         --output_dir {{output_dir}} \
+#         --processing_tomo {{processing_tomo}} \
+#         --box_shape {{box_shape}} \
+#         --min_label_fraction {{min_label_fraction}} \
+#         --max_label_fraction {{max_label_fraction}} \
+#         --tomo_name {{tomo_name_training}} \
+#         && touch {{done_training_pattern}}
+#         """
+# -pythonpath
+# -partition_name
+# -segmentation_names
+# -dataset_table
+# -output_dir
+# -box_shape
+# -gpu
+# logging_dir
+# model_dir
+# models_table
+# tomo_training_list
+# split
+# n_epochs
+# depth
+# decoder_dropout
+# encoder_dropout
+# batch_size
+# batch_norm
+# initial_features
+# overlap
+# processing_tomo
+# partition_name
