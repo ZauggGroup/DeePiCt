@@ -2,6 +2,7 @@
 
 export srcdir="$( cd "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
 config_file=$1
+CUDA_VISIBLE_DEVICES=$1
 export PYTHONPATH=${srcdir}/src
 echo PYTHONPATH=$PYTHONPATH
 

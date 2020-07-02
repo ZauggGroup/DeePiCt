@@ -36,7 +36,7 @@ def get_clusters_within_size_range(dataset: np.array, min_cluster_size: int,
 
 
 def get_cluster_centroids(dataset: np.array, min_cluster_size: int,
-                          max_cluster_size: int, connectivity=1) -> tuple:
+                          max_cluster_size: int, connectivity=1, compute_centroids=True) -> tuple:
     labeled_clusters, labels_list_within_range, cluster_size_within_range = \
         get_clusters_within_size_range(dataset=dataset,
                                        min_cluster_size=min_cluster_size,
@@ -44,12 +44,13 @@ def get_cluster_centroids(dataset: np.array, min_cluster_size: int,
                                        connectivity=connectivity)
     centroids_list = list()
     total_clusters = len(labels_list_within_range)
-    print("Computing cluster centroids:")
-    for index, label in zip(tqdm(range(total_clusters)),
-                            labels_list_within_range):
-        cluster = np.where(labeled_clusters == label)
-        centroid = np.rint(np.mean(cluster, axis=1))
-        centroids_list.append(centroid)
+    if compute_centroids:
+        print("Computing cluster centroids:")
+        for index, label in zip(tqdm(range(total_clusters)),
+                                labels_list_within_range):
+            cluster = np.where(labeled_clusters == label)
+            centroid = np.rint(np.mean(cluster, axis=1))
+            centroids_list.append(centroid)
     return labeled_clusters, centroids_list, cluster_size_within_range
 
 
