@@ -20,7 +20,6 @@ import os
 import pandas as pd
 import torch
 import torch.nn as nn
-import yaml
 
 from constants.dataset_tables import ModelsTableHeader, DatasetTableHeader
 from file_actions.writers.h5 import segment_and_write

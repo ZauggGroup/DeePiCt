@@ -1,6 +1,7 @@
 # General parameters for training and prediction:
 dataset_table: "/struct/mahamid/Irene/3d-unet/yeast_metadata.csv" # Path to metadata csv file
 output_dir: "/struct/mahamid/Irene/scratch/trueba/test_3d_unet"   # Output directory
+work_dir: "/scratch/trueba/test_3d_unet/"                         # Destination directory of intermediate files
 model_name: "test_model3.pkl"                                     # Output model using .pkl extension
 
 # Tomogram sets used for training or prediction

@@ -38,9 +38,7 @@ import pandas as pd
 
 from tomogram_utils.volume_actions.actions import \
     generate_strongly_labeled_partition
-
-
-output_dir = os.path.join(output_dir, "training_data")
+from paths.pipeline_dirs import training_partition_path
 
 df = pd.read_csv(dataset_table)
 df['tomo_name'] = df['tomo_name'].astype(str)
@@ -60,10 +58,14 @@ print("labels_dataset_list = ")
 print(labels_dataset_list)
 
 subtomogram_shape = (box_shape, box_shape, box_shape)
-output_h5_file_name = partition_name + ".h5"
-output_path = join(output_dir, tomo_name)
-makedirs(name=output_path, exist_ok=True)
-output_path = join(output_path, output_h5_file_name)
+# output_h5_file_name = partition_name + ".h5"
+# output_dir = os.path.join(output_dir, "training_data")
+# output_path = join(output_dir, tomo_name)
+#
+# output_path = join(output_path, output_h5_file_name)
+
+output_path_dir, output_path = training_partition_path(output_dir=output_dir, tomo_name=tomo_name)
+makedirs(name=output_path_dir, exist_ok=True)
 
 label_fractions_list = generate_strongly_labeled_partition(
     path_to_raw=path_to_raw,

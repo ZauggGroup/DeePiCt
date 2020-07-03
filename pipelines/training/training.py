@@ -20,6 +20,7 @@ from networks.utils import save_unet_model, generate_model_name
 from networks.visualizers import TensorBoard_multiclass
 from tomogram_utils.volume_actions.actions import \
     load_and_normalize_dataset_list
+from paths.pipeline_dirs import training_partition_path
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-config", "--config", help="yaml_file", type=str)

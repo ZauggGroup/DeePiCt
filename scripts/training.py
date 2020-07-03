@@ -46,6 +46,7 @@ from networks.utils import save_unet_model, generate_model_name
 from networks.visualizers import TensorBoard_multiclass
 from tomogram_utils.volume_actions.actions import \
     load_and_normalize_dataset_list
+from paths.pipeline_dirs import training_partition_path
 
 gpu = args.gpu
 if gpu is None:
@@ -90,9 +91,10 @@ training_partition_paths = list()
 data_aug_rounds_list = list()
 for tomo_name in tomo_training_list:
     print(tomo_name)
-    partition_path = os.path.join(output_dir, "training_data")
-    partition_path = os.path.join(partition_path, tomo_name)
-    partition_path = os.path.join(partition_path, partition_name + ".h5")
+    _, partition_path = training_partition_path(output_dir=output_dir, tomo_name=tomo_name)
+    # partition_path = os.path.join(output_dir, "training_data")
+    # partition_path = os.path.join(partition_path, tomo_name)
+    # partition_path = os.path.join(partition_path, partition_name + ".h5")
     training_partition_paths += [partition_path]
     data_aug_rounds_list += [0]
 
