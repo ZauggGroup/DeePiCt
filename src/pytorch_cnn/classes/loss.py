@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from src.python.tensors.actions import crop_tensor
+from tensors.actions import crop_tensor
 
 
 class BCELoss(nn.Module):

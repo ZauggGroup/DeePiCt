@@ -68,9 +68,7 @@ tomo_output_dir = os.path.join(tomo_output_dir, tomo_name)
 tomo_output_dir = os.path.join(tomo_output_dir, semantic_class)
 os.makedirs(tomo_output_dir, exist_ok=True)
 
-# df = pd.read_csv(dataset_table)
-# df[DTHeader.tomo_name] = df[DTHeader.tomo_name].astype(str)
-# tomo_df = df[df[DTHeader.tomo_name] == tomo_name]
+
 for file in listdir(tomo_output_dir):
     if "motl" in file:
         print("Motive list already exists:", file)
@@ -82,8 +80,7 @@ assert os.path.isfile(output_path)
 prediction_dataset = load_tomogram(path_to_dataset=output_path)
 output_shape = prediction_dataset.shape
 sigmoid = nn.Sigmoid()
-prediction_dataset = sigmoid(
-    torch.from_numpy(prediction_dataset).float())
+prediction_dataset = sigmoid(torch.from_numpy(prediction_dataset).float())
 prediction_dataset = 1 * (prediction_dataset > threshold).float()
 prediction_dataset = prediction_dataset.numpy()
 prediction_dataset.astype(int)

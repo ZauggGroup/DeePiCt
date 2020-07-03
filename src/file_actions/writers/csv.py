@@ -575,8 +575,15 @@ def write_on_models_notebook(model_name: str, label_name:str,
     if os.path.isfile(models_notebook_path):
         models_notebook_df = pd.read_csv(models_notebook_path,
                                          dtype={ModelsHeader.model_name: str})
-        models_notebook_df = models_notebook_df.append(mini_notebook_df,
-                                                       sort="False")
+        if model_name in models_notebook_df[ModelsHeader.model_name].values:
+            print("Substituting model row in models table")
+            index = models_notebook_df.index[models_notebook_df[ModelsHeader.model_name] == model_name].tolist()
+            assert len(index) == 1
+            index = index[0]
+            models_notebook_df.iloc[index, :] = mini_notebook_df.iloc[0, :]
+        else:
+            models_notebook_df = models_notebook_df.append(mini_notebook_df, sort="False")
+
         models_notebook_df.to_csv(path_or_buf=models_notebook_path, index=False)
     else:
         mini_notebook_df.to_csv(path_or_buf=models_notebook_path, index=False)

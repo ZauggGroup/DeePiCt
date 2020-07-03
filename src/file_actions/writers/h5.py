@@ -531,14 +531,15 @@ def segment_and_write(data_path: str, model: UNet3D, label_name: str) -> None:
         print("data_mean = {}, data_std = {}".format(np.mean(subtomos_data), np.std(subtomos_data)))
         subtomos_data = list(subtomos_data)
         for index, subtomo_name, subtomo_data in zip(tqdm(range(total_subtomos)), subtomo_names, subtomos_data):
-            subtomo_data = np.array([subtomo_data])
-            subtomo_data = subtomo_data[:, None]
-            segmented_data = model(torch.from_numpy(subtomo_data).to(device))
-            segmented_data = segmented_data.cpu().detach().numpy()
-            _write_segmented_subtomo_data(data_file=data_file,
-                                          segmented_data=segmented_data,
-                                          label_name=label_name,
-                                          subtomo_name=subtomo_name)
+            if subtomo_name not in predicted_subtomos_names:
+                subtomo_data = np.array([subtomo_data])
+                subtomo_data = subtomo_data[:, None]
+                segmented_data = model(torch.from_numpy(subtomo_data).to(device))
+                segmented_data = segmented_data.cpu().detach().numpy()
+                _write_segmented_subtomo_data(data_file=data_file,
+                                              segmented_data=segmented_data,
+                                              label_name=label_name,
+                                              subtomo_name=subtomo_name)
     return
 
 

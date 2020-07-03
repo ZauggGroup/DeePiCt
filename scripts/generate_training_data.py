@@ -42,16 +42,6 @@ from tomogram_utils.volume_actions.actions import \
 
 output_dir = os.path.join(output_dir, "training_data")
 
-print("tomo_name", tomo_name)
-print("overlap", overlap)
-print("partition_name", partition_name)
-print("segmentation_names", segmentation_names)
-print("dataset_table", dataset_table)
-print("output_dir", output_dir)
-print("processing_tomo", processing_tomo)
-print("box_shape", box_shape)
-print("min_label_fraction", min_label_fraction)
-print("max_label_fraction", max_label_fraction)
 df = pd.read_csv(dataset_table)
 df['tomo_name'] = df['tomo_name'].astype(str)
 

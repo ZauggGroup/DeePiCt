@@ -12,6 +12,6 @@ snakemake \
     --config config="${config_file}" \
     --forceall \
     --use-conda \
-#    --printshellcmds \
-#    --cores 1 --resources gpu=1 --dryrun
+    --printshellcmds \
+    --cores 1 --resources gpu=1
 

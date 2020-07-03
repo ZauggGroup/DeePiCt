@@ -27,7 +27,6 @@ import pandas as pd
 from constants.dataset_tables import ModelsTableHeader, DatasetTableHeader
 from file_actions.writers.csv import motl_writer
 from file_actions.writers.csv import write_statistics
-from file_actions.readers.tomograms import load_tomogram
 from networks.utils import build_prediction_output_dir
 from performance.statistics_utils import pr_auc_score, \
     f1_score_calculator, precision_recall_calculator

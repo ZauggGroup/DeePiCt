@@ -53,43 +53,41 @@ print("Partitioning tomo", tomo_name)
 
 output_dir_tomo = os.path.join(output_dir, "test_partitions")
 output_dir_tomo = os.path.join(output_dir_tomo, tomo_name)
+output_dir_tomo = os.path.join(output_dir_tomo, model_name)
 os.makedirs(output_dir_tomo, exist_ok=True)
 partition_path = os.path.join(output_dir_tomo, test_partition + ".h5")
 
 print("output path:", partition_path)
-if os.path.isfile(partition_path):
-    print("Partition exists already.")
+tomo_df = df[df[DTHeader.tomo_name] == tomo_name]
+path_to_raw = tomo_df.iloc[0][DTHeader.processing_tomo]
+path_to_lamella = tomo_df.iloc[0][DTHeader.filtering_mask]
+raw_dataset = load_tomogram(path_to_dataset=path_to_raw)
+if isinstance(path_to_lamella, float):
+    print("No filtering mask file available.")
+    partition_tomogram(dataset=raw_dataset,
+                       output_h5_file_path=partition_path,
+                       subtomo_shape=subtomogram_shape,
+                       overlap=overlap)
 else:
-    tomo_df = df[df[DTHeader.tomo_name] == tomo_name]
-    path_to_raw = tomo_df.iloc[0][DTHeader.processing_tomo]
     path_to_lamella = tomo_df.iloc[0][DTHeader.filtering_mask]
-    raw_dataset = load_tomogram(path_to_dataset=path_to_raw)
-    if isinstance(path_to_lamella, float):
-        print("No filtering mask file available.")
-        partition_tomogram(dataset=raw_dataset,
-                           output_h5_file_path=partition_path,
-                           subtomo_shape=subtomogram_shape,
-                           overlap=overlap)
-    else:
-        path_to_lamella = tomo_df.iloc[0][DTHeader.filtering_mask]
-        lamella_mask = load_tomogram(path_to_dataset=path_to_lamella)
+    lamella_mask = load_tomogram(path_to_dataset=path_to_lamella)
 
-        lamella_shape = lamella_mask.shape
-        dataset_shape = raw_dataset.shape
+    lamella_shape = lamella_mask.shape
+    dataset_shape = raw_dataset.shape
 
-        minimum_shape = [np.min([data_dim, lamella_dim]) for
-                         data_dim, lamella_dim
-                         in zip(dataset_shape, lamella_shape)]
-        minz, miny, minx = minimum_shape
+    minimum_shape = [np.min([data_dim, lamella_dim]) for
+                     data_dim, lamella_dim
+                     in zip(dataset_shape, lamella_shape)]
+    minz, miny, minx = minimum_shape
 
-        lamella_mask = lamella_mask[:minz, :miny, :minx]
-        raw_dataset = raw_dataset[:minz, :miny, :minx]
+    lamella_mask = lamella_mask[:minz, :miny, :minx]
+    raw_dataset = raw_dataset[:minz, :miny, :minx]
 
-        partition_raw_intersecting_mask(dataset=raw_dataset,
-                                        mask_dataset=lamella_mask,
-                                        output_h5_file_path=partition_path,
-                                        subtomo_shape=subtomogram_shape,
-                                        overlap=overlap)
+    partition_raw_intersecting_mask(dataset=raw_dataset,
+                                    mask_dataset=lamella_mask,
+                                    output_h5_file_path=partition_path,
+                                    subtomo_shape=subtomogram_shape,
+                                    overlap=overlap)
 
 # df.loc[df[
 #            DTHeader.tomo_name] == tomo_name, DTHeader.partition_name] = \

@@ -47,6 +47,7 @@ models_table = os.path.join(models_table, "models.csv")
 
 output_dir_tomo = os.path.join(output_dir, "test_partitions")
 output_dir_tomo = os.path.join(output_dir_tomo, tomo_name)
+output_dir_tomo = os.path.join(output_dir_tomo, model_name)
 partition_path = os.path.join(output_dir_tomo, test_partition + ".h5")
 
 ModelsHeader = ModelsTableHeader()
