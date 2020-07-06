@@ -5,6 +5,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("-pythonpath", "--pythonpath", type=str)
 parser.add_argument("-dataset_table", "--dataset_table", type=str)
 parser.add_argument("-output_dir", "--output_dir", type=str)
+parser.add_argument("-work_dir", "--work_dir", type=str)
 parser.add_argument("-model_name", "--model_name", type=str)
 parser.add_argument("-test_partition", "--test_partition", type=str)
 parser.add_argument("-tomo_name", "--tomo_name", type=str)
@@ -15,16 +16,15 @@ pythonpath = args.pythonpath
 sys.path.append(pythonpath)
 
 import os
-from os.path import join
 
 import pandas as pd
-import yaml
 
 from constants import h5_internal_paths
 from constants.dataset_tables import ModelsTableHeader, DatasetTableHeader
 from file_actions.writers.h5 import \
     assemble_tomo_from_subtomos
-from networks.utils import build_prediction_output_dir
+from paths.pipeline_dirs import testing_partition_path
+
 
 tomo_name = args.tomo_name
 output_dir = args.output_dir
@@ -32,17 +32,13 @@ model_name = args.model_name[:-4]
 class_number = args.class_number
 dataset_table = args.dataset_table
 test_partition = args.test_partition
+work_dir = args.work_dir
+# output_dir_tomo = os.path.join(output_dir, "test_partitions")
+# output_dir_tomo = os.path.join(output_dir_tomo, tomo_name)
+# data_partition = os.path.join(output_dir_tomo, test_partition + ".h5")
+output_dir_tomo, data_partition = testing_partition_path(output_dir=work_dir, tomo_name=tomo_name,
+                                                         model_name=model_name, partition_name=test_partition)
 
-print("tomo_name", tomo_name)
-print("output_dir", output_dir)
-print("model_name", model_name)
-print("class_number", class_number)
-print("dataset_table", dataset_table)
-print("test_partition", test_partition)
-
-output_dir_tomo = os.path.join(output_dir, "test_partitions")
-output_dir_tomo = os.path.join(output_dir_tomo, tomo_name)
-data_partition = os.path.join(output_dir_tomo, test_partition + ".h5")
 
 segmentation_label = model_name
 models_table = os.path.join(output_dir, "models")

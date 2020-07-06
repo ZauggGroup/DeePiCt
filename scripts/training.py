@@ -8,6 +8,7 @@ parser.add_argument("-dataset_table", "--dataset_table", type=str)
 parser.add_argument("-box_shape", "--box_shape", type=int)
 parser.add_argument("-gpu", "--gpu", help="cuda visible devices", type=str)
 parser.add_argument("-output_dir", "--output_dir", type=str)
+parser.add_argument("-work_dir", "--work_dir", type=str)
 parser.add_argument("-tomo_training_list", "--tomo_training_list", nargs="+", type=str)
 parser.add_argument("-split", "--split", type=float)
 parser.add_argument("-n_epochs", "--n_epochs", type=int)
@@ -76,6 +77,8 @@ overlap = args.overlap
 processing_tomo = args.processing_tomo
 box_size = args.box_shape
 model_name = args.model_name
+work_dir = args.work_dir
+
 
 logging_dir = os.path.join(output_dir, "logging")
 model_dir = os.path.join(output_dir, "models")
@@ -91,7 +94,8 @@ training_partition_paths = list()
 data_aug_rounds_list = list()
 for tomo_name in tomo_training_list:
     print(tomo_name)
-    _, partition_path = training_partition_path(output_dir=output_dir, tomo_name=tomo_name)
+    _, partition_path = training_partition_path(output_dir=work_dir, tomo_name=tomo_name,
+                                                partition_name=partition_name)
     # partition_path = os.path.join(output_dir, "training_data")
     # partition_path = os.path.join(partition_path, tomo_name)
     # partition_path = os.path.join(partition_path, partition_name + ".h5")
@@ -139,7 +143,6 @@ loss = loss.to(device)
 optimizer = optim.Adam(net.parameters())
 old_epoch = 0
 metric = loss
-
 
 model_path = os.path.join(model_dir, model_name)
 log_model = os.path.join(logging_dir, model_name[:-4])

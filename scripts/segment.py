@@ -6,6 +6,7 @@ parser.add_argument("-gpu", "--gpu", help="cuda visible devices", type=str)
 parser.add_argument("-pythonpath", "--pythonpath", type=str)
 parser.add_argument("-dataset_table", "--dataset_table", type=str)
 parser.add_argument("-output_dir", "--output_dir", type=str)
+parser.add_argument("-work_dir", "--work_dir", type=str)
 parser.add_argument("-model_name", "--model_name", type=str)
 parser.add_argument("-test_partition", "--test_partition", type=str)
 parser.add_argument("-processing_tomo", "--processing_tomo", type=str)
@@ -25,6 +26,7 @@ from constants.dataset_tables import ModelsTableHeader, DatasetTableHeader
 from file_actions.writers.h5 import segment_and_write
 from networks.io import get_device
 from networks.unet import UNet3D, UNet
+from paths.pipeline_dirs import testing_partition_path
 
 gpu = args.gpu
 if gpu is None:
@@ -36,6 +38,7 @@ else:
 
 dataset_table = args.dataset_table
 output_dir = args.output_dir
+work_dir = args.work_dir
 model_name = args.model_name[:-4]
 test_partition = args.test_partition
 processing_tomo = args.processing_tomo
@@ -44,11 +47,12 @@ tomo_name = args.tomo_name
 models_table = os.path.join(output_dir, "models")
 models_table = os.path.join(models_table, "models.csv")
 
-output_dir_tomo = os.path.join(output_dir, "test_partitions")
-output_dir_tomo = os.path.join(output_dir_tomo, tomo_name)
-output_dir_tomo = os.path.join(output_dir_tomo, model_name)
-partition_path = os.path.join(output_dir_tomo, test_partition + ".h5")
-
+# output_dir_tomo = os.path.join(output_dir, "test_partitions")
+# output_dir_tomo = os.path.join(output_dir_tomo, tomo_name)
+# output_dir_tomo = os.path.join(output_dir_tomo, model_name)
+# partition_path = os.path.join(output_dir_tomo, test_partition + ".h5")
+output_dir_tomo, partition_path = testing_partition_path(output_dir=work_dir, tomo_name=tomo_name,
+                                                         model_name=model_name, partition_name=test_partition)
 ModelsHeader = ModelsTableHeader()
 models_df = pd.read_csv(models_table, dtype=ModelsHeader.dtype_dict)
 model_df = models_df[models_df[ModelsHeader.model_name] == model_name]

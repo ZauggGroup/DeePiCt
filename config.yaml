@@ -6,7 +6,7 @@ model_name: "test_model3.pkl"                                     # Output model
 
 # Tomogram sets used for training or prediction
 tomos_sets:
-  training_list: [ "190301/001"]   # Tomograms in dataset_table for training
+  training_list: [ "190301/001"]         # Tomograms in dataset_table for training
   prediction_list: ["190301/006"]        # Tomograms in dataset_table for testing
 
 training:

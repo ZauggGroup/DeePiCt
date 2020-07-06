@@ -9,6 +9,7 @@ parser.add_argument("-partition_name", "--partition_name", type=str)
 parser.add_argument("-segmentation_names", "--segmentation_names", nargs='+', type=str)  # todo change to list!!
 parser.add_argument("-dataset_table", "--dataset_table", type=str)
 parser.add_argument("-output_dir", "--output_dir", type=str)
+parser.add_argument("-work_dir", "--work_dir", type=str)
 parser.add_argument("-processing_tomo", "--processing_tomo", type=str)
 parser.add_argument("-box_shape", "--box_shape", type=int)
 parser.add_argument("-min_label_fraction", "--min_label_fraction", type=float)
@@ -22,6 +23,7 @@ partition_name = args.partition_name
 segmentation_names = args.segmentation_names
 dataset_table = args.dataset_table
 output_dir = args.output_dir
+work_dir = args.work_dir
 processing_tomo = args.processing_tomo
 box_shape = args.box_shape
 min_label_fraction = args.min_label_fraction
@@ -64,7 +66,8 @@ subtomogram_shape = (box_shape, box_shape, box_shape)
 #
 # output_path = join(output_path, output_h5_file_name)
 
-output_path_dir, output_path = training_partition_path(output_dir=output_dir, tomo_name=tomo_name)
+output_path_dir, output_path = training_partition_path(output_dir=work_dir, tomo_name=tomo_name,
+                                                       partition_name=partition_name)
 makedirs(name=output_path_dir, exist_ok=True)
 
 label_fractions_list = generate_strongly_labeled_partition(

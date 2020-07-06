@@ -5,6 +5,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("-pythonpath", "--pythonpath", type=str)
 parser.add_argument("-dataset_table", "--dataset_table", type=str)
 parser.add_argument("-output_dir", "--output_dir", type=str)
+parser.add_argument("-work_dir", "--work_dir", type=str)
 parser.add_argument("-model_name", "--model_name", type=str)
 parser.add_argument("-test_partition", "--test_partition", type=str)
 parser.add_argument("-processing_tomo", "--processing_tomo", type=str)
@@ -20,6 +21,7 @@ import pandas as pd
 
 from constants.dataset_tables import DatasetTableHeader, ModelsTableHeader
 from file_actions.readers.tomograms import load_tomogram
+from paths.pipeline_dirs import testing_partition_path
 from tomogram_utils.volume_actions.actions import \
     partition_raw_intersecting_mask
 from tomogram_utils.volume_actions.actions import partition_tomogram
@@ -29,6 +31,7 @@ model_name = args.model_name[:-4]
 test_partition = args.test_partition
 processing_tomo = args.processing_tomo
 output_dir = args.output_dir
+work_dir = args.work_dir
 tomo_name = args.tomo_name
 models_table = os.path.join(output_dir, "models")
 models_table = os.path.join(models_table, "models.csv")
@@ -43,19 +46,20 @@ box_shape = int(model_df.iloc[0][ModelsHeader.box_size])
 
 subtomogram_shape = (box_shape, box_shape, box_shape)
 
-DTHeader = DatasetTableHeader(processing_tomo=processing_tomo,
-                              partition_name=test_partition)
+DTHeader = DatasetTableHeader(processing_tomo=processing_tomo)
 
 df = pd.read_csv(dataset_table)
 df[DTHeader.tomo_name] = df[DTHeader.tomo_name].astype(str)
 
 print("Partitioning tomo", tomo_name)
 
-output_dir_tomo = os.path.join(output_dir, "test_partitions")
-output_dir_tomo = os.path.join(output_dir_tomo, tomo_name)
-output_dir_tomo = os.path.join(output_dir_tomo, model_name)
-os.makedirs(output_dir_tomo, exist_ok=True)
-partition_path = os.path.join(output_dir_tomo, test_partition + ".h5")
+partition_output_dir, partition_path = testing_partition_path(output_dir=work_dir, tomo_name=tomo_name,
+                                                              model_name=model_name, partition_name=test_partition)
+# output_dir_tomo = os.path.join(output_dir, "test_partitions")
+# output_dir_tomo = os.path.join(output_dir_tomo, tomo_name)
+# output_dir_tomo = os.path.join(output_dir_tomo, model_name)
+os.makedirs(partition_output_dir, exist_ok=True)
+# partition_path = os.path.join(output_dir_tomo, test_partition + ".h5")
 
 print("output path:", partition_path)
 tomo_df = df[df[DTHeader.tomo_name] == tomo_name]
@@ -76,8 +80,7 @@ else:
     dataset_shape = raw_dataset.shape
 
     minimum_shape = [np.min([data_dim, lamella_dim]) for
-                     data_dim, lamella_dim
-                     in zip(dataset_shape, lamella_shape)]
+                     data_dim, lamella_dim in zip(dataset_shape, lamella_shape)]
     minz, miny, minx = minimum_shape
 
     lamella_mask = lamella_mask[:minz, :miny, :minx]

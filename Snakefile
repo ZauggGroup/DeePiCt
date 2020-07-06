@@ -27,6 +27,7 @@ run_name = datetime.strftime(datetime.now(), "%y%m%d-%H%M%S")
 # General data
 dataset_table = config["dataset_table"]
 output_dir = config["output_dir"]
+work_dir = config["work_dir"]
 model_name = config["model_name"]
 
 # Tomogram lists
@@ -162,6 +163,7 @@ rule training_set_generation:
         --segmentation_names {{str_segmentation_names}} \
         --dataset_table {{dataset_table}} \
         --output_dir {{output_dir}} \
+        --work_dir {{work_dir}} \
         --processing_tomo {{processing_tomo}} \
         --box_shape {{box_shape}} \
         --min_label_fraction {{min_label_fraction}} \
@@ -189,6 +191,7 @@ rule training_3dunet:
         --segmentation_names  {{segmentation_names}} \
         --dataset_table  {{dataset_table}} \
         --output_dir  {{output_dir}} \
+        --work_dir  {{work_dir}} \
         --box_shape  {{box_shape}} \
         --output_dir  {{output_dir}} \
         --tomo_training_list  {{tomo_training_list}} \
@@ -221,6 +224,7 @@ rule generate_prediction_partition:
         --pythonpath {srcdir} \
         --dataset_table {{dataset_table}} \
         --output_dir {{output_dir}} \
+        --work_dir {{work_dir}} \
         --model_name {{model_name}} \
         --test_partition {{pred_partition_name}} \
         --processing_tomo {{pred_processing_tomo}} \
@@ -245,6 +249,7 @@ rule segment:
         --gpu {{CUDA_VISIBLE_DEVICES}} \
         --dataset_table {{dataset_table}} \
         --output_dir {{output_dir}} \
+        --work_dir {{work_dir}} \
         --model_name {{model_name}} \
         --test_partition {{pred_partition_name}} \
         --processing_tomo {{pred_processing_tomo}} \
@@ -266,6 +271,7 @@ rule assemble_prediction:
         --pythonpath {srcdir} \
         --dataset_table {{dataset_table}} \
         --output_dir {{output_dir}} \
+        --work_dir {{work_dir}} \
         --model_name {{model_name}} \
         --test_partition {{pred_partition_name}} \
         --tomo_name {{tomo_name_prediction}} \
