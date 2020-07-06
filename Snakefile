@@ -114,7 +114,7 @@ model_path = os.path.join(model_path, model_name)
 targets = []
 if config["training"]["active"]:
     targets += done_training_pattern
-    targets.append(model_path)
+    # targets.append(model_path)
 else:
     print("training isn't active!")
     with open(file=skip_training_pattern, mode="w"):
