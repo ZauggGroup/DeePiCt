@@ -33,6 +33,7 @@ processing_tomo = args.processing_tomo
 output_dir = args.output_dir
 work_dir = args.work_dir
 tomo_name = args.tomo_name
+print("tomo_name", tomo_name)
 models_table = os.path.join(output_dir, "models")
 models_table = os.path.join(models_table, "models.csv")
 write_on_table = True
