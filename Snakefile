@@ -79,7 +79,7 @@ tomo_name_prediction = prediction_tomos  #expand(["{tomo_name}"], tomo_name=pred
 # print("tomo_name_prediction =", tomo_name_prediction)
 
 os.makedirs(".done_patterns", exist_ok=True)
-done_training_set_generation_pattern = expand([".done_patterns/{run_name}_training_set_generation_{tomo}.done"],
+done_training_set_generation_pattern = expand([".done_patterns/{run_name}_3d_training.done_set_generation_{tomo}.done"],
                                               tomo=training_tomos, run_name=run_name)
 done_training_pattern = expand([".done_patterns/{run_name}_3d_training.done"], run_name=run_name)
 
@@ -106,11 +106,10 @@ print(done_clustering_pattern)
 #                                               tomo=prediction_tomos, run_name=run_name)
 done_particle_picking_evaluation_pattern = expand([".done_patterns/{run_name}_particle_picking_evaluation_{tomo}.done"],
                                                   tomo=prediction_tomos, run_name=run_name)
-done_segmentation_evaluation_pattern = expand(
-    [".done_patterns/{run_name}_segmentation_evaluation_evaluation_{tomo}.done"],
-    tomo=prediction_tomos, run_name=run_name)
-skip_training_pattern = expand(".done_patterns/{run_name}_skip_training", run_name=run_name)
-skip_prediction_pattern = expand(".done_patterns/{run_name}_skip_prediction", run_name=run_name)
+done_segmentation_evaluation_pattern = expand([".done_patterns/{run_name}_dice_evaluation_{tomo}.done"],
+                                              tomo=prediction_tomos, run_name=run_name)
+skip_training_pattern = ".done_patterns/{run_name}_skip_training".format(run_name=run_name)
+skip_prediction_pattern = ".done_patterns/{run_name}_skip_prediction".format(run_name=run_name)
 skip_particle_picking_evaluation_pattern = ".done_patterns/{}_skip_particle_picking_eval".format(run_name)
 
 # for dir_file in start_prediction_pattern:
@@ -118,13 +117,24 @@ skip_particle_picking_evaluation_pattern = ".done_patterns/{}_skip_particle_pick
 #     with open(file=dir_file + "/.start", mode="w") as f:
 #         print("generating start file for tomo...")
 
+if config["prediction"]["active"]:
+    if config["evaluation"]["particle_picking"]["active"]:
+        start_segmentation_evaluation_when = ".done_patterns/{run_name}_particle_picking_evaluation_{tomo}.done"
+    else:
+        start_segmentation_evaluation_when = ".done_patterns/{run_name}_clustering_{tomo}.done"
+else:
+    if config["evaluation"]["particle_picking"]["active"]:
+        start_segmentation_evaluation_when = ".done_patterns/{run_name}_particle_picking_evaluation_{tomo}.done"
+    else:
+        start_segmentation_evaluation_when = ".done_patterns/{run_name}_skip_prediction"
+
 str_segmentation_names = ""
 for name in segmentation_names:
     str_segmentation_names += name + " "
 
-# tomo_training_list = ""
-# for tomo in training_tomos:
-#     tomo_training_list += tomo + " "
+tomo_training_list = ""
+for tomo in training_tomos:
+    tomo_training_list += tomo + " "
 
 model_path = os.path.join(output_dir, "models")
 model_path = os.path.join(model_path, model_name)
@@ -133,21 +143,21 @@ model_path = os.path.join(model_path, model_name)
 targets = []
 if config["training"]["active"]:
     targets += [done_training_pattern]
-# else:
-#     print("training isn't active!")
-#     with open(file=skip_training_pattern, mode="w"):
-#         skip_training_pattern
+else:
+    print("training isn't active!")
+    with open(file=skip_training_pattern, mode="w"):
+        print(skip_training_pattern)
 
 if config["prediction"]["active"]:
+    targets += done_prediction_set_generation_pattern
     targets += done_segmentation_pattern
     targets += done_assembling_prediction_pattern
-    targets += done_prediction_set_generation_pattern
     targets += done_clustering_pattern
 else:
     print("prediction isn't active!")
-    targets += skip_prediction_pattern
+    # targets += skip_prediction_pattern
     print(skip_prediction_pattern)
-    with open(file=skip_prediction_pattern[0], mode="w"):
+    with open(file=skip_prediction_pattern, mode="w"):
         print(skip_prediction_pattern)
 
 if config["evaluation"]["particle_picking"]["active"]:
@@ -161,115 +171,97 @@ if config["evaluation"]["segmentation_evaluation"]["active"]:
 
 if config["debug"]:
     print("TARGETS:\n", targets)
+    final_line="rm ./done_patterns/*"
+else:
+    final_line="echo 'Finishing pipeline.'"
 
 # Rules
-# rule all:
-#     input:
-#          targets
-#     shell:
-#          "echo 'Finishing pipeline.'"
-
-# rule training_set_generation:
-#     conda:
-#          "environment.yaml"
-#          # log: "test.log"
-#     output:
-#           training_set_done_file=done_training_set_generation_pattern
-#     shell:
-#          f"""
-#         python3 {scriptdir}/generate_training_data.py \
-#         --pythonpath {srcdir} \
-#         --overlap {{overlap}}  \
-#         --partition_name {{partition_name}} \
-#         --segmentation_names {{str_segmentation_names}} \
-#         --dataset_table {{dataset_table}} \
-#         --output_dir {{output_dir}} \
-#         --work_dir {{work_dir}} \
-#         --processing_tomo {{processing_tomo}} \
-#         --box_shape {{box_shape}} \
-#         --min_label_fraction {{min_label_fraction}} \
-#         --max_label_fraction {{max_label_fraction}} \
-#         --tomo_name {{tomo_name_training}} \
-#         && touch {{output.training_set_done_file}}
-#         """
-#
-# rule training_3dunet:
-#     conda:
-#          "environment.yaml"
-#          # log: "test.log"
-#     input:
-#          training_set_done_file=done_training_set_generation_pattern
-#     output:
-#           training_unet_done_file=done_training_pattern
-#     resources:
-#              gpu=1
-#     shell:
-#          f"""
-#         python3 {scriptdir}/training.py \
-#         --pythonpath {srcdir} \
-#         --gpu {{CUDA_VISIBLE_DEVICES}} \
-#         --partition_name  {{partition_name}} \
-#         --segmentation_names  {{segmentation_names}} \
-#         --dataset_table  {{dataset_table}} \
-#         --output_dir  {{output_dir}} \
-#         --work_dir  {{work_dir}} \
-#         --box_shape  {{box_shape}} \
-#         --output_dir  {{output_dir}} \
-#         --tomo_training_list  {{tomo_training_list}} \
-#         --split  {{split}} \
-#         --n_epochs  {{n_epochs}} \
-#         --depth  {{depth}} \
-#         --decoder_dropout  {{decoder_dropout}} \
-#         --encoder_dropout  {{encoder_dropout}} \
-#         --batch_size  {{batch_size}} \
-#         --batch_norm  {{BatchNorm}} \
-#         --initial_features  {{initial_features}} \
-#         --overlap  {{overlap}} \
-#         --processing_tomo  {{processing_tomo}} \
-#         --partition_name  {{partition_name}} \
-#         --model_name {{model_name}} \
-#         && touch {{output.training_unet_done_file}}
-#         """
-#
-
-# done_prediction_set_generation_pattern = expand(".done_patterns/{run_name}_prediction_set_generation_{tomo}.done",
-#                                                 tomo=prediction_tomos, run_name=run_name)
-# done_segmentation_pattern = expand(".done_patterns/{run_name}_segmentation_{tomo}.done", tomo=prediction_tomos,
-#                                    run_name=run_name)
-# done_assembling_prediction_pattern = expand(".done_patterns/{run_name}_assembling_prediction_{tomo}.done",
-#                                             tomo=prediction_tomos, run_name=run_name)
-# done_clustering_pattern = expand(".done_patterns/{run_name}_clustering_{tomo}.done", tomo=prediction_tomos,
-#                                  run_name=run_name)
-# print(done_prediction_set_generation_pattern)
-# print(done_segmentation_pattern)
-# print(done_assembling_prediction_pattern)
-# print(done_clustering_pattern)
-
 rule all:
     input:
-         # done_prediction_set_generation_pattern,
-         # done_segmentation_pattern,
-         # done_assembling_prediction_pattern,
-         # done_clustering_pattern
          targets
+    shell:
+         final_line
+
+rule training_set_generation:
+    conda:
+         "environment.yaml"
+         # log: "test.log"
+    output:
+          file=".done_patterns/{run_name}_3d_training.done_set_generation_{tomo}.done"
+    shell:
+         f"""
+        python3 {scriptdir}/generate_training_data.py \
+        --pythonpath {srcdir} \
+        --overlap {{overlap}}  \
+        --partition_name {{partition_name}} \
+        --segmentation_names {{str_segmentation_names}} \
+        --dataset_table {{dataset_table}} \
+        --output_dir {{output_dir}} \
+        --work_dir {{work_dir}} \
+        --processing_tomo {{processing_tomo}} \
+        --box_shape {{box_shape}} \
+        --min_label_fraction {{min_label_fraction}} \
+        --max_label_fraction {{max_label_fraction}} \
+        """ + "--tomo_name {wildcards.tomo} \
+                && touch {output.file}"
+
+rule training_3dunet:
+    conda:
+         "environment.yaml"
+         # log: "test.log"
+    input:
+         training_set_done_file=done_training_set_generation_pattern
+    output:
+          file=".done_patterns/{run_name}_3d_training.done"
+    resources:
+             gpu=1
+    shell:
+         f"""
+        python3 {scriptdir}/training.py \
+        --pythonpath {srcdir} \
+        --gpu {{CUDA_VISIBLE_DEVICES}} \
+        --partition_name  {{partition_name}} \
+        --segmentation_names  {{segmentation_names}} \
+        --dataset_table  {{dataset_table}} \
+        --output_dir  {{output_dir}} \
+        --work_dir  {{work_dir}} \
+        --box_shape  {{box_shape}} \
+        --output_dir  {{output_dir}} \
+        --tomo_training_list  {{tomo_training_list}} \
+        --split  {{split}} \
+        --n_epochs  {{n_epochs}} \
+        --depth  {{depth}} \
+        --decoder_dropout  {{decoder_dropout}} \
+        --encoder_dropout  {{encoder_dropout}} \
+        --batch_size  {{batch_size}} \
+        --batch_norm  {{BatchNorm}} \
+        --initial_features  {{initial_features}} \
+        --overlap  {{overlap}} \
+        --processing_tomo  {{processing_tomo}} \
+        --partition_name  {{partition_name}} \
+        --model_name {{model_name}} \
+        """ + " && touch {output.file}"
 
 rule generate_prediction_partition:
     conda:
          "environment.yaml"
+    input:
+         ".done_patterns/{run_name}_3d_training.done" if config["training"][
+             "active"] else ".done_patterns/{run_name}_skip_training"
     output:
           file=".done_patterns/{run_name}_prediction_set_generation_{tomo}.done"
     shell:
          f"""
-                python3 {scriptdir}/generate_prediction_partition.py \
-                --pythonpath {srcdir} \
-                --dataset_table {{dataset_table}} \
-                --output_dir {{output_dir}} \
-                --work_dir {{work_dir}} \
-                --model_name {{model_name}} \
-                --test_partition {{pred_partition_name}} \
-                --processing_tomo {{pred_processing_tomo}} \
-          """ + "--tomo_name {wildcards.tomo} \
-                && touch {output.file}"
+        python3 {scriptdir}/generate_prediction_partition.py \
+        --pythonpath {srcdir} \
+        --dataset_table {{dataset_table}} \
+        --output_dir {{output_dir}} \
+        --work_dir {{work_dir}} \
+        --model_name {{model_name}} \
+        --test_partition {{pred_partition_name}} \
+        --processing_tomo {{pred_processing_tomo}} \
+        """ + "--tomo_name {wildcards.tomo} \
+        && touch {output.file}"
 
 rule segment:
     conda:
@@ -283,17 +275,17 @@ rule segment:
              gpu=1
     shell:
          f"""
-                 python3 {scriptdir}/segment.py \
-                 --pythonpath {srcdir} \
-                 --gpu {{CUDA_VISIBLE_DEVICES}} \
-                 --dataset_table {{dataset_table}} \
-                 --output_dir {{output_dir}} \
-                 --work_dir {{work_dir}} \
-                 --model_name {{model_name}} \
-                 --test_partition {{pred_partition_name}} \
-                 --processing_tomo {{pred_processing_tomo}} \
-                 """ + "--tomo_name {wildcards.tomo} \
-                && touch {output.file}"
+        python3 {scriptdir}/segment.py \
+        --pythonpath {srcdir} \
+        --gpu {{CUDA_VISIBLE_DEVICES}} \
+        --dataset_table {{dataset_table}} \
+        --output_dir {{output_dir}} \
+        --work_dir {{work_dir}} \
+        --model_name {{model_name}} \
+        --test_partition {{pred_partition_name}} \
+        --processing_tomo {{pred_processing_tomo}} \
+        """ + "--tomo_name {wildcards.tomo} \
+        && touch {output.file}"
 
 rule assemble_prediction:
     conda:
@@ -305,16 +297,16 @@ rule assemble_prediction:
           file=".done_patterns/{run_name}_assembling_prediction_{tomo}.done"
     shell:
          f"""
-            python3 {scriptdir}/assemble_prediction.py \
-            --pythonpath {srcdir} \
-            --dataset_table {{dataset_table}} \
-            --output_dir {{output_dir}} \
-            --work_dir {{work_dir}} \
-            --model_name {{model_name}} \
-            --test_partition {{pred_partition_name}} \
-            --class_number {{pred_class_number}} \
-         """ + "--tomo_name {wildcards.tomo} \
-            && touch {output.file}"
+        python3 {scriptdir}/assemble_prediction.py \
+        --pythonpath {srcdir} \
+        --dataset_table {{dataset_table}} \
+        --output_dir {{output_dir}} \
+        --work_dir {{work_dir}} \
+        --model_name {{model_name}} \
+        --test_partition {{pred_partition_name}} \
+        --class_number {{pred_class_number}} \
+        """ + "--tomo_name {wildcards.tomo} \
+        && touch {output.file}"
 
 rule clustering_and_cleaning:
     conda:
@@ -326,19 +318,19 @@ rule clustering_and_cleaning:
           file=".done_patterns/{run_name}_clustering_{tomo}.done"
     shell:
          f"""
-            python3 {scriptdir}/clustering_and_cleaning.py \
-            --pythonpath {srcdir} \
-            --dataset_table {{dataset_table}} \
-            --output_dir {{output_dir}} \
-            --model_name {{model_name}} \
-            --class_number {{pred_class_number}} \
-            --min_cluster_size {{min_cluster_size}} \
-            --max_cluster_size {{max_cluster_size}} \
-            --threshold {{threshold}} \
-            --dataset_table {{dataset_table}} \
-            --calculate_motl {{calculate_motl}} \
-            """ + "--tomo_name {wildcards.tomo} \
-            && touch {output.file}"
+        python3 {scriptdir}/clustering_and_cleaning.py \
+        --pythonpath {srcdir} \
+        --dataset_table {{dataset_table}} \
+        --output_dir {{output_dir}} \
+        --model_name {{model_name}} \
+        --class_number {{pred_class_number}} \
+        --min_cluster_size {{min_cluster_size}} \
+        --max_cluster_size {{max_cluster_size}} \
+        --threshold {{threshold}} \
+        --dataset_table {{dataset_table}} \
+        --calculate_motl {{calculate_motl}} \
+        """ + "--tomo_name {wildcards.tomo} \
+        && touch {output.file}"
 
 rule particle_picking_evaluation:
     conda:
@@ -351,27 +343,19 @@ rule particle_picking_evaluation:
           file=".done_patterns/{run_name}_particle_picking_evaluation_{tomo}.done"
     shell:
          f"""
-                 python3 {scriptdir}/particle_picking_evaluation.py \
-                 --pythonpath {srcdir} \
-                 --dataset_table {{dataset_table}} \
-                 --output_dir {{output_dir}} \
-                 --model_name {{model_name}} \
-                 --class_number {{pred_class_number}} \
-                 --calculate_motl {{calculate_motl}} \
-                 --filtering_mask {{filtering_mask}} \
-                 --calculate_motl {{calculate_motl}} \
-                 --statistics_file {{pr_statistics_file}} \
-                 --radius {{pr_tolerance_radius}} \
-                 """ + "--tomo_name {wildcards.tomo} \
-            && touch {output.file}"
-
-if config["evaluation"]["particle_picking"]["active"]:
-    start_segmentation_evaluation_when = ".done_patterns/{run_name}_particle_picking_evaluation_{tomo}.done"
-else:
-    if config["prediction"]["active"]:
-        start_segmentation_evaluation_when = ".done_patterns/{run_name}_clustering_{tomo}.done"
-    else:
-        start_segmentation_evaluation_when = skip_prediction_pattern
+        python3 {scriptdir}/particle_picking_evaluation.py \
+        --pythonpath {srcdir} \
+        --dataset_table {{dataset_table}} \
+        --output_dir {{output_dir}} \
+        --model_name {{model_name}} \
+        --class_number {{pred_class_number}} \
+        --calculate_motl {{calculate_motl}} \
+        --filtering_mask {{filtering_mask}} \
+        --calculate_motl {{calculate_motl}} \
+        --statistics_file {{pr_statistics_file}} \
+        --radius {{pr_tolerance_radius}} \
+        """ + "--tomo_name {wildcards.tomo} \
+        && touch {output.file}"
 
 rule segmentation_evaluation:
     conda:
@@ -380,16 +364,16 @@ rule segmentation_evaluation:
     input:
          start_segmentation_evaluation_when
     output:
-          file=".done_patterns/{run_name}_segmentation_evaluation_{tomo}.done"
+          file=".done_patterns/{run_name}_dice_evaluation_{tomo}.done"
     shell:
          f"""
-            python3 {scriptdir}/segmentation_evaluation.py \
-            --pythonpath {srcdir} \
-            --dataset_table {{dataset_table}} \
-            --output_dir {{output_dir}} \
-            --model_name {{model_name}} \
-            --class_number {{pred_class_number}} \
-            --filtering_mask {{filtering_mask}} \
-            --statistics_file {{dice_eval_statistics_file}} \
-            """ + "--tomo_name {wildcards.tomo} \
-            && touch {output.file}"
+        python3 {scriptdir}/segmentation_evaluation.py \
+        --pythonpath {srcdir} \
+        --dataset_table {{dataset_table}} \
+        --output_dir {{output_dir}} \
+        --model_name {{model_name}} \
+        --class_number {{pred_class_number}} \
+        --filtering_mask {{filtering_mask}} \
+        --statistics_file {{dice_eval_statistics_file}} \
+        """ + "--tomo_name {wildcards.tomo} \
+        && touch {output.file}"
