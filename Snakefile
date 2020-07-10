@@ -171,7 +171,7 @@ if config["evaluation"]["segmentation_evaluation"]["active"]:
 
 if config["debug"]:
     print("TARGETS:\n", targets)
-    final_line="rm ./done_patterns/*"
+    final_line="rm .done_patterns/*"
 else:
     final_line="echo 'Finishing pipeline.'"
 
