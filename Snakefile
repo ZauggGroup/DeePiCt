@@ -74,10 +74,6 @@ pr_statistics_file = config["evaluation"]["particle_picking"]["statistics_file"]
 dice_eval_active = config["evaluation"]["segmentation_evaluation"]["active"]
 dice_eval_statistics_file = config["evaluation"]["segmentation_evaluation"]["statistics_file"]
 
-# tomo_name_training = training_tomos # expand(["{tomo_name}"], tomo_name=training_tomos)
-tomo_name_prediction = prediction_tomos  #expand(["{tomo_name}"], tomo_name=prediction_tomos)
-# print("tomo_name_prediction =", tomo_name_prediction)
-
 os.makedirs(".done_patterns", exist_ok=True)
 done_training_set_generation_pattern = expand([".done_patterns/{run_name}_3d_training.done_set_generation_{tomo}.done"],
                                               tomo=training_tomos, run_name=run_name)
@@ -91,19 +87,6 @@ done_assembling_prediction_pattern = expand(".done_patterns/{run_name}_assemblin
                                             tomo=prediction_tomos, run_name=run_name)
 done_clustering_pattern = expand(".done_patterns/{run_name}_clustering_{tomo}.done", tomo=prediction_tomos,
                                  run_name=run_name)
-print(done_prediction_set_generation_pattern)
-print(done_segmentation_pattern)
-print(done_assembling_prediction_pattern)
-print(done_clustering_pattern)
-
-# done_prediction_set_generation_pattern = expand([".done_patterns/{run_name}_prediction_set_generation_{tomo}.done"],
-#                                                 tomo=prediction_tomos, run_name=run_name)
-# done_segmenting_pattern = expand([".done_patterns/{run_name}_segmenting_{tomo}.done"], tomo=prediction_tomos,
-#                                  run_name=run_name)
-# done_assembling_prediction_pattern = expand([".done_patterns/{run_name}_assembling_segmentation_{tomo}.done"],
-#                                             tomo=prediction_tomos, run_name=run_name)
-# done_clustering_and_cleaning_pattern = expand([".done_patterns/{run_name}_clustering_and_cleaning_{tomo}.done"],
-#                                               tomo=prediction_tomos, run_name=run_name)
 done_particle_picking_evaluation_pattern = expand([".done_patterns/{run_name}_particle_picking_evaluation_{tomo}.done"],
                                                   tomo=prediction_tomos, run_name=run_name)
 done_segmentation_evaluation_pattern = expand([".done_patterns/{run_name}_dice_evaluation_{tomo}.done"],
@@ -111,11 +94,6 @@ done_segmentation_evaluation_pattern = expand([".done_patterns/{run_name}_dice_e
 skip_training_pattern = ".done_patterns/{run_name}_skip_training".format(run_name=run_name)
 skip_prediction_pattern = ".done_patterns/{run_name}_skip_prediction".format(run_name=run_name)
 skip_particle_picking_evaluation_pattern = ".done_patterns/{}_skip_particle_picking_eval".format(run_name)
-
-# for dir_file in start_prediction_pattern:
-#     os.makedirs(name=dir_file, exist_ok=True)
-#     with open(file=dir_file + "/.start", mode="w") as f:
-#         print("generating start file for tomo...")
 
 if config["prediction"]["active"]:
     if config["evaluation"]["particle_picking"]["active"]:
@@ -155,25 +133,20 @@ if config["prediction"]["active"]:
     targets += done_clustering_pattern
 else:
     print("prediction isn't active!")
-    # targets += skip_prediction_pattern
     print(skip_prediction_pattern)
     with open(file=skip_prediction_pattern, mode="w"):
         print(skip_prediction_pattern)
 
 if config["evaluation"]["particle_picking"]["active"]:
     targets += done_particle_picking_evaluation_pattern
-# else:
-#     with open(file=skip_particle_picking_evaluation_pattern, mode="w"):
-#         skip_particle_picking_evaluation_pattern
-#
 if config["evaluation"]["segmentation_evaluation"]["active"]:
     targets += done_segmentation_evaluation_pattern
 
 if config["debug"]:
     print("TARGETS:\n", targets)
-    final_line="rm .done_patterns/*"
+    final_line = "rm -r .done_patterns/*"
 else:
-    final_line="echo 'Finishing pipeline.'"
+    final_line = "echo 'Finishing pipeline.'"
 
 # Rules
 rule all:
@@ -185,7 +158,6 @@ rule all:
 rule training_set_generation:
     conda:
          "environment.yaml"
-         # log: "test.log"
     output:
           file=".done_patterns/{run_name}_3d_training.done_set_generation_{tomo}.done"
     shell:
@@ -208,7 +180,6 @@ rule training_set_generation:
 rule training_3dunet:
     conda:
          "environment.yaml"
-         # log: "test.log"
     input:
          training_set_done_file=done_training_set_generation_pattern
     output:
@@ -266,7 +237,6 @@ rule generate_prediction_partition:
 rule segment:
     conda:
          "environment.yaml"
-         # log: "test.log"
     input:
          ".done_patterns/{run_name}_prediction_set_generation_{tomo}.done"
     output:
@@ -290,7 +260,6 @@ rule segment:
 rule assemble_prediction:
     conda:
          "environment.yaml"
-         # log: "test.log"
     input:
          ".done_patterns/{run_name}_segmentation_{tomo}.done"
     output:
@@ -311,7 +280,6 @@ rule assemble_prediction:
 rule clustering_and_cleaning:
     conda:
          "environment.yaml"
-         # log: "test.log"
     input:
          ".done_patterns/{run_name}_assembling_prediction_{tomo}.done"
     output:
@@ -335,7 +303,6 @@ rule clustering_and_cleaning:
 rule particle_picking_evaluation:
     conda:
          "environment.yaml"
-         # log: "test.log"
     input:
          done_clustering_and_cleaning_file=".done_patterns/{run_name}_clustering_{tomo}.done" if config["prediction"][
              "active"] else skip_prediction_pattern
@@ -360,7 +327,6 @@ rule particle_picking_evaluation:
 rule segmentation_evaluation:
     conda:
          "environment.yaml"
-         # log: "test.log"
     input:
          start_segmentation_evaluation_when
     output:
