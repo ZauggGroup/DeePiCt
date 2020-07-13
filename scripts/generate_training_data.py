@@ -30,11 +30,7 @@ min_label_fraction = args.min_label_fraction
 max_label_fraction = args.max_label_fraction
 sys.path.append(pythonpath)
 
-import os
 from os import makedirs
-from os.path import join
-
-import yaml
 import numpy as np
 import pandas as pd
 
@@ -60,11 +56,6 @@ print("labels_dataset_list = ")
 print(labels_dataset_list)
 
 subtomogram_shape = (box_shape, box_shape, box_shape)
-# output_h5_file_name = partition_name + ".h5"
-# output_dir = os.path.join(output_dir, "training_data")
-# output_path = join(output_dir, tomo_name)
-#
-# output_path = join(output_path, output_h5_file_name)
 
 output_path_dir, output_path = training_partition_path(output_dir=work_dir, tomo_name=tomo_name,
                                                        partition_name=partition_name)
@@ -86,7 +77,3 @@ if len(selected_cubes) == 0:
 else:
     selected_cubes = selected_cubes[0]
 print("{} out of {} cubes in partition file.".format(selected_cubes, len(label_fractions_list)))
-
-# print("path to training partition written on table: ", output_path)
-# df.loc[df['tomo_name'] == tomo_name, config["training"]["partition_name"]] = [output_path]
-# df.to_csv(path_or_buf=dataset_table, index=False)

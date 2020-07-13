@@ -56,11 +56,7 @@ print("Partitioning tomo", tomo_name)
 
 partition_output_dir, partition_path = testing_partition_path(output_dir=work_dir, tomo_name=tomo_name,
                                                               model_name=model_name, partition_name=test_partition)
-# output_dir_tomo = os.path.join(output_dir, "test_partitions")
-# output_dir_tomo = os.path.join(output_dir_tomo, tomo_name)
-# output_dir_tomo = os.path.join(output_dir_tomo, model_name)
 os.makedirs(partition_output_dir, exist_ok=True)
-# partition_path = os.path.join(output_dir_tomo, test_partition + ".h5")
 
 print("output path:", partition_path)
 tomo_df = df[df[DTHeader.tomo_name] == tomo_name]
@@ -93,7 +89,3 @@ else:
                                     subtomo_shape=subtomogram_shape,
                                     overlap=overlap)
 
-# df.loc[df[
-#            DTHeader.tomo_name] == tomo_name, DTHeader.partition_name] = \
-#     [partition_path]
-# df.to_csv(dataset_table, index=False)

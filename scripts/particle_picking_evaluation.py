@@ -179,6 +179,7 @@ plt.gcf()
 fig_name = join(figures_dir, "pr_" + title_str + ".png")
 plt.savefig(fname=fig_name, format="png")
 plt.close()
+
 print("statistics_file", statistics_file)
 if statistics_file != "None":
     statistics_label = segmentation_label + "_pr_radius_" + str(radius)

@@ -55,7 +55,7 @@ def write_dataset_from_subtomograms(output_path, subtomo_path, output_shape,
 
 
 def assemble_tomo_from_subtomos(output_path: str, partition_file_path: str,
-                                output_shape: tuple, subtomo_shape: tuple,
+                                output_shape: tuple, subtomo_shape: tuple or list,
                                 subtomos_internal_path: str,
                                 class_number: int, overlap: int,
                                 final_activation: None or nn.Module = None,

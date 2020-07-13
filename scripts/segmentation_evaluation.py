@@ -19,12 +19,10 @@ import os
 import numpy as np
 import pandas as pd
 import torch
-import torch.nn as nn
 
 from constants.dataset_tables import DatasetTableHeader, ModelsTableHeader
 from file_actions.readers.tomograms import load_tomogram
 from file_actions.writers.csv import write_statistics
-from file_actions.writers.h5 import write_dataset_hdf
 from pytorch_cnn.classes.loss import DiceCoefficient
 
 

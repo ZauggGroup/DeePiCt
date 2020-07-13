@@ -1,64 +1,56 @@
 # General parameters for training and prediction:
-dataset_table: "/struct/mahamid/Irene/3d-unet/yeast_metadata.csv" # Path to metadata csv file
-output_dir: "/struct/mahamid/Irene/scratch/trueba/test_3d_unet"   # Output directory
-work_dir: "/scratch/trueba/test_3d_unet/"                         # Destination directory of intermediate files
-model_name: "test_model3.pkl"                                     # Output model using .pkl extension
+dataset_table: "yeast_metadata.csv"     # Path to metadata csv file
+output_dir: "out"                       # Output directory
+work_dir: "work"                        # Destination directory of intermediate files
+model_name: "test_model.pkl"            # Output model using .pkl extension
 
 # Tomogram sets used for training or prediction
 tomos_sets:
-  training_list: [ "190301/001"]         # Tomograms in dataset_table for training
-  prediction_list: ["190301/006"]        # Tomograms in dataset_table for testing
+  training_list: ["190301/001"]         # Tomograms in dataset_table for training ["tomo1", "tomo2", ...]
+  prediction_list: ["190301/006"]       # Tomograms in dataset_table for prediction ["tomo1", "tomo2", ...]
 
 training:
   active: false
-  semantic_classes: ['ribo']             # List of k semantic classes that the network will learn to recognize
+  semantic_classes: ['ribo']             # List of k semantic classes that the network will learn to segment
   processing_tomo: "tomo"                # Column name in dataset_table corresponding to raw tomo used for training
-  partition_name: "train_partition"      # Under this column in dataset_table the training partition path will be stored
   box_shape: 64                          # Box side of the partition
   min_label_fraction: 0.002              # Minimum label required in each box considered for the training partition
-  max_label_fraction: 1                  # Maximum, usually 1 works
-  edge_tolerance: 20                     # edge ignored for semantic class masks
   overlap: 12                            # Thickness of overlap for training partition
 
   # Unet architecture parameters
   unet_hyperparameters:
-    depth: 1                             # unet depth
+    depth: 1                             # unet depth (=number of maxpooling layers)
     initial_features: 1                  # number of initial convolutions
-    n_epochs: 1                            # training epochs
+    n_epochs: 1                          # training epochs
     split: 0.8                           # proportion of training (vs. validation) set, always between 0 and 1
     BatchNorm: False                     # boolean value
     encoder_dropout: 0                   # dropout for encoder path
     decoder_dropout: 0                   # dropout for decoder path
-    batch_size: 4                        # batch size, integer
+    batch_size: 4                        # batch size for training
 
 prediction:
   active: true
   processing_tomo: "tomo"                # Column name in dataset table corresp. to tomogram that will be segmented
-  partition_name: "test_partition"       # Column name that'll be created in dataset table to store partition path for pred.
-  class_number: 0                        # The index of the semantic class that will be predicted (0, 1, ..., k-1)
+  semantic_class: 'ribo'                 # The semantic class to be predicted
 
 # Thresholding clustering and motl generation
 postprocessing_clustering:
   active: true
-  threshold: 0.5                          # Threshold for the probability score to make the predicted segmentation
-  min_cluster_size: 100                   # Minimum number of voxels per cluster
-  max_cluster_size: 35000                 # Maximum number of voxels per cluster
-  calculate_motl: False                   # Get the motl of centroids for each cluster
-  ignore_border_thickness: 10             # ignore border for motl generation if calculate_motl is True
-  filtering_mask: 'lamella_file'          # masking lamella for motl generation
+  threshold: 0.5                         # Threshold for the probability score to make the predicted segmentation
+  min_cluster_size: 100                  # Minimum number of voxels per cluster
+  max_cluster_size: 35000                # Maximum number of voxels per cluster
+  calculate_motl: False                  # Get the motl of centroids for each cluster
+  ignore_border_thickness: 10            # ignore border for motl generation if calculate_motl is True
+  filtering_mask: 'lamella_file'         # column name in metadata table for masking segmentation, e.g. lamella_file
 
 # For precision recall in particle picking
 evaluation:
   particle_picking:
     active: false
-    pr_tolerance_radius: 10               # radius in voxels for considering two coordinate corresp. to same particle
-    statistics_file: "/struct/mahamid/Irene/scratch/trueba/test_3d_unet/pr_statistics.csv" # statistics file where area under pr curve will be stored
+    pr_tolerance_radius: 10              # radius in voxels for considering two coordinate corresp. to same particle
+    statistics_file: "pr_statistics.csv" # statistics file where area under pr curve will be stored
   segmentation_evaluation:
     active: true
-    statistics_file: "/struct/mahamid/Irene/scratch/trueba/test_3d_unet/dice_evaluation.csv"
+    statistics_file: "dice_eval.csv"     # statistics file where the dice coefficient will be stored
 
 debug: True
-
-
-
-

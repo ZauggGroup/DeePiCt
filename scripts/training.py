@@ -96,9 +96,6 @@ for tomo_name in tomo_training_list:
     print(tomo_name)
     _, partition_path = training_partition_path(output_dir=work_dir, tomo_name=tomo_name,
                                                 partition_name=partition_name)
-    # partition_path = os.path.join(output_dir, "training_data")
-    # partition_path = os.path.join(partition_path, tomo_name)
-    # partition_path = os.path.join(partition_path, partition_name + ".h5")
     training_partition_paths += [partition_path]
     data_aug_rounds_list += [0]
 
@@ -127,9 +124,7 @@ net_conf = {'final_activation': final_activation, 'depth': depth,
             "encoder_dropout": encoder_dropout,
             "decoder_dropout": decoder_dropout}
 
-# net = UNet_dropout(**net_conf)
 net = UNet3D(**net_conf)
-# net = UNet(**net_conf)
 net = net.to(device)
 
 if torch.cuda.device_count() > 1:

@@ -29,7 +29,6 @@ from constants.dataset_tables import ModelsTableHeader, DatasetTableHeader
 from file_actions.readers.tomograms import load_tomogram
 from file_actions.writers.csv import build_tom_motive_list
 from file_actions.writers.tomogram import write_tomogram
-from networks.utils import build_prediction_output_dir
 from tomogram_utils.coordinates_toolbox.clustering import get_cluster_centroids
 
 class_number = args.class_number

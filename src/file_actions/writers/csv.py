@@ -615,6 +615,9 @@ def write_statistics(statistics_file: str, statistics_label: str,
     else:
         print("The statistics file does not exist, we will create it.")
         path = os.path.dirname(statistics_file)
-        makedirs(path, exist_ok=True)
+        if path == '':
+            print("Writing statistics file in current directory.")
+        else:
+            makedirs(path, exist_ok=True)
         mini_stats_df.to_csv(path_or_buf=statistics_file, index=False)
     return

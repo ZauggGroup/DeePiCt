@@ -34,12 +34,12 @@ training_tomos = config["tomos_sets"]["training_list"]
 prediction_tomos = config["tomos_sets"]["prediction_list"]
 # Training
 overlap = config["training"]["overlap"]
-partition_name = config["training"]["partition_name"]
+partition_name = "train_partition"
 segmentation_names = config["training"]["semantic_classes"]
 processing_tomo = config["training"]["processing_tomo"]
 box_shape = config["training"]["box_shape"]
 min_label_fraction = config["training"]["min_label_fraction"]
-max_label_fraction = config["training"]["max_label_fraction"]
+max_label_fraction = 1
 
 #unet_hyperparameters:
 depth = config["training"]["unet_hyperparameters"]["depth"]
@@ -53,8 +53,13 @@ batch_size = config["training"]["unet_hyperparameters"]["batch_size"]
 
 # prediction:
 pred_processing_tomo = config["prediction"]["processing_tomo"]
-pred_partition_name = config["prediction"]["partition_name"]
-pred_class_number = config["prediction"]["class_number"]
+pred_partition_name = "test_partition"
+pred_class = config["prediction"]["semantic_class"]
+pred_class_number = -1
+for class_number, semantic_class in enumerate(segmentation_names):
+    if semantic_class == pred_class:
+        pred_class_number = class_number
+assert pred_class_number >= 0, "Prediction class not among segmentation names for this model!"
 
 # Thresholding clustering and motl generation
 threshold = config["postprocessing_clustering"]["threshold"]
@@ -274,6 +279,7 @@ rule assemble_prediction:
         --model_name {{model_name}} \
         --test_partition {{pred_partition_name}} \
         --class_number {{pred_class_number}} \
+        --processing_tomo {{pred_processing_tomo}} \
         """ + "--tomo_name {wildcards.tomo} \
         && touch {output.file}"
 
