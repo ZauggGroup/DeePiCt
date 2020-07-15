@@ -174,12 +174,15 @@ for epoch in range(n_epochs):
           log_image=False, lr_scheduler=lr_scheduler)
     step = new_epoch * len(train_loader.dataset)
     # run validation after training epoch
-    current_validation_loss = validate(net, val_loader, loss, metric,
+    # def validate(model, loader, loss_function, metric, device, step=None,
+    #              tb_logger=None, log_image_interval=30)
+    current_validation_loss = validate(model=net, loader=val_loader, loss_function=loss,
+                                       metric=metric,
                                        device=device, step=step,
                                        tb_logger=logger)
     if current_validation_loss <= validation_loss:
         best_epoch = new_epoch
-        print("Best epoch! -->", best_epoch)
+        print("Best epoch! -->", best_epoch, "with validation loss:", current_validation_loss)
         validation_loss = current_validation_loss
         save_unet_model(path_to_model=model_path, epoch=new_epoch,
                         net=net, optimizer=optimizer, loss=current_validation_loss)

@@ -173,7 +173,7 @@ def train(model, loader, optimizer, loss_function,
 
 
 def validate(model, loader, loss_function, metric, device, step=None,
-             tb_logger=None, log_image_interval=30):
+             tb_logger=None, log_image_interval=10):
     # set model to eval mode
     model.eval()
     # running loss and metric values
@@ -192,31 +192,38 @@ def validate(model, loader, loss_function, metric, device, step=None,
             if tb_logger is not None:
                 assert step is not None, \
                     "Need to know the current step to log validation results"
-                if index % log_image_interval == 0:
-                    print('val_loss', "value=", val_loss, "step", step)
-                    tb_logger.log_scalar(tag='val_loss', value=val_loss, step=step)
-                    tb_logger.log_scalar(tag='val_metric', value=val_metric, step=step)
-                    # we always log the last validation images
-                    y = y.to('cpu').numpy()
-                    nim, C, zdim, ydim, xdim = y.shape
-                    max_sl = 0
-                    max_level_sl = 0
-                    for sl in range(zdim):
-                        slide = y[0, 0, sl, ...]
-                        label_sl = np.sum(slide > 0)
-                        if max_level_sl < label_sl:
-                            max_level_sl = label_sl
-                            max_sl = sl
-                    tb_logger.log_image(tag='val_input', image=x[0, :, max_sl, ...].to('cpu'), step=step)
-                    tb_logger.log_image(tag='val_target', image=y[0, :, max_sl, ...], step=step)
-                    tb_logger.log_image(tag='val_prediction', image=prediction[0, :, max_sl, ...].to('cpu'), step=step)
-    # normalize loss and metric
-    val_loss /= len(loader)
-    val_metric /= len(loader)
+                if log_image_interval is not None:
+                    if index % len(loader) == 0:
+                        # we always log the last validation images
+                        y = y.to('cpu').numpy()
+                        nim, C, zdim, ydim, xdim = y.shape
+                        max_sl = 0
+                        max_level_sl = 0
+                        for sl in range(zdim):
+                            slide = y[0, 0, sl, ...]
+                            label_sl = np.sum(slide > 0)
+                            if max_level_sl < label_sl:
+                                max_level_sl = label_sl
+                                max_sl = sl
+                        tb_logger.log_image(tag='val_input', image=x[0, :, max_sl, ...].to('cpu'), step=step)
+                        tb_logger.log_image(tag='val_target', image=y[0, :, max_sl, ...], step=step)
+                        tb_logger.log_image(tag='val_prediction', image=prediction[0, :, max_sl, ...].to('cpu'), step=step)
 
 
-    print('\nValidate: Average loss: {:.4f}, Average Metric: {:.4f}\n'.format(
-        val_loss, val_metric))
+        # normalize loss and metric
+        val_loss /= len(loader)
+        val_metric /= len(loader)
+        val_loss /= len(loader)
+        val_metric /= len(loader)
+
+        if tb_logger is not None:
+            assert step is not None, \
+                "Need to know the current step to log validation results"
+            print('val_loss', "value=", val_loss, "step", step)
+            tb_logger.log_scalar(tag='val_loss', value=val_loss, step=step)
+            tb_logger.log_scalar(tag='val_metric', value=val_metric, step=step)
+        print('\nValidate: Average loss: {:.4f}, Average Metric: {:.4f}\n'.format(
+            val_loss, val_metric))
     return val_loss
 
 
