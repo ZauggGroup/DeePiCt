@@ -7,7 +7,7 @@ echo PYTHONPATH=$PYTHONPATH
 
 source ~/.bashrc
 conda activate snakemake
-srun -t 00:20:00 -c 1 --mem 4G \
+srun -t 04:00:00 -c 1 --mem 4G \
     snakemake \
     --snakefile "${srcdir}/Snakefile" \
     --cluster "sbatch" \

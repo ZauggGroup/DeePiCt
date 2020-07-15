@@ -4,6 +4,9 @@ output_dir: "out"                       # Output directory
 work_dir: "work"                        # Destination directory of intermediate files
 model_name: "test_model.pkl"            # Output model using .pkl extension
 
+cluster:
+  logdir: "logs"
+
 # Tomogram sets used for training or prediction
 tomos_sets:
   training_list: ["190301/001"]         # Tomograms in dataset_table for training ["tomo1", "tomo2", ...]

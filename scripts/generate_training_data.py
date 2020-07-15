@@ -57,7 +57,8 @@ print(labels_dataset_list)
 
 subtomogram_shape = (box_shape, box_shape, box_shape)
 
-output_path_dir, output_path = training_partition_path(output_dir=work_dir, tomo_name=tomo_name,
+output_path_dir, output_path = training_partition_path(output_dir=work_dir,
+                                                       tomo_name=tomo_name,
                                                        partition_name=partition_name)
 makedirs(name=output_path_dir, exist_ok=True)
 

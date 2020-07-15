@@ -173,7 +173,7 @@ def train(model, loader, optimizer, loss_function,
 
 
 def validate(model, loader, loss_function, metric, device, step=None,
-             tb_logger=None, log_image_interval=10):
+             tb_logger=None, log_image_interval=30):
     # set model to eval mode
     model.eval()
     # running loss and metric values
