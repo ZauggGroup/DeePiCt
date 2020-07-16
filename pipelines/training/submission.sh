@@ -14,7 +14,7 @@
 
 
 echo "Activating virtual environment"
-source activate 3d-cnn
+source activate /struct/mahamid/Irene/segmentation_ribo/.snakemake/conda/50db6a03
 echo "done"
 export src_dir="$( cd "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
 export PYTHONPATH=${src_dir%/*/*}/src

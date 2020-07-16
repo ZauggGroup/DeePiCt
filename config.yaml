@@ -1,16 +1,21 @@
 # General parameters for training and prediction:
 dataset_table: "yeast_metadata.csv"     # Path to metadata csv file
-output_dir: "out"                       # Output directory
-work_dir: "work"                        # Destination directory of intermediate files
+output_dir: "test/out"                       # Output directory
+work_dir: "test/work"                        # Destination directory of intermediate files
 model_name: "test_model.pkl"            # Output model using .pkl extension
 
 cluster:
-  logdir: "logs"
+  logdir: "test/logs"
 
 # Tomogram sets used for training or prediction
 tomos_sets:
-  training_list: ["190301/001"]         # Tomograms in dataset_table for training ["tomo1", "tomo2", ...]
-  prediction_list: ["190301/006"]       # Tomograms in dataset_table for prediction ["tomo1", "tomo2", ...]
+  training_list: ["190301/001", "190301/006"]         # Tomograms in dataset_table for training ["tomo1", "tomo2", ...]
+  prediction_list: ["190301/006"]                     # Tomograms in dataset_table for prediction ["tomo1", "tomo2", ...]
+
+cross_validation:
+  active: true
+  cv_folds: 2
+  cross_validation: "test/cv_statistics.csv"
 
 training:
   active: false

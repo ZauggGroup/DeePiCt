@@ -213,8 +213,6 @@ def validate(model, loader, loss_function, metric, device, step=None,
         # normalize loss and metric
         val_loss /= len(loader)
         val_metric /= len(loader)
-        val_loss /= len(loader)
-        val_metric /= len(loader)
 
         if tb_logger is not None:
             assert step is not None, \
