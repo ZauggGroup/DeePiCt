@@ -165,9 +165,6 @@ rule all:
 rule partition_training:
     conda:
          "environment.yaml"
-    input:
-        ".done_patterns/run_3d_training.done" if config["training"][
-                 "active"] else ".done_patterns/run_skip_training"
     output:
           file=training_part_pattern
           # file=".done_patterns/run_3d_training.done_set_generation_{tomo}.done"
