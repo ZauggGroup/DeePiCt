@@ -207,8 +207,8 @@ def validate(model, loader, loss_function, metric, device, step=None,
                                 max_sl = sl
                         tb_logger.log_image(tag='val_input', image=x[0, :, max_sl, ...].to('cpu'), step=step)
                         tb_logger.log_image(tag='val_target', image=y[0, :, max_sl, ...], step=step)
-                        tb_logger.log_image(tag='val_prediction', image=prediction[0, :, max_sl, ...].to('cpu'), step=step)
-
+                        tb_logger.log_image(tag='val_prediction', image=prediction[0, :, max_sl, ...].to('cpu'),
+                                            step=step)
 
         # normalize loss and metric
         val_loss /= len(loader)
@@ -223,6 +223,35 @@ def validate(model, loader, loss_function, metric, device, step=None,
         print('\nValidate: Average loss: {:.4f}, Average Metric: {:.4f}\n'.format(
             val_loss, val_metric))
     return val_loss
+
+
+def compute_global_dice(model, loader, device, overlap):
+    # set model to eval mode
+    model.eval()
+    # running loss and metric values
+    numerator = 0
+    denominator = 0
+    mask = np.zeros(loader[0].shape)
+    ones = np.ones(loader[0].shape)
+    mask[:, :, overlap:-overlap, overlap:-overlap, overlap:-overlap] = ones[:, :, overlap:-overlap, overlap:-overlap,
+                                                                       overlap:-overlap]
+    mask = torch.from_numpy(mask).to(device)
+    # disable gradients during validation
+    with torch.no_grad():
+        # iterate over validation loader and update loss and metric values
+        for index, data in enumerate(loader):
+            x, y = data
+            x, y = x.to(device), y.to(device)
+            prediction = model(x)
+            numerator += (prediction * y.long() * mask).sum()
+            denominator += (prediction * prediction * mask).sum() + (y.long() * y.long() * mask).sum()
+
+        # normalize loss and metric
+        print(numerator, denominator)
+        global_dice = 2 * numerator.item() / denominator.item()
+
+        print('\nValidate: Global_dice: {:.4f}'.format(global_dice))
+    return global_dice
 
 
 def validate_float(model, loader, loss_function, metric, device, step=None,

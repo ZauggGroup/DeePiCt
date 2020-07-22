@@ -58,10 +58,10 @@ def assemble_tomo_from_subtomos(output_path: str, partition_file_path: str,
                                 output_shape: tuple, subtomo_shape: tuple or list,
                                 subtomos_internal_path: str,
                                 class_number: int, overlap: int,
-                                final_activation: None or nn.Module = None,
+                                final_activation: None or 'sigmoid' = None,
                                 reconstruction_type: str = "prediction"):
     print("Assembling data from", partition_file_path, ":")
-    tomo_data = np.zeros(output_shape)
+    tomo_data = -10 * np.ones(output_shape)  # such that sigmoid(-10) ~ 0
     inner_subtomo_shape = tuple([subtomo_dim - 2 * overlap for
                                  subtomo_dim in subtomo_shape])
     with h5py.File(partition_file_path, 'r') as f:
@@ -91,9 +91,6 @@ def assemble_tomo_from_subtomos(output_path: str, partition_file_path: str,
                     channel_slices = tuple(channel_slices)
                     subtomo_data = f[subtomo_h5_internal_path][:]
                     internal_subtomo_data = subtomo_data[channel_slices]
-                    if final_activation is not None:
-                        internal_subtomo_data = np.array(final_activation(
-                            torch.from_numpy(internal_subtomo_data).double()))
                 else:
                     volume_slices = tuple(volume_slices)
                     internal_subtomo_data = f[subtomo_h5_internal_path][
@@ -101,7 +98,10 @@ def assemble_tomo_from_subtomos(output_path: str, partition_file_path: str,
                 tomo_slices = tuple(
                     [slice(s, e) for s, e in zip(start_corner, end_corner)])
                 tomo_data[tomo_slices] = internal_subtomo_data
-
+    if final_activation is not None:
+        sigmoid = nn.Sigmoid()
+        tomo_data = sigmoid(torch.from_numpy(tomo_data).float())
+        tomo_data = tomo_data.float().numpy()
     ext = os.path.splitext(output_path)[-1].lower()
     if ext == ".mrc":
         write_mrc_dataset(mrc_path=output_path, array=tomo_data)

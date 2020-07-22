@@ -1,55 +1,60 @@
 # General parameters for training and prediction:
-dataset_table: "yeast_metadata.csv"     # Path to metadata csv file
-output_dir: "test/out"                       # Output directory
-work_dir: "test/work"                        # Destination directory of intermediate files
-model_name: "test_model.pkl"            # Output model using .pkl extension
+dataset_table: "/struct/mahamid/Irene/yeast/yeast_table.csv"     # Path to metadata csv file
+output_dir: "out"                            # Output directory
+work_dir: "work"                             # Destination directory of intermediate files
+model_name: "ribo_vpp_spombe_IF8.pkl"            # Output model using .pkl extension
 
+# When running in the cluster:
 cluster:
-  logdir: "test/logs"
+  logdir: "logs"
 
 # Tomogram sets used for training or prediction
 tomos_sets:
-  training_list: ["190301/001", "190301/006"]         # Tomograms in dataset_table for training ["tomo1", "tomo2", ...]
-  prediction_list: ["190301/006"]                     # Tomograms in dataset_table for prediction ["tomo1", "tomo2", ...]
+  training_list: [  "180426/005", "180426/021", "180426/024",
+                    "181119/030", "181126/002", "181126/012",
+                    "181126/025", "180426/004", "181119/002"]
+  prediction_list: []
+  # Tomograms in dataset_table for prediction ["tomo1", "tomo2", ...]
 
 cross_validation:
   active: true
-  cv_folds: 2
-  cross_validation: "test/cv_statistics.csv"
+  cv_folds: 5
+  cv_data: cv_data.csv
+  statistics_file: "cv_statistics_ribo_alex_filter.csv"
 
 training:
   active: false
   semantic_classes: ['ribo']             # List of k semantic classes that the network will learn to segment
-  processing_tomo: "tomo"                # Column name in dataset_table corresponding to raw tomo used for training
+  processing_tomo: "alex_filter"                # Column name in dataset_table corresponding to raw tomo used for training
   box_shape: 64                          # Box side of the partition
-  min_label_fraction: 0.002              # Minimum label required in each box considered for the training partition
+  min_label_fraction: 0.001              # Minimum label required in each box considered for the training partition
   overlap: 12                            # Thickness of overlap for training partition
 
   # Unet architecture parameters
   unet_hyperparameters:
-    depth: 1                             # unet depth (=number of maxpooling layers)
-    initial_features: 1                  # number of initial convolutions
-    n_epochs: 1                          # training epochs
+    depth: 2                             # unet depth (=number of maxpooling layers)
+    initial_features: 8                  # number of initial convolutions
+    n_epochs: 50                          # training epochs
     split: 0.8                           # proportion of training (vs. validation) set, always between 0 and 1
     BatchNorm: False                     # boolean value
     encoder_dropout: 0                   # dropout for encoder path
     decoder_dropout: 0                   # dropout for decoder path
-    batch_size: 4                        # batch size for training
+    batch_size: 5                        # batch size for training
 
 prediction:
-  active: true
-  processing_tomo: "tomo"                # Column name in dataset table corresp. to tomogram that will be segmented
+  active: false
+  processing_tomo: "alex_filter"         # Column name in dataset table corresp. to tomogram that will be segmented
   semantic_class: 'ribo'                 # The semantic class to be predicted
 
 # Thresholding clustering and motl generation
 postprocessing_clustering:
-  active: true
-  threshold: 0.5                         # Threshold for the probability score to make the predicted segmentation
+  active: false
+  threshold: 0.001                       # Threshold for the probability score to make the predicted segmentation
   min_cluster_size: 100                  # Minimum number of voxels per cluster
   max_cluster_size: 35000                # Maximum number of voxels per cluster
   calculate_motl: False                  # Get the motl of centroids for each cluster
   ignore_border_thickness: 10            # ignore border for motl generation if calculate_motl is True
-  filtering_mask: 'lamella_file'         # column name in metadata table for masking segmentation, e.g. lamella_file
+  filtering_mask: 'cytosol_mask'         # column name in metadata table for masking segmentation, e.g. lamella_file
 
 # For precision recall in particle picking
 evaluation:
@@ -58,7 +63,7 @@ evaluation:
     pr_tolerance_radius: 10              # radius in voxels for considering two coordinate corresp. to same particle
     statistics_file: "pr_statistics.csv" # statistics file where area under pr curve will be stored
   segmentation_evaluation:
-    active: true
+    active: false
     statistics_file: "dice_eval.csv"     # statistics file where the dice coefficient will be stored
 
 debug: True

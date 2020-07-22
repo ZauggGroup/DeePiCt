@@ -24,7 +24,7 @@ from constants.dataset_tables import DatasetTableHeader, ModelsTableHeader
 from file_actions.readers.tomograms import load_tomogram
 from file_actions.writers.csv import write_statistics
 from pytorch_cnn.classes.loss import DiceCoefficient
-
+from paths.pipeline_dirs import get_post_processed_prediction_path
 
 args = parser.parse_args()
 dataset_table = args.dataset_table
@@ -50,11 +50,8 @@ assert model_df.shape[0] == 1
 semantic_classes = model_df.iloc[0][ModelsHeader.semantic_classes].split(',')
 semantic_class = semantic_classes[class_number]
 
-prediction_dir = os.path.join(output_dir, "predictions")
-prediction_dir = os.path.join(prediction_dir, model_name)
-prediction_dir = os.path.join(prediction_dir, tomo_name)
-prediction_dir = os.path.join(prediction_dir, semantic_class)
-prediction_path = os.path.join(prediction_dir, "clusters.mrc")
+prediction_path = get_post_processed_prediction_path(output_dir=output_dir, model_name=model_name, tomo_name=tomo_name,
+                                                     semantic_class=semantic_class)
 print(prediction_path)
 assert os.path.isfile(prediction_path), "The prediction file does not exist!"
 
@@ -104,3 +101,8 @@ if statistics_file != "None":
                      stat_measure=dice_statistic)
 
 print("Dice coefficient =", dice_statistic)
+### For snakemake:
+prediction_dir = os.path.dirname(prediction_path)
+snakemake_pattern = os.path.join(prediction_dir, ".done_dice_eval_snakemake")
+with open(file=snakemake_pattern, mode="w") as f:
+    print("Creating snakemake pattern", snakemake_pattern)

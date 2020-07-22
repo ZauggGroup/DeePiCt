@@ -22,6 +22,7 @@ import pandas as pd
 import torch
 import torch.nn as nn
 
+from collections import OrderedDict
 from constants.dataset_tables import ModelsTableHeader, DatasetTableHeader
 from file_actions.writers.h5 import segment_and_write
 from networks.io import get_device
@@ -44,8 +45,8 @@ test_partition = args.test_partition
 processing_tomo = args.processing_tomo
 tomo_name = args.tomo_name
 
-models_table = os.path.join(output_dir, "models")
-models_table = os.path.join(models_table, "models.csv")
+models_dir = os.path.join(output_dir, "models")
+models_table = os.path.join(models_dir, "models.csv")
 
 output_dir_tomo, partition_path = testing_partition_path(output_dir=work_dir, tomo_name=tomo_name,
                                                          model_name=model_name, partition_name=test_partition)
@@ -81,6 +82,14 @@ if torch.cuda.device_count() > 1:
     model = nn.DataParallel(model)
 
 checkpoint = torch.load(path_to_model, map_location=device)
+
+substring = 'module.'
+checkpoint_tmp = OrderedDict()
+for k in checkpoint['model_state_dict']:
+    new_k = k[len(substring):] if k.startswith(substring) else k
+    checkpoint_tmp[new_k] = checkpoint['model_state_dict'][k]
+checkpoint['model_state_dict'] = checkpoint_tmp
+
 model.load_state_dict(checkpoint['model_state_dict'])
 model = model.eval()
 
@@ -92,3 +101,11 @@ print("Segmenting tomo", tomo_name)
 print("test_partition", partition_path)
 segment_and_write(data_path=partition_path, model=model, label_name=label_name)
 print("The segmentation has finished!")
+
+### For snakemake:
+model_path = os.path.join(models_dir, args.model_name)
+snakemake_pattern = ".done_patterns/" + model_path + "." + tomo_name + ".done"
+snakemake_pattern_dir = os.path.dirname(snakemake_pattern)
+os.makedirs(snakemake_pattern_dir, exist_ok=True)
+with open(file=snakemake_pattern, mode="w") as f:
+    print("Creating snakemake pattern", snakemake_pattern)

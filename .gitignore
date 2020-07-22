@@ -1,3 +1,5 @@
+pipelines/plotting_utils.py
+src/__pycache__/
 .idea
 .snakemake
 src/*/*/__pycache__/*

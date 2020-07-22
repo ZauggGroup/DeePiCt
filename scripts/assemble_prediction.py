@@ -1,6 +1,8 @@
 import argparse
 import sys
 
+from paths.pipeline_dirs import get_models_table_path
+
 parser = argparse.ArgumentParser()
 parser.add_argument("-pythonpath", "--pythonpath", type=str)
 parser.add_argument("-dataset_table", "--dataset_table", type=str)
@@ -24,7 +26,7 @@ from constants import h5_internal_paths
 from constants.dataset_tables import ModelsTableHeader, DatasetTableHeader
 from file_actions.writers.h5 import assemble_tomo_from_subtomos
 from file_actions.readers.tomograms import load_tomogram
-from paths.pipeline_dirs import testing_partition_path
+from paths.pipeline_dirs import get_probability_map_path, testing_partition_path
 
 tomo_name = args.tomo_name
 output_dir = args.output_dir
@@ -38,9 +40,7 @@ output_dir_tomo, data_partition = testing_partition_path(output_dir=work_dir, to
                                                          model_name=model_name, partition_name=test_partition)
 
 segmentation_label = model_name
-models_table = os.path.join(output_dir, "models")
-models_table = os.path.join(models_table, "models.csv")
-
+models_table = get_models_table_path(output_dir)
 ModelsHeader = ModelsTableHeader()
 models_df = pd.read_csv(models_table,
                         dtype={ModelsHeader.model_name: str,
@@ -56,12 +56,8 @@ box_shape = [box_shape, box_shape, box_shape]
 semantic_names = model_df.iloc[0]['segmentation_names'].split(',')
 semantic_class = semantic_names[class_number]
 
-tomo_output_dir = os.path.join(output_dir, "predictions")
-tomo_output_dir = os.path.join(tomo_output_dir, model_name)
-tomo_output_dir = os.path.join(tomo_output_dir, tomo_name)
-tomo_output_dir = os.path.join(tomo_output_dir, semantic_class)
+tomo_output_dir, output_path = get_probability_map_path(output_dir, model_name, tomo_name, semantic_class)
 os.makedirs(tomo_output_dir, exist_ok=True)
-output_path = os.path.join(tomo_output_dir, "prediction.mrc")
 
 DTHeader = DatasetTableHeader(processing_tomo=processing_tomo)
 df = pd.read_csv(dataset_table)
@@ -81,6 +77,7 @@ assemble_tomo_from_subtomos(
     subtomo_shape=box_shape,
     subtomos_internal_path=subtomos_internal_path,
     class_number=class_number, overlap=overlap,
-    reconstruction_type="prediction")
+    reconstruction_type="prediction",
+    final_activation='sigmoid')
 
 print("Assembling prediction has finalized.")

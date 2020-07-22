@@ -193,3 +193,12 @@ for epoch in range(n_epochs):
 print("We have finished the training!")
 print("The best validation loss was", validation_loss)
 print("The best epoch was", best_epoch)
+
+### For snakemake:
+snakemake_pattern = ".done_patterns/" + model_path + ".done"
+os.makedirs(os.path.basename(snakemake_pattern), exist_ok=True)
+with open(file=snakemake_pattern, mode="w") as f:
+    print("Creating snakemake pattern", snakemake_pattern)
+
+
+

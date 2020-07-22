@@ -94,11 +94,6 @@ pr_statistics_file = config["evaluation"]["particle_picking"]["statistics_file"]
 dice_eval_active = config["evaluation"]["segmentation_evaluation"]["active"]
 dice_eval_statistics_file = config["evaluation"]["segmentation_evaluation"]["statistics_file"]
 
-###### Modify pipeline so  to simplify target definition and be more consistent
-prediction
-
-
-
 os.makedirs(".done_patterns", exist_ok=True)
 done_training_set_generation_pattern = expand([".done_patterns/run_3d_training.done_set_generation_{tomo}.done"],
                                               tomo=training_tomos)
@@ -300,9 +295,9 @@ rule segment:
           nodes=1,
           cores=4,
           memory="20G",
-          gres='#SBATCH -p gpu\n#SBATCH --gres=gpu:2'
+          gres='#SBATCH -p gpu\n#SBATCH --gres=gpu:4'
     resources:
-             gpu=2
+             gpu=4
     shell:
          f"""
         python3 {scriptdir}/segment.py \
@@ -374,6 +369,7 @@ rule clustering_and_cleaning:
         --threshold {{threshold}} \
         --dataset_table {{dataset_table}} \
         --calculate_motl {{calculate_motl}} \
+        --filtering_mask {{filtering_mask}} \
         """ + "--tomo_name {wildcards.tomo} \
         && touch {output.file}"
 

@@ -12,6 +12,7 @@ parser.add_argument("-max_cluster_size", "--max_cluster_size", type=int)
 parser.add_argument("-threshold", "--threshold", type=float)
 parser.add_argument("-dataset_table", "--dataset_table", type=str)
 parser.add_argument("-calculate_motl", "--calculate_motl", type=str)
+parser.add_argument("-filtering_mask", "--filtering_mask", type=str)
 
 args = parser.parse_args()
 pythonpath = args.pythonpath
@@ -22,14 +23,14 @@ from os import listdir
 
 import pandas as pd
 import numpy as np
-import torch
-import torch.nn as nn
 from distutils.util import strtobool
 from constants.dataset_tables import ModelsTableHeader, DatasetTableHeader
 from file_actions.readers.tomograms import load_tomogram
 from file_actions.writers.csv import build_tom_motive_list
 from file_actions.writers.tomogram import write_tomogram
 from tomogram_utils.coordinates_toolbox.clustering import get_cluster_centroids
+from paths.pipeline_dirs import get_probability_map_path, get_post_processed_prediction_path
+from constants.dataset_tables import DatasetTableHeader
 
 class_number = args.class_number
 model_name = args.model_name[:-4]
@@ -40,6 +41,7 @@ threshold = args.threshold
 dataset_table = args.dataset_table
 calculate_motl = strtobool(args.calculate_motl)
 tomo_name = args.tomo_name
+filtering_mask = args.filtering_mask
 
 models_table = os.path.join(output_dir, "models")
 models_table = os.path.join(models_table, "models.csv")
@@ -61,39 +63,54 @@ semantic_class = semantic_names[class_number]
 DTHeader = DatasetTableHeader()
 
 print("Processing tomo", tomo_name)
-tomo_output_dir = os.path.join(output_dir, "predictions")
-tomo_output_dir = os.path.join(tomo_output_dir, model_name)
-tomo_output_dir = os.path.join(tomo_output_dir, tomo_name)
-tomo_output_dir = os.path.join(tomo_output_dir, semantic_class)
-os.makedirs(tomo_output_dir, exist_ok=True)
-
+tomo_output_dir, output_path = get_probability_map_path(output_dir, model_name, tomo_name, semantic_class)
 
 for file in listdir(tomo_output_dir):
     if "motl" in file:
         print("Motive list already exists:", file)
         calculate_motl = False
 
-print(tomo_output_dir)
-output_path = os.path.join(tomo_output_dir, "prediction.mrc")
 assert os.path.isfile(output_path)
 prediction_dataset = load_tomogram(path_to_dataset=output_path)
 output_shape = prediction_dataset.shape
-sigmoid = nn.Sigmoid()
-prediction_dataset = sigmoid(torch.from_numpy(prediction_dataset).float())
-prediction_dataset = 1 * (prediction_dataset > threshold).float()
-prediction_dataset = prediction_dataset.numpy()
-prediction_dataset.astype(int)
+prediction_dataset = 1 * (prediction_dataset > threshold)
+
+DTHeader = DatasetTableHeader(filtering_mask=filtering_mask)
+print("filtering mask:", DTHeader.filtering_mask)
+df = pd.read_csv(dataset_table)
+df[DTHeader.tomo_name] = df[DTHeader.tomo_name].astype(str)
+tomo_df = df[df[DTHeader.tomo_name] == tomo_name]
+masking_file = tomo_df.iloc[0][DTHeader.filtering_mask]
+
+if str(masking_file) == "nan":
+    print("No filtering mask...")
+else:
+    mask_indicator = load_tomogram(path_to_dataset=masking_file)
+    shx, shy, shz = [np.min([shl, shp]) for shl, shp in
+                     zip(mask_indicator.shape, prediction_dataset.shape)]
+    mask_indicator = mask_indicator[:shx, :shy, :shz]
+    prediction_dataset = prediction_dataset[:shx, :shy, :shz]
+    prediction_dataset = np.array(mask_indicator, dtype=float) * np.array(prediction_dataset,
+                                                                          dtype=float)
+    tmp_output_path = get_post_processed_prediction_path(output_dir=output_dir, model_name=model_name,
+                                       tomo_name=tomo_name,
+                                       semantic_class=semantic_class + "_tmp")
+    os.makedirs(os.path.dirname(tmp_output_path), exist_ok=True)
+    write_tomogram(output_path=tmp_output_path, tomo_data=prediction_dataset)
+
 if np.max(prediction_dataset) > 0:
-    clustering_labels, centroids_list, cluster_size_list = \
+    clusters_labeled_by_size, centroids_list, cluster_size_list = \
         get_cluster_centroids(dataset=prediction_dataset,
                               min_cluster_size=min_cluster_size,
                               max_cluster_size=max_cluster_size,
                               connectivity=1, compute_centroids=calculate_motl)
 else:
-    clustering_labels = prediction_dataset
+    clusters_labeled_by_size = prediction_dataset
     centroids_list = []
-clusters_output_path = os.path.join(tomo_output_dir, "clusters.mrc")
-write_tomogram(output_path=clusters_output_path, tomo_data=clustering_labels)
+clusters_output_path = get_post_processed_prediction_path(output_dir=output_dir, model_name=model_name,
+                                                          tomo_name=tomo_name,
+                                                          semantic_class=semantic_class)
+write_tomogram(output_path=clusters_output_path, tomo_data=clusters_labeled_by_size)
 os.makedirs(tomo_output_dir, exist_ok=True)
 if calculate_motl:
     motl_name = "motl_" + str(len(centroids_list)) + ".csv"

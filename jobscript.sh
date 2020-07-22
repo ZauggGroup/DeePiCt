@@ -9,6 +9,7 @@
 #SBATCH --cpus-per-task={job.params.cores}
 {job.params.gres}
 
+export QT_QPA_PLATFORM='offscreen'
 export DISPLAY=0.0
 export PYTHONUNBUFFERED=1
 export gpu=$CUDA_VISIBLE_DEVICES

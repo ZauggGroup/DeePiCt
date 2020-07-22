@@ -30,7 +30,7 @@ min_label_fraction = args.min_label_fraction
 max_label_fraction = args.max_label_fraction
 sys.path.append(pythonpath)
 
-from os import makedirs
+import os
 import numpy as np
 import pandas as pd
 
@@ -60,21 +60,24 @@ subtomogram_shape = (box_shape, box_shape, box_shape)
 output_path_dir, output_path = training_partition_path(output_dir=work_dir,
                                                        tomo_name=tomo_name,
                                                        partition_name=partition_name)
-makedirs(name=output_path_dir, exist_ok=True)
-
-label_fractions_list = generate_strongly_labeled_partition(
-    path_to_raw=path_to_raw,
-    labels_dataset_paths_list=labels_dataset_list,
-    segmentation_names=segmentation_names,
-    output_h5_file_path=output_path,
-    subtomo_shape=subtomogram_shape,
-    overlap=overlap,
-    min_label_fraction=min_label_fraction,
-    max_label_fraction=max_label_fraction)
-
-selected_cubes = np.where(np.array(label_fractions_list) > min_label_fraction)[0].shape
-if len(selected_cubes) == 0:
-    selected_cubes = 0
+os.makedirs(name=output_path_dir, exist_ok=True)
+if os.path.isfile(output_path):
+    print("Training partition already exists")
 else:
-    selected_cubes = selected_cubes[0]
-print("{} out of {} cubes in partition file.".format(selected_cubes, len(label_fractions_list)))
+    print("Training partition to be generated...")
+    label_fractions_list = generate_strongly_labeled_partition(
+        path_to_raw=path_to_raw,
+        labels_dataset_paths_list=labels_dataset_list,
+        segmentation_names=segmentation_names,
+        output_h5_file_path=output_path,
+        subtomo_shape=subtomogram_shape,
+        overlap=overlap,
+        min_label_fraction=min_label_fraction,
+        max_label_fraction=max_label_fraction)
+
+    selected_cubes = np.where(np.array(label_fractions_list) > min_label_fraction)[0].shape
+    if len(selected_cubes) == 0:
+        selected_cubes = 0
+    else:
+        selected_cubes = selected_cubes[0]
+    print("{} out of {} cubes in partition file.".format(selected_cubes, len(label_fractions_list)))

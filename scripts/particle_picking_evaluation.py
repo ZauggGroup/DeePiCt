@@ -7,7 +7,6 @@ parser.add_argument("-tomo_name", "--tomo_name", type=str)
 parser.add_argument("-class_number", "--class_number", type=int)
 parser.add_argument("-model_name", "--model_name", type=str)
 parser.add_argument("-output_dir", "--output_dir", type=str)
-parser.add_argument("-filtering_mask", "--filtering_mask", type=str)
 parser.add_argument("-dataset_table", "--dataset_table", type=str)
 parser.add_argument("-calculate_motl", "--calculate_motl", type=str)
 parser.add_argument("-statistics_file", "--statistics_file", type=str)
@@ -23,6 +22,7 @@ from os.path import join
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import matplotlib
 
 from constants.dataset_tables import ModelsTableHeader, DatasetTableHeader
 from file_actions.writers.csv import motl_writer
@@ -36,7 +36,6 @@ tomo_name = args.tomo_name
 output_dir = args.output_dir
 model_name = args.model_name[:-4]
 class_number = args.class_number
-filtering_mask = args.filtering_mask
 dataset_table = args.dataset_table
 statistics_file = args.statistics_file
 radius = args.radius
@@ -71,8 +70,7 @@ tomo_output_dir = build_prediction_output_dir(base_output_dir=output_dir,
                                               tomo_name=tomo_name,
                                               semantic_class=semantic_class)
 os.makedirs(tomo_output_dir, exist_ok=True)
-if filtering_mask is not None:
-    tomo_output_dir = os.path.join(tomo_output_dir, "in_" + filtering_mask)
+
 motl_in_dir = [file for file in os.listdir(tomo_output_dir) if 'motl_' in file]
 assert len(motl_in_dir) == 1, "only one motive list can be filtered."
 path_to_motl_predicted = os.path.join(tomo_output_dir, motl_in_dir[0])
@@ -130,7 +128,7 @@ motl_writer(path_to_output_folder=path_to_undetected_predicted,
             list_of_peak_coords=fp_pred,
             list_of_peak_scores=fp_pred_scores,
             in_tom_format=True)
-
+matplotlib.use('Agg')
 plt.figure(1)
 plt.hist(predicted_values, bins=45, label="predicted")
 plt.xlabel("score value")
@@ -193,3 +191,8 @@ if statistics_file != "None":
                      statistics_label="F1_" + statistics_label,
                      tomo_name=tomo_name,
                      stat_measure=round(max_F1, 4))
+
+### For snakemake:
+snakemake_pattern = os.path.join(path_to_detected_predicted, ".done_pp_snakemake")
+with open(file=snakemake_pattern, mode="w") as f:
+    print("Creating snakemake pattern", snakemake_pattern)

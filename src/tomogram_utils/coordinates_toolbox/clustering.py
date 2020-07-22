@@ -32,6 +32,7 @@ def get_clusters_within_size_range(dataset: np.array, min_cluster_size: int,
         cluster_size[(cluster_size > min_cluster_size) & (
                 cluster_size <= max_cluster_size)])
     print("Clusters in subtomo before size filtering =", num)
+
     return labeled_clusters, labels_list_within_range, cluster_size_within_range
 
 
@@ -44,14 +45,14 @@ def get_cluster_centroids(dataset: np.array, min_cluster_size: int,
                                        connectivity=connectivity)
     centroids_list = list()
     total_clusters = len(labels_list_within_range)
-    if compute_centroids:
-        print("Computing cluster centroids:")
-        for index, label in zip(tqdm(range(total_clusters)),
-                                labels_list_within_range):
-            cluster = np.where(labeled_clusters == label)
-            centroid = np.rint(np.mean(cluster, axis=1))
-            centroids_list.append(centroid)
-    return labeled_clusters, centroids_list, cluster_size_within_range
+    clusters_map_in_range = np.zeros(labeled_clusters.shape)
+    for index, label, size in zip(tqdm(range(total_clusters)),
+                                  labels_list_within_range, cluster_size_within_range):
+        cluster = np.where(labeled_clusters == label)
+        clusters_map_in_range[cluster] = 1
+        centroid = np.rint(np.mean(cluster, axis=1))
+        centroids_list.append(centroid)
+    return clusters_map_in_range, centroids_list, cluster_size_within_range
 
 
 def get_cluster_centroids_from_partition(partition: str, label_name: str,

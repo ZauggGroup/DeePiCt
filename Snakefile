@@ -1,42 +1,24 @@
-"""
-Modular pipeline for Spatial Point Pattern Analysis in 3D
-"""
+import os, yaml
+import pandas as pd
+from snakemake_utils import generate_cv_folds
 
-__author__ = "Irene de Teresa"
-__version__ = "0.1.0"
-__maintainer__ = "Irene de Teresa"
-__email__ = "irene.de.teresa@embl.de"
-
-import os, yaml, shutil
-
-# folder = '.done_patterns'
-# if os.path.exists(folder):
-#     for filename in os.listdir(folder):
-#         file_path = os.path.join(folder, filename)
-#         try:
-#             if os.path.isfile(file_path) or os.path.islink(file_path):
-#                 os.unlink(file_path)
-#             elif os.path.isdir(file_path):
-#                 shutil.rmtree(file_path)
-#         except Exception as e:
-#             print('Failed to delete %s. Reason: %s' % (file_path, e))
-# from datetime import datetime
-
-# Load user's config file
 cli_config = config.copy()
 user_config_file = cli_config["config"]
 CUDA_VISIBLE_DEVICES = cli_config["gpu"]
 
-# if CUDA_VISIBLE_DEVICES == '':
-#     CUDA_VISIBLE_DEVICES='0'
-# print("CUDA_VISIBLE_DEVICES", CUDA_VISIBLE_DEVICES)
 with open(user_config_file, 'r') as user_config:
     config = yaml.safe_load(user_config)
 
 srcdir = os.path.join(workflow.basedir, "src")
 scriptdir = os.path.join(workflow.basedir, "scripts")
 
-# run_name = datetime.strftime(datetime.now(), "%y%m%d-%H%M%S")
+
+def generate_training_list_str(training_tomos: list) -> str:
+    tomo_training_list = ""
+    for tomo in training_tomos:
+        tomo_training_list += tomo + " "
+    return tomo_training_list
+
 
 # General data
 dataset_table = config["dataset_table"]
@@ -94,93 +76,101 @@ pr_statistics_file = config["evaluation"]["particle_picking"]["statistics_file"]
 dice_eval_active = config["evaluation"]["segmentation_evaluation"]["active"]
 dice_eval_statistics_file = config["evaluation"]["segmentation_evaluation"]["statistics_file"]
 
-os.makedirs(".done_patterns", exist_ok=True)
-done_training_set_generation_pattern = expand([".done_patterns/run_3d_training.done_set_generation_{tomo}.done"],
-                                              tomo=training_tomos)
-done_training_pattern = [".done_patterns/run_3d_training.done"]
-
-done_prediction_set_generation_pattern = expand(".done_patterns/run_prediction_set_generation_{tomo}.done",
-                                                tomo=prediction_tomos)
-done_segmentation_pattern = expand(".done_patterns/run_segmentation_{tomo}.done", tomo=prediction_tomos)
-done_assembling_prediction_pattern = expand([".done_patterns/run_assembling_prediction_{tomo}.done"],
-                                            tomo=prediction_tomos)
-done_clustering_pattern = expand(".done_patterns/run_clustering_{tomo}.done", tomo=prediction_tomos)
-done_particle_picking_evaluation_pattern = expand([".done_patterns/run_particle_picking_evaluation_{tomo}.done"],
-                                                  tomo=prediction_tomos)
-done_segmentation_evaluation_pattern = expand([".done_patterns/run_dice_evaluation_{tomo}.done"],
-                                              tomo=prediction_tomos)
-skip_training_pattern = ".done_patterns/run_skip_training"
-skip_prediction_pattern = ".done_patterns/run_skip_prediction"
-skip_particle_picking_evaluation_pattern = ".done_patterns/{}_skip_particle_picking_eval"
-
-if config["prediction"]["active"]:
-    if config["evaluation"]["particle_picking"]["active"]:
-        start_segmentation_evaluation_when = ".done_patterns/run_particle_picking_evaluation_{tomo}.done"
-    else:
-        start_segmentation_evaluation_when = ".done_patterns/run_clustering_{tomo}.done"
-else:
-    if config["evaluation"]["particle_picking"]["active"]:
-        start_segmentation_evaluation_when = ".done_patterns/run_particle_picking_evaluation_{tomo}.done"
-    else:
-        start_segmentation_evaluation_when = ".done_patterns/run_skip_prediction"
-
 str_segmentation_names = ""
 for name in segmentation_names:
     str_segmentation_names += name + " "
 
-tomo_training_list = ""
-for tomo in training_tomos:
-    tomo_training_list += tomo + " "
+tomo_training_list = generate_training_list_str(training_tomos=training_tomos)
 
 model_path = os.path.join(output_dir, "models")
 model_path = os.path.join(model_path, model_name)
 
-# Build dependency targets:
-targets = []
-if config["training"]["active"]:
-    targets += [done_training_pattern]
-else:
-    print("training isn't active!")
-    with open(file=skip_training_pattern, mode="w"):
-        print(skip_training_pattern)
 
-if config["prediction"]["active"]:
-    targets += done_prediction_set_generation_pattern
-    targets += done_segmentation_pattern
-    targets += done_assembling_prediction_pattern
-    targets += done_clustering_pattern
-else:
-    print("prediction isn't active!")
-    print(skip_prediction_pattern)
-    with open(file=skip_prediction_pattern, mode="w"):
-        print(skip_prediction_pattern)
-
-if config["evaluation"]["particle_picking"]["active"]:
-    targets += done_particle_picking_evaluation_pattern
-if config["evaluation"]["segmentation_evaluation"]["active"]:
-    targets += done_segmentation_evaluation_pattern
-
-if config["debug"]:
-    print("TARGETS:\n", targets)
-    final_line = "rm -r .done_patterns/*"
-else:
-    final_line = "echo 'Finishing pipeline.'"
-
-if config["cluster"]["logdir"]:
+training_part_pattern = work_dir + "/training_data/{tomo_name}/train_partition.h5"
+training_model_pattern = model_path
+done_training_pattern = ".done_patterns/" + model_path + ".done"
+testing_part_pattern = work_dir + "/test_partitions/{tomo_name}/" + model_name[:-4] + "/test_partition.h5"
+segmented_part_pattern = ".done_patterns/" + model_path + ".{tomo_name}.done"
+assemble_probability_map_done = output_dir + "/predictions/" + model_name[
+                                                               :-4] + "/{tomo_name}/" + pred_class + "/probability_map.mrc"
+postprocess_prediction_done = output_dir + "/predictions/" + model_name[
+                                                             :-4] + "/{tomo_name}/" + pred_class + "/post_processed_prediction.mrc"
+particle_picking_pr_done = output_dir + "/predictions/" + model_name[
+                                                          :-4] + "/{tomo_name}/" + pred_class + "/pr_radius_" + str(
+    pr_tolerance_radius) + "/detected/.done_pp_snakemake"
+dice_evaluation_done = output_dir + "/predictions/" + model_name[
+                                                      :-4] + "/{tomo_name}/" + pred_class + "/.done_dice_eval_snakemake"
+# in_lamella_file/pr_radius_10/undetected/motl_*.csv
+if config["cluster"]["logdir"] is not None:
     os.makedirs(config["cluster"]["logdir"], exist_ok=True)
 
-# Rules
+print("training_tomos", training_tomos)
+targets = []
+if config["training"]["active"]:
+    print("training is active")
+    targets += expand([training_part_pattern], tomo_name=training_tomos)
+    targets.append(model_path)
+    targets.append(done_training_pattern)
+
+# targets += expand([output_dir + "/training_data/{tomo_name}/train_partition.h5"], tomo_name=training_tomos)
+
+if config["prediction"]["active"]:
+    targets += expand([testing_part_pattern], tomo_name=prediction_tomos)
+    targets += expand([segmented_part_pattern], tomo_name=prediction_tomos)
+    targets += expand([assemble_probability_map_done], tomo_name=prediction_tomos)
+    targets += expand([postprocess_prediction_done], tomo_name=prediction_tomos)
+
+if config["evaluation"]["particle_picking"]["active"]:
+    targets += expand([particle_picking_pr_done], tomo_name=prediction_tomos)
+if config["evaluation"]["segmentation_evaluation"]["active"]:
+    targets += expand([dice_evaluation_done], tomo_name=prediction_tomos)
+if config["cross_validation"]["active"]:
+    cv_folds = config["cross_validation"]["cv_folds"]
+    cv_statistics_file = config["cross_validation"]["statistics_file"]
+    print("todo assert len(training_tomos) > cv_folds", len(training_tomos), cv_folds)
+    print("tomo assert cv_folds > 1")
+    # assert len(training_tomos) > cv_folds
+    if config["cross_validation"]["cv_data"] is not None:
+        path_to_cv_data = config["cross_validation"]["cv_data"]
+    else:
+        print("generating cv_data.csv file")
+        path_to_cv_data = "cv_data.csv"
+        cv_training_dict, cv_evaluation_dict = generate_cv_folds(tomo_training_list=training_tomos, cv_folds=cv_folds)
+        cv_data = pd.DataFrame({"cv_fold":list(cv_training_dict.keys()),
+                                "cv_training_list": [None for _ in range(cv_folds)],
+                                "cv_evaluation_list": [None for _ in range(cv_folds)]})
+        cv_data.set_index("cv_fold", inplace=True)
+        for fold in cv_training_dict.keys():
+            print("fold:", fold)
+            cv_training_tomos = cv_training_dict[fold]
+            cv_evaluation_tomos = cv_evaluation_dict[fold]
+            cv_data["cv_training_list"][fold] = generate_training_list_str(training_tomos=cv_training_tomos)
+            cv_data["cv_evaluation_list"][fold] = generate_training_list_str(training_tomos=cv_evaluation_tomos)
+
+        cv_data_path = cv_data.to_csv(path_to_cv_data)
+        del cv_data, cv_evaluation_dict, cv_training_tomos
+
+    targets = []
+    targets += expand([training_part_pattern], tomo_name=training_tomos)
+    done_cv_eval = ".done_patterns/" + model_path[:-4] + "_{fold}.pkl.done"
+    targets += expand([done_cv_eval], fold=list(range(cv_folds)))
+print("TARGETS:\n")
+print(targets)
+# print("expanded files", expand(work_dir + "/training_data/{tomo_name}/fold_{fold}_train_partition.h5",
+#                 tomo_name=training_tomos, fold=list(range(cv_folds))))
 rule all:
     input:
          targets
-    shell:
-         final_line
 
-rule training_set_generation:
+rule partition_training:
     conda:
          "environment.yaml"
+    input:
+        ".done_patterns/run_3d_training.done" if config["training"][
+                 "active"] else ".done_patterns/run_skip_training"
     output:
-          file=".done_patterns/run_3d_training.done_set_generation_{tomo}.done"
+          file=training_part_pattern
+          # file=".done_patterns/run_3d_training.done_set_generation_{tomo}.done"
     params:
           config=user_config_file,
           logdir=config["cluster"]["logdir"],
@@ -203,22 +193,20 @@ rule training_set_generation:
          --box_shape {{box_shape}} \
          --min_label_fraction {{min_label_fraction}} \
          --max_label_fraction {{max_label_fraction}} \
-         """ + "--tomo_name {wildcards.tomo} \
-                 && touch {output.file}"
-# "echo {output.file} \
-#  && touch {output.file}"
+         """ + "--tomo_name {wildcards.tomo_name}"
 
 rule training_3dunet:
     conda:
          "environment.yaml"
     input:
-         training_set_done_file=done_training_set_generation_pattern
+         training_set_done_file=expand([training_part_pattern], tomo_name=training_tomos)
     output:
-          file=".done_patterns/run_3d_training.done"
+          file=model_path,
+          done=done_training_pattern
     params:
           config=user_config_file,
           logdir=config["cluster"]["logdir"],
-          walltime="8:00:00",
+          walltime="04:30:00",
           nodes=1,
           cores=4,
           memory="40G",
@@ -249,17 +237,61 @@ rule training_3dunet:
         --processing_tomo  {{processing_tomo}} \
         --partition_name  {{partition_name}} \
         --model_name {{model_name}} \
-        """ + " --gpu $CUDA_VISIBLE_DEVICES \
-        && touch {output.file}"
+        """ + "--gpu $CUDA_VISIBLE_DEVICES"
 
-rule generate_prediction_partition:
+
+rule cross_validation_3dunet:
     conda:
          "environment.yaml"
     input:
-         ".done_patterns/run_3d_training.done" if config["training"][
-             "active"] else ".done_patterns/run_skip_training"
+         training_set_done_file=expand([training_part_pattern], tomo_name=training_tomos)
     output:
-          file=".done_patterns/run_prediction_set_generation_{tomo}.done"
+          done=".done_patterns/" + model_path[:-4] + "_{fold}.pkl.done"
+    params:
+          config=user_config_file,
+          logdir=config["cluster"]["logdir"],
+          walltime="10:00:00",
+          nodes=1,
+          cores=4,
+          memory="40G",
+          gres='#SBATCH -p gpu\n#SBATCH --gres=gpu:4'
+    resources:
+          gpu=4
+    shell:
+         f"""
+         python3 {scriptdir}/cross_validation_unet.py \
+         --pythonpath {srcdir} \
+         --partition_name  {{partition_name}} \
+         --segmentation_names  {{segmentation_names}} \
+         --dataset_table  {{dataset_table}} \
+         --output_dir  {{output_dir}} \
+         --work_dir  {{work_dir}} \
+         --box_shape  {{box_shape}} \
+         --split  {{split}} \
+         --n_epochs  {{n_epochs}} \
+         --depth  {{depth}} \
+         --decoder_dropout  {{decoder_dropout}} \
+         --encoder_dropout  {{encoder_dropout}} \
+         --batch_size  {{batch_size}} \
+         --batch_norm  {{BatchNorm}} \
+         --initial_features  {{initial_features}} \
+         --overlap  {{overlap}} \
+         --processing_tomo  {{processing_tomo}} \
+         --partition_name  {{partition_name}} \
+         --model_name {{model_name}} \
+         --statistics_file {{cv_statistics_file}} \
+         --cv_data_path {{path_to_cv_data}} \
+         --fold {{wildcards.fold}} \
+         """ + "--gpu $CUDA_VISIBLE_DEVICES"
+
+rule predict_partition:
+    conda:
+         "environment.yaml"
+    input:
+         file=model_path,
+         done=done_training_pattern if config["training"]["active"] else model_path
+    output:
+          file=testing_part_pattern
     params:
           config=user_config_file,
           logdir=config["cluster"]["logdir"],
@@ -278,16 +310,15 @@ rule generate_prediction_partition:
         --model_name {{model_name}} \
         --test_partition {{pred_partition_name}} \
         --processing_tomo {{pred_processing_tomo}} \
-        """ + "--tomo_name {wildcards.tomo} \
-        && touch {output.file}"
+        """ + "--tomo_name {wildcards.tomo_name}"
 
 rule segment:
     conda:
          "environment.yaml"
     input:
-         ".done_patterns/run_prediction_set_generation_{tomo}.done"
+         testing_part_pattern
     output:
-          file=".done_patterns/run_segmentation_{tomo}.done"
+          file=segmented_part_pattern
     params:
           config=user_config_file,
           logdir=config["cluster"]["logdir"],
@@ -308,17 +339,16 @@ rule segment:
         --model_name {{model_name}} \
         --test_partition {{pred_partition_name}} \
         --processing_tomo {{pred_processing_tomo}} \
-        """ + "--tomo_name {wildcards.tomo} \
-         --gpu $CUDA_VISIBLE_DEVICES \
-        && touch {output.file}"
+        """ + "--tomo_name {wildcards.tomo_name} \
+         --gpu $CUDA_VISIBLE_DEVICES"
 
 rule assemble_prediction:
     conda:
          "environment.yaml"
     input:
-         ".done_patterns/run_segmentation_{tomo}.done"
+         segmented_part_pattern
     output:
-          file=".done_patterns/run_assembling_prediction_{tomo}.done"
+          file=assemble_probability_map_done
     params:
           config=user_config_file,
           logdir=config["cluster"]["logdir"],
@@ -338,23 +368,22 @@ rule assemble_prediction:
         --test_partition {{pred_partition_name}} \
         --class_number {{pred_class_number}} \
         --processing_tomo {{pred_processing_tomo}} \
-        """ + "--tomo_name {wildcards.tomo} \
-        && touch {output.file}"
+        """ + "--tomo_name {wildcards.tomo_name}"
 
-rule clustering_and_cleaning:
+rule postprocess_prediction:
     conda:
          "environment.yaml"
     input:
-         ".done_patterns/run_assembling_prediction_{tomo}.done"
+         assemble_probability_map_done
     output:
-          file=".done_patterns/run_clustering_{tomo}.done"
+          postprocess_prediction_done
     params:
           config=user_config_file,
           logdir=config["cluster"]["logdir"],
-          walltime="00:40:00",
+          walltime="01:30:00",
           nodes=1,
           cores=4,
-          memory="10G",
+          memory="30G",
           gres=''
     shell:
          f"""
@@ -368,18 +397,17 @@ rule clustering_and_cleaning:
         --max_cluster_size {{max_cluster_size}} \
         --threshold {{threshold}} \
         --dataset_table {{dataset_table}} \
+        --filtering_mask {{filtering_mask}} \
         --calculate_motl {{calculate_motl}} \
-        """ + "--tomo_name {wildcards.tomo} \
-        && touch {output.file}"
+        """ + "--tomo_name {wildcards.tomo_name}"
 
 rule particle_picking_evaluation:
     conda:
          "environment.yaml"
     input:
-         done_clustering_and_cleaning_file=".done_patterns/run_clustering_{tomo}.done" if config["prediction"][
-             "active"] else skip_prediction_pattern
+         done_clustering_and_cleaning_file=postprocess_prediction_done
     output:
-          file=".done_patterns/run_particle_picking_evaluation_{tomo}.done"
+          file=particle_picking_pr_done
     params:
           config=user_config_file,
           logdir=config["cluster"]["logdir"],
@@ -397,20 +425,17 @@ rule particle_picking_evaluation:
         --model_name {{model_name}} \
         --class_number {{pred_class_number}} \
         --calculate_motl {{calculate_motl}} \
-        --filtering_mask {{filtering_mask}} \
-        --calculate_motl {{calculate_motl}} \
         --statistics_file {{pr_statistics_file}} \
         --radius {{pr_tolerance_radius}} \
-        """ + "--tomo_name {wildcards.tomo} \
-        && touch {output.file}"
+        """ + "--tomo_name {wildcards.tomo_name}"
 
 rule segmentation_evaluation:
     conda:
          "environment.yaml"
     input:
-         start_segmentation_evaluation_when
+         done_clustering_and_cleaning_file=postprocess_prediction_done
     output:
-          file=".done_patterns/run_dice_evaluation_{tomo}.done"
+          file=dice_evaluation_done
     params:
           config=user_config_file,
           logdir=config["cluster"]["logdir"],
@@ -429,5 +454,4 @@ rule segmentation_evaluation:
         --class_number {{pred_class_number}} \
         --filtering_mask {{filtering_mask}} \
         --statistics_file {{dice_eval_statistics_file}} \
-        """ + "--tomo_name {wildcards.tomo} \
-        && touch {output.file}"
+        """ + "--tomo_name {wildcards.tomo_name}"
