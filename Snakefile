@@ -85,12 +85,11 @@ tomo_training_list = generate_training_list_str(training_tomos=training_tomos)
 model_path = os.path.join(output_dir, "models")
 model_path = os.path.join(model_path, model_name)
 
-
 training_part_pattern = work_dir + "/training_data/{tomo_name}/train_partition.h5"
 training_model_pattern = model_path
 done_training_pattern = ".done_patterns/" + model_path + ".done"
 testing_part_pattern = work_dir + "/test_partitions/{tomo_name}/" + model_name[:-4] + "/test_partition.h5"
-segmented_part_pattern = ".done_patterns/" + model_path + ".{tomo_name}.done"
+segmented_part_pattern = ".done_patterns/" + model_path + ".{tomo_name}.segmentation.done"
 assemble_probability_map_done = output_dir + "/predictions/" + model_name[
                                                                :-4] + "/{tomo_name}/" + pred_class + "/probability_map.mrc"
 postprocess_prediction_done = output_dir + "/predictions/" + model_name[
@@ -108,35 +107,32 @@ print("training_tomos", training_tomos)
 targets = []
 if config["training"]["active"]:
     print("training is active")
-    targets += expand([training_part_pattern], tomo_name=training_tomos)
     targets.append(model_path)
     targets.append(done_training_pattern)
 
-# targets += expand([output_dir + "/training_data/{tomo_name}/train_partition.h5"], tomo_name=training_tomos)
-
 if config["prediction"]["active"]:
-    targets += expand([testing_part_pattern], tomo_name=prediction_tomos)
-    targets += expand([segmented_part_pattern], tomo_name=prediction_tomos)
-    targets += expand([assemble_probability_map_done], tomo_name=prediction_tomos)
     targets += expand([postprocess_prediction_done], tomo_name=prediction_tomos)
 
 if config["evaluation"]["particle_picking"]["active"]:
     targets += expand([particle_picking_pr_done], tomo_name=prediction_tomos)
 if config["evaluation"]["segmentation_evaluation"]["active"]:
     targets += expand([dice_evaluation_done], tomo_name=prediction_tomos)
+
 if config["cross_validation"]["active"]:
     cv_folds = config["cross_validation"]["cv_folds"]
-    cv_statistics_file = config["cross_validation"]["statistics_file"]
+    cv_statistics_file = "dice_" + config["cross_validation"]["statistics_file"]
+    cv_statistics_file_pp = "pp_" + config["cross_validation"]["statistics_file"]
     print("todo assert len(training_tomos) > cv_folds", len(training_tomos), cv_folds)
     print("tomo assert cv_folds > 1")
-    # assert len(training_tomos) > cv_folds
+    assert len(training_tomos) >= cv_folds
+    assert cv_folds >= 2
     if config["cross_validation"]["cv_data"] is not None:
         path_to_cv_data = config["cross_validation"]["cv_data"]
     else:
         print("generating cv_data.csv file")
         path_to_cv_data = "cv_data.csv"
         cv_training_dict, cv_evaluation_dict = generate_cv_folds(tomo_training_list=training_tomos, cv_folds=cv_folds)
-        cv_data = pd.DataFrame({"cv_fold":list(cv_training_dict.keys()),
+        cv_data = pd.DataFrame({"cv_fold": list(cv_training_dict.keys()),
                                 "cv_training_list": [None for _ in range(cv_folds)],
                                 "cv_evaluation_list": [None for _ in range(cv_folds)]})
         cv_data.set_index("cv_fold", inplace=True)
@@ -151,13 +147,12 @@ if config["cross_validation"]["active"]:
         del cv_data, cv_evaluation_dict, cv_training_tomos
 
     targets = []
-    targets += expand([training_part_pattern], tomo_name=training_tomos)
     done_cv_eval = ".done_patterns/" + model_path[:-4] + "_{fold}.pkl.done"
-    targets += expand([done_cv_eval], fold=list(range(cv_folds)))
+    done_cv_pp = ".done_patterns/" + model_path[:-4] + "_{fold}.pkl.done_pp_cv_snakemake"
+    targets += expand([done_cv_pp], fold=list(range(cv_folds)))
 print("TARGETS:\n")
 print(targets)
-# print("expanded files", expand(work_dir + "/training_data/{tomo_name}/fold_{fold}_train_partition.h5",
-#                 tomo_name=training_tomos, fold=list(range(cv_folds))))
+
 rule all:
     input:
          targets
@@ -167,7 +162,6 @@ rule partition_training:
          "environment.yaml"
     output:
           file=training_part_pattern
-          # file=".done_patterns/run_3d_training.done_set_generation_{tomo}.done"
     params:
           config=user_config_file,
           logdir=config["cluster"]["logdir"],
@@ -236,7 +230,6 @@ rule training_3dunet:
         --model_name {{model_name}} \
         """ + "--gpu $CUDA_VISIBLE_DEVICES"
 
-
 rule cross_validation_3dunet:
     conda:
          "environment.yaml"
@@ -253,7 +246,7 @@ rule cross_validation_3dunet:
           memory="40G",
           gres='#SBATCH -p gpu\n#SBATCH --gres=gpu:4'
     resources:
-          gpu=4
+             gpu=4
     shell:
          f"""
          python3 {scriptdir}/cross_validation_unet.py \
@@ -284,9 +277,8 @@ rule cross_validation_3dunet:
 rule predict_partition:
     conda:
          "environment.yaml"
-    input:
-         file=model_path,
-         done=done_training_pattern if config["training"]["active"] else model_path
+         # input:
+         #       done=[model_path, done_training_pattern] if config["training"]["active"] else model_path
     output:
           file=testing_part_pattern
     params:
@@ -313,6 +305,7 @@ rule segment:
     conda:
          "environment.yaml"
     input:
+         done=[model_path, done_training_pattern, testing_part_pattern] if config["training"]["active"] else
          testing_part_pattern
     output:
           file=segmented_part_pattern
@@ -452,3 +445,43 @@ rule segmentation_evaluation:
         --filtering_mask {{filtering_mask}} \
         --statistics_file {{dice_eval_statistics_file}} \
         """ + "--tomo_name {wildcards.tomo_name}"
+
+rule cross_validation_particle_picking:
+    conda:
+         "environment.yaml"
+    input:
+         done_cv_eval=".done_patterns/" + model_path[:-4] + "_{fold}.pkl.done",
+    output:
+          done=".done_patterns/" + model_path[:-4] + "_{fold}.pkl.done_pp_cv_snakemake"
+    params:
+          config=user_config_file,
+          logdir=config["cluster"]["logdir"],
+          walltime="05:00:00",
+          nodes=1,
+          cores=4,
+          memory="40G",
+          gres='#SBATCH -p gpu\n#SBATCH --gres=gpu:4'
+    resources:
+             gpu=4
+    shell:
+         f"""
+         python3 {scriptdir}/cross_validation_particle_picking.py \
+         --pythonpath {srcdir} \
+         --test_partition  {{pred_partition_name}} \
+         --dataset_table  {{dataset_table}} \
+         --output_dir  {{output_dir}} \
+         --work_dir  {{work_dir}} \
+         --processing_tomo  {{pred_processing_tomo}} \
+         --model_name {{model_name}} \
+         --statistics_file {{cv_statistics_file_pp}} \
+         --cv_data_path {{path_to_cv_data}} \
+         --fold {{wildcards.fold}} \
+         --class_number {{pred_class_number}} \
+         --min_cluster_size {{min_cluster_size}} \
+         --max_cluster_size {{max_cluster_size}} \
+         --threshold {{threshold}} \
+         --dataset_table {{dataset_table}} \
+         --filtering_mask {{filtering_mask}} \
+         --calculate_motl {{calculate_motl}} \
+         --radius {{pr_tolerance_radius}} \
+         """ + "--gpu $CUDA_VISIBLE_DEVICES"

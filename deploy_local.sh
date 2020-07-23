@@ -6,14 +6,6 @@ echo CUDA_VISIBLE_DEVICES=$CUDA_VISIBLE_DEVICES
 export PYTHONPATH=${srcdir}/src
 echo PYTHONPATH=$PYTHONPATH
 
-#snakemake \
-#    --snakefile "${srcdir}/Snakefile" \
-#    --config config="${config_file}" gpu=$CUDA_VISIBLE_DEVICES \
-#    --forceall \
-#    --use-conda \
-#    --printshellcmds \
-#    --cores 1 --resources gpu=1
-
 snakemake \
     --snakefile "${srcdir}/Snakefile" \
     --config config="${config_file}" gpu=$CUDA_VISIBLE_DEVICES \

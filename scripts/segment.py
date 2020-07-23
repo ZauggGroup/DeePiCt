@@ -104,7 +104,7 @@ print("The segmentation has finished!")
 
 ### For snakemake:
 model_path = os.path.join(models_dir, args.model_name)
-snakemake_pattern = ".done_patterns/" + model_path + "." + tomo_name + ".done"
+snakemake_pattern = ".done_patterns/" + model_path + "." + tomo_name + ".segmentation.done"
 snakemake_pattern_dir = os.path.dirname(snakemake_pattern)
 os.makedirs(snakemake_pattern_dir, exist_ok=True)
 with open(file=snakemake_pattern, mode="w") as f:

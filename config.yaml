@@ -13,7 +13,7 @@ tomos_sets:
   training_list: [  "180426/005", "180426/021", "180426/024",
                     "181119/030", "181126/002", "181126/012",
                     "181126/025", "180426/004", "181119/002"]
-  prediction_list: []
+  prediction_list: [""]
   # Tomograms in dataset_table for prediction ["tomo1", "tomo2", ...]
 
 cross_validation:

@@ -18,6 +18,15 @@ def testing_partition_path(output_dir: str, tomo_name: str, model_name: str, par
     return output_path_dir, output_path
 
 
+def fold_testing_partition_path(output_dir: str, tomo_name: str, model_name: str, partition_name: str, fold: str):
+    output_path_dir = os.path.join(output_dir, "test_partitions")
+    output_path_dir = os.path.join(output_path_dir, tomo_name)
+    output_path_dir = os.path.join(output_path_dir, model_name)
+    output_h5_file_name = partition_name + fold + ".h5"
+    output_path = os.path.join(output_path_dir, output_h5_file_name)
+    return output_path_dir, output_path
+
+
 def get_probability_map_path(output_dir: str, model_name: str, tomo_name: str, semantic_class: str):
     tomo_output_dir = os.path.join(output_dir, "predictions")
     tomo_output_dir = os.path.join(tomo_output_dir, model_name)

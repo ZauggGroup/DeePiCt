@@ -253,3 +253,8 @@ os.makedirs(os.path.dirname(snakemake_pattern), exist_ok=True)
 with open(file=snakemake_pattern, mode="w") as f:
     print("Creating snakemake pattern", snakemake_pattern)
 
+snakemake_pattern = ".done_patterns/" + model_path[:-6] + ".pkl.done"
+os.makedirs(os.path.dirname(snakemake_pattern), exist_ok=True)
+with open(file=snakemake_pattern, mode="w") as f:
+    print("Creating snakemake pattern", snakemake_pattern)
+
