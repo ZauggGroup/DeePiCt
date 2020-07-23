@@ -10,6 +10,7 @@ parser.add_argument("-class_number", "--class_number", type=int)
 parser.add_argument("-output_dir", "--output_dir", type=str)
 parser.add_argument("-filtering_mask", "--filtering_mask", type=str)
 parser.add_argument("-model_name", "--model_name", type=str)
+parser.add_argument("-segmentation_names", "--segmentation_names", nargs='+', type=str)
 
 args = parser.parse_args()
 pythonpath = args.pythonpath
@@ -34,23 +35,14 @@ class_number = args.class_number
 statistics_file = args.statistics_file
 filtering_mask = args.filtering_mask
 model_name = args.model_name[:-4]
-
 label_name = model_name
 
-models_dir = os.path.join(output_dir, "models")
-models_table = os.path.join(models_dir, "models.csv")
-ModelsHeader = ModelsTableHeader()
-models_df = pd.read_csv(models_table,
-                        dtype={ModelsHeader.model_name: str,
-                               ModelsHeader.semantic_classes: str})
-
-model_df = models_df[models_df[ModelsHeader.model_name] == model_name]
-print(model_df)
-assert model_df.shape[0] == 1
-semantic_classes = model_df.iloc[0][ModelsHeader.semantic_classes].split(',')
+semantic_classes = args.segmentation_names
 semantic_class = semantic_classes[class_number]
 
-prediction_path = get_post_processed_prediction_path(output_dir=output_dir, model_name=model_name, tomo_name=tomo_name,
+prediction_path = get_post_processed_prediction_path(output_dir=output_dir,
+                                                     model_name=model_name,
+                                                     tomo_name=tomo_name,
                                                      semantic_class=semantic_class)
 print(prediction_path)
 assert os.path.isfile(prediction_path), "The prediction file does not exist!"
@@ -58,7 +50,6 @@ assert os.path.isfile(prediction_path), "The prediction file does not exist!"
 DTHeader = DatasetTableHeader(semantic_classes=semantic_classes, filtering_mask=filtering_mask)
 df = pd.read_csv(dataset_table)
 df[DTHeader.tomo_name] = df[DTHeader.tomo_name].astype(str)
-class_name = semantic_classes[class_number]
 clean_mask_name = DTHeader.masks_names[class_number]
 
 tomo_df = df[df[DTHeader.tomo_name] == tomo_name]
@@ -101,6 +92,7 @@ if statistics_file != "None":
                      stat_measure=dice_statistic)
 
 print("Dice coefficient =", dice_statistic)
+
 ### For snakemake:
 prediction_dir = os.path.dirname(prediction_path)
 snakemake_pattern = os.path.join(prediction_dir, ".done_dice_eval_snakemake")

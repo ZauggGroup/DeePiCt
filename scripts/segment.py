@@ -11,6 +11,15 @@ parser.add_argument("-model_name", "--model_name", type=str)
 parser.add_argument("-test_partition", "--test_partition", type=str)
 parser.add_argument("-processing_tomo", "--processing_tomo", type=str)
 parser.add_argument("-tomo_name", "--tomo_name", type=str)
+parser.add_argument("-depth", "--depth", type=int)
+parser.add_argument("-decoder_dropout", "--decoder_dropout", type=float)
+parser.add_argument("-encoder_dropout", "--encoder_dropout", type=float)
+parser.add_argument("-batch_size", "--batch_size", type=int)
+parser.add_argument("-batch_norm", "--batch_norm", type=bool)
+parser.add_argument("-initial_features", "--initial_features", type=int)
+parser.add_argument("-segmentation_names", "--segmentation_names", nargs='+', type=str)
+parser.add_argument("-overlap", "--overlap", type=int)
+parser.add_argument("-box_shape", "--box_shape", type=int)
 
 args = parser.parse_args()
 pythonpath = args.pythonpath
@@ -23,7 +32,7 @@ import torch
 import torch.nn as nn
 
 from collections import OrderedDict
-from constants.dataset_tables import ModelsTableHeader, DatasetTableHeader
+from constants.dataset_tables import DatasetTableHeader
 from file_actions.writers.h5 import segment_and_write
 from networks.io import get_device
 from networks.unet import UNet3D, UNet
@@ -45,27 +54,22 @@ test_partition = args.test_partition
 processing_tomo = args.processing_tomo
 tomo_name = args.tomo_name
 
-models_dir = os.path.join(output_dir, "models")
-models_table = os.path.join(models_dir, "models.csv")
-
 output_dir_tomo, partition_path = testing_partition_path(output_dir=work_dir, tomo_name=tomo_name,
                                                          model_name=model_name, partition_name=test_partition)
-ModelsHeader = ModelsTableHeader()
-models_df = pd.read_csv(models_table, dtype=ModelsHeader.dtype_dict)
-model_df = models_df[models_df[ModelsHeader.model_name] == model_name]
-print(model_df)
-assert model_df.shape[0] == 1
-overlap = model_df.iloc[0][ModelsHeader.overlap]
-box_shape = int(model_df.iloc[0][ModelsHeader.box_size])
+overlap = args.overlap
+box_shape = args.box_shape
 box_shape = [box_shape, box_shape, box_shape]
-path_to_model = model_df.iloc[0][ModelsHeader.model_path]
-initial_features = model_df.iloc[0][ModelsHeader.initial_features]
-depth = model_df.iloc[0][ModelsHeader.depth]
-output_classes = model_df.iloc[0][ModelsHeader.output_classes]
-BN = model_df.iloc[0][ModelsHeader.batch_normalization].astype(bool)
-encoder_dropout = model_df.iloc[0][ModelsHeader.encoder_dropout]
-decoder_dropout = model_df.iloc[0][ModelsHeader.decoder_dropout]
+path_to_model = args.model_name #model_df.iloc[0][ModelsHeader.model_path]
+depth = args.depth
+decoder_dropout = args.decoder_dropout
+encoder_dropout = args.encoder_dropout
+batch_size = args.batch_size
+BN = args.batch_norm
+initial_features = args.initial_features
+# output_classes = model_df.iloc[0][ModelsHeader.output_classes]
 label_name = model_name
+segmentation_names = args.segmentation_names
+output_classes = len(segmentation_names)
 
 net_conf = {'final_activation': None, 'depth': depth,
             'initial_features': initial_features, "out_channels": output_classes,
@@ -103,8 +107,7 @@ segment_and_write(data_path=partition_path, model=model, label_name=label_name)
 print("The segmentation has finished!")
 
 ### For snakemake:
-model_path = os.path.join(models_dir, args.model_name)
-snakemake_pattern = ".done_patterns/" + model_path + "." + tomo_name + ".segmentation.done"
+snakemake_pattern = ".done_patterns/" + path_to_model + "." + tomo_name + ".segmentation.done"
 snakemake_pattern_dir = os.path.dirname(snakemake_pattern)
 os.makedirs(snakemake_pattern_dir, exist_ok=True)
 with open(file=snakemake_pattern, mode="w") as f:

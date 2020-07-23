@@ -82,8 +82,11 @@ for name in segmentation_names:
 
 tomo_training_list = generate_training_list_str(training_tomos=training_tomos)
 
-model_path = os.path.join(output_dir, "models")
-model_path = os.path.join(model_path, model_name)
+if config["cross_validation"]["active"]:
+    model_path = os.path.join(output_dir, "models")
+    model_path = os.path.join(model_path, model_name)
+else:
+    model_path = model_name
 
 training_part_pattern = work_dir + "/training_data/{tomo_name}/train_partition.h5"
 training_model_pattern = model_path
@@ -99,7 +102,6 @@ particle_picking_pr_done = output_dir + "/predictions/" + model_name[
     pr_tolerance_radius) + "/detected/.done_pp_snakemake"
 dice_evaluation_done = output_dir + "/predictions/" + model_name[
                                                       :-4] + "/{tomo_name}/" + pred_class + "/.done_dice_eval_snakemake"
-# in_lamella_file/pr_radius_10/undetected/motl_*.csv
 if config["cluster"]["logdir"] is not None:
     os.makedirs(config["cluster"]["logdir"], exist_ok=True)
 
@@ -112,9 +114,13 @@ if config["training"]["active"]:
 
 if config["prediction"]["active"]:
     targets += expand([postprocess_prediction_done], tomo_name=prediction_tomos)
+else:
+    with open(".done_patterns/.skip_prediction", mode="w") as f:
+        print("skipping prediction")
 
 if config["evaluation"]["particle_picking"]["active"]:
     targets += expand([particle_picking_pr_done], tomo_name=prediction_tomos)
+
 if config["evaluation"]["segmentation_evaluation"]["active"]:
     targets += expand([dice_evaluation_done], tomo_name=prediction_tomos)
 
@@ -277,8 +283,6 @@ rule cross_validation_3dunet:
 rule predict_partition:
     conda:
          "environment.yaml"
-         # input:
-         #       done=[model_path, done_training_pattern] if config["training"]["active"] else model_path
     output:
           file=testing_part_pattern
     params:
@@ -299,6 +303,8 @@ rule predict_partition:
         --model_name {{model_name}} \
         --test_partition {{pred_partition_name}} \
         --processing_tomo {{pred_processing_tomo}} \
+        --box_shape  {{box_shape}} \
+        --overlap  {{overlap}} \
         """ + "--tomo_name {wildcards.tomo_name}"
 
 rule segment:
@@ -329,6 +335,15 @@ rule segment:
         --model_name {{model_name}} \
         --test_partition {{pred_partition_name}} \
         --processing_tomo {{pred_processing_tomo}} \
+        --depth  {{depth}} \
+        --decoder_dropout  {{decoder_dropout}} \
+        --encoder_dropout  {{encoder_dropout}} \
+        --batch_size  {{batch_size}} \
+        --batch_norm  {{BatchNorm}} \
+        --initial_features  {{initial_features}} \
+        --segmentation_names  {{segmentation_names}} \
+        --box_shape  {{box_shape}} \
+        --overlap  {{overlap}} \
         """ + "--tomo_name {wildcards.tomo_name} \
          --gpu $CUDA_VISIBLE_DEVICES"
 
@@ -358,6 +373,9 @@ rule assemble_prediction:
         --test_partition {{pred_partition_name}} \
         --class_number {{pred_class_number}} \
         --processing_tomo {{pred_processing_tomo}} \
+        --segmentation_names  {{segmentation_names}} \
+        --box_shape  {{box_shape}} \
+        --overlap  {{overlap}} \
         """ + "--tomo_name {wildcards.tomo_name}"
 
 rule postprocess_prediction:
@@ -388,14 +406,14 @@ rule postprocess_prediction:
         --threshold {{threshold}} \
         --dataset_table {{dataset_table}} \
         --filtering_mask {{filtering_mask}} \
-        --calculate_motl {{calculate_motl}} \
+        --segmentation_names  {{segmentation_names}} \
         """ + "--tomo_name {wildcards.tomo_name}"
 
 rule particle_picking_evaluation:
     conda:
          "environment.yaml"
     input:
-         done_clustering_and_cleaning_file=postprocess_prediction_done
+          postprocess_prediction_done if config["prediction"]["active"] else ".done_patterns/.skip_prediction"
     output:
           file=particle_picking_pr_done
     params:
@@ -417,13 +435,14 @@ rule particle_picking_evaluation:
         --calculate_motl {{calculate_motl}} \
         --statistics_file {{pr_statistics_file}} \
         --radius {{pr_tolerance_radius}} \
+        --segmentation_names  {{segmentation_names}} \
         """ + "--tomo_name {wildcards.tomo_name}"
 
 rule segmentation_evaluation:
     conda:
          "environment.yaml"
     input:
-         done_clustering_and_cleaning_file=postprocess_prediction_done
+          postprocess_prediction_done if config["prediction"]["active"] else ".done_patterns/.skip_prediction"
     output:
           file=dice_evaluation_done
     params:
@@ -444,6 +463,7 @@ rule segmentation_evaluation:
         --class_number {{pred_class_number}} \
         --filtering_mask {{filtering_mask}} \
         --statistics_file {{dice_eval_statistics_file}} \
+        --segmentation_names  {{segmentation_names}} \
         """ + "--tomo_name {wildcards.tomo_name}"
 
 rule cross_validation_particle_picking:

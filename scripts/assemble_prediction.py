@@ -13,6 +13,9 @@ parser.add_argument("-test_partition", "--test_partition", type=str)
 parser.add_argument("-tomo_name", "--tomo_name", type=str)
 parser.add_argument("-processing_tomo", "--processing_tomo", type=str)
 parser.add_argument("-class_number", "--class_number", type=int)
+parser.add_argument("-segmentation_names", "--segmentation_names", nargs='+', type=str)
+parser.add_argument("-overlap", "--overlap", type=int)
+parser.add_argument("-box_shape", "--box_shape", type=int)
 
 args = parser.parse_args()
 pythonpath = args.pythonpath
@@ -23,7 +26,7 @@ import os
 import pandas as pd
 
 from constants import h5_internal_paths
-from constants.dataset_tables import ModelsTableHeader, DatasetTableHeader
+from constants.dataset_tables import DatasetTableHeader
 from file_actions.writers.h5 import assemble_tomo_from_subtomos
 from file_actions.readers.tomograms import load_tomogram
 from paths.pipeline_dirs import get_probability_map_path, testing_partition_path
@@ -40,20 +43,10 @@ output_dir_tomo, data_partition = testing_partition_path(output_dir=work_dir, to
                                                          model_name=model_name, partition_name=test_partition)
 
 segmentation_label = model_name
-models_table = get_models_table_path(output_dir)
-ModelsHeader = ModelsTableHeader()
-models_df = pd.read_csv(models_table,
-                        dtype={ModelsHeader.model_name: str,
-                               ModelsHeader.semantic_classes: str})
-
-model_df = models_df[models_df[ModelsHeader.model_name] == model_name]
-assert model_df.shape[0] < 2, "several models have the same name in models.csv"
-assert model_df.shape[0] > 0, "no model with that name in models.csv"
-
-overlap = model_df.iloc[0][ModelsHeader.overlap]
-box_shape = int(model_df.iloc[0][ModelsHeader.box_size])
+overlap = args.overlap
+box_shape = args.box_shape
 box_shape = [box_shape, box_shape, box_shape]
-semantic_names = model_df.iloc[0]['segmentation_names'].split(',')
+semantic_names = args.segmentation_names
 semantic_class = semantic_names[class_number]
 
 tomo_output_dir, output_path = get_probability_map_path(output_dir, model_name, tomo_name, semantic_class)

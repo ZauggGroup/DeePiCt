@@ -11,8 +11,8 @@ parser.add_argument("-min_cluster_size", "--min_cluster_size", type=int)
 parser.add_argument("-max_cluster_size", "--max_cluster_size", type=int)
 parser.add_argument("-threshold", "--threshold", type=float)
 parser.add_argument("-dataset_table", "--dataset_table", type=str)
-parser.add_argument("-calculate_motl", "--calculate_motl", type=str)
 parser.add_argument("-filtering_mask", "--filtering_mask", type=str)
+parser.add_argument("-segmentation_names", "--segmentation_names", nargs='+', type=str)
 
 args = parser.parse_args()
 pythonpath = args.pythonpath
@@ -23,8 +23,6 @@ from os import listdir
 
 import pandas as pd
 import numpy as np
-from distutils.util import strtobool
-from constants.dataset_tables import ModelsTableHeader, DatasetTableHeader
 from file_actions.readers.tomograms import load_tomogram
 from file_actions.writers.csv import build_tom_motive_list
 from file_actions.writers.tomogram import write_tomogram
@@ -39,25 +37,12 @@ min_cluster_size = args.min_cluster_size
 max_cluster_size = args.max_cluster_size
 threshold = args.threshold
 dataset_table = args.dataset_table
-calculate_motl = strtobool(args.calculate_motl)
+calculate_motl = True
 tomo_name = args.tomo_name
 filtering_mask = args.filtering_mask
 
-models_table = os.path.join(output_dir, "models")
-models_table = os.path.join(models_table, "models.csv")
-label_name = model_name
-
-ModelsHeader = ModelsTableHeader()
-models_df = pd.read_csv(models_table, dtype=ModelsHeader.dtype_dict)
-model_df = models_df[models_df[ModelsHeader.model_name] == model_name]
-print(model_df)
-assert model_df.shape[0] == 1
-overlap = model_df.iloc[0][ModelsHeader.overlap]
-box_shape = int(model_df.iloc[0][ModelsHeader.box_size])
-box_shape = [box_shape, box_shape, box_shape]
-
 segmentation_label = model_name
-semantic_names = model_df.iloc[0][ModelsHeader.semantic_classes].split(',')
+semantic_names = args.segmentation_names
 semantic_class = semantic_names[class_number]
 
 DTHeader = DatasetTableHeader()
@@ -92,12 +77,6 @@ else:
     prediction_dataset = prediction_dataset[:shx, :shy, :shz]
     prediction_dataset = np.array(mask_indicator, dtype=float) * np.array(prediction_dataset,
                                                                           dtype=float)
-    tmp_output_path = get_post_processed_prediction_path(output_dir=output_dir, model_name=model_name,
-                                       tomo_name=tomo_name,
-                                       semantic_class=semantic_class + "_tmp")
-    os.makedirs(os.path.dirname(tmp_output_path), exist_ok=True)
-    write_tomogram(output_path=tmp_output_path, tomo_data=prediction_dataset)
-
 if np.max(prediction_dataset) > 0:
     clusters_labeled_by_size, centroids_list, cluster_size_list = \
         get_cluster_centroids(dataset=prediction_dataset,

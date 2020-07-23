@@ -24,48 +24,60 @@ def precision_recall_calculator(predicted_coordinates: np.array or list,
     precision = list()
     recall = list()
     total_true_points = len(true_coordinates)
-    assert total_true_points > 0 and len(predicted_coordinates) > 0, "one empty list here!"
-    predicted_false_positives = list()
-    value_predicted_false_positives = list()
-    for value, point in zip(value_predicted, predicted_coordinates):
-        close_to_point = get_clean_points_close2point(point,
-                                                      true_coordinates,
-                                                      radius)
-        if len(close_to_point) > 0:
-            flag = "true_positive_candidate"
-            flag_tmp = "not_redundant_yet"
-            for clean_p in close_to_point:
-                if flag == "true_positive_candidate":
-                    if tuple(clean_p) not in detected_true:
-                        detected_true.append(tuple(clean_p))
-                        flag = "true_positive"
-                    else:
-                        flag_tmp = "redundant_candidate"
-                # else:
-                # print(point, "is already flagged as true positive")
-            if flag == "true_positive":
-                predicted_true_positives.append(tuple(point))
-                value_predicted_true_positives.append(value)
-            elif flag == "true_positive_candidate" and \
-                    flag_tmp == "redundant_candidate":
-                predicted_redundant.append(tuple(point))
-                value_predicted_redundant.append(value)
+    assert total_true_points > 0, "one empty list here!"
+    if len(predicted_coordinates) == 0:
+        print("No predicted points")
+        precision = []
+        recall = []
+        detected_true = []
+        predicted_true_positives = []
+        predicted_false_positives = []
+        value_predicted_true_positives = []
+        value_predicted_false_positives = []
+        predicted_redundant = []
+        value_predicted_redundant = []
+    else:
+        predicted_false_positives = list()
+        value_predicted_false_positives = list()
+        for value, point in zip(value_predicted, predicted_coordinates):
+            close_to_point = get_clean_points_close2point(point,
+                                                          true_coordinates,
+                                                          radius)
+            if len(close_to_point) > 0:
+                flag = "true_positive_candidate"
+                flag_tmp = "not_redundant_yet"
+                for clean_p in close_to_point:
+                    if flag == "true_positive_candidate":
+                        if tuple(clean_p) not in detected_true:
+                            detected_true.append(tuple(clean_p))
+                            flag = "true_positive"
+                        else:
+                            flag_tmp = "redundant_candidate"
+                    # else:
+                    # print(point, "is already flagged as true positive")
+                if flag == "true_positive":
+                    predicted_true_positives.append(tuple(point))
+                    value_predicted_true_positives.append(value)
+                elif flag == "true_positive_candidate" and \
+                        flag_tmp == "redundant_candidate":
+                    predicted_redundant.append(tuple(point))
+                    value_predicted_redundant.append(value)
+                else:
+                    print("This should never happen!")
             else:
-                print("This should never happen!")
-        else:
-            # print("len(close_to_point) = ", len(close_to_point))
-            predicted_false_positives.append(tuple(point))
-            value_predicted_false_positives.append(value)
-        true_positives_total = len(predicted_true_positives)
-        false_positives_total = len(predicted_false_positives)
-        total_current_predicted_points = true_positives_total + \
-                                         false_positives_total
-        precision.append(true_positives_total / total_current_predicted_points)
-        recall.append(true_positives_total + false_positives_total)
-    total_predicted_points = true_positives_total + false_positives_total
-    N_inv = 1 / total_predicted_points
-    recall = np.array(recall) * N_inv
-    recall = list(recall)
+                # print("len(close_to_point) = ", len(close_to_point))
+                predicted_false_positives.append(tuple(point))
+                value_predicted_false_positives.append(value)
+            true_positives_total = len(predicted_true_positives)
+            false_positives_total = len(predicted_false_positives)
+            total_current_predicted_points = true_positives_total + \
+                                             false_positives_total
+            precision.append(true_positives_total / total_current_predicted_points)
+            recall.append(true_positives_total + false_positives_total)
+        total_predicted_points = true_positives_total + false_positives_total
+        N_inv = 1 / total_predicted_points
+        recall = np.array(recall) * N_inv
+        recall = list(recall)
     return precision, recall, detected_true, predicted_true_positives, \
            predicted_false_positives, value_predicted_true_positives, \
            value_predicted_false_positives, predicted_redundant, \
@@ -74,11 +86,14 @@ def precision_recall_calculator(predicted_coordinates: np.array or list,
 
 def f1_score_calculator(precision: list, recall: list):
     f1_score = []
-    for p, r in zip(precision, recall):
-        if p + r != 0:
-            f1_score.append(2 * p * r / float(p + r))
-        else:
-            f1_score.append(0)
+    if len(precision) == 0:
+        print("No precision and recall")
+    else:
+        for p, r in zip(precision, recall):
+            if p + r != 0:
+                f1_score.append(2 * p * r / float(p + r))
+            else:
+                f1_score.append(0)
     return f1_score
 
 

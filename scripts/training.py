@@ -43,7 +43,7 @@ from networks.loss import DiceCoefficientLoss
 from networks.routines import train, validate
 
 from networks.unet import UNet3D, UNet
-from networks.utils import save_unet_model, generate_model_name
+from networks.utils import save_unet_model
 from networks.visualizers import TensorBoard_multiclass
 from tomogram_utils.volume_actions.actions import \
     load_and_normalize_dataset_list
@@ -139,7 +139,7 @@ optimizer = optim.Adam(net.parameters())
 old_epoch = 0
 metric = loss
 
-model_path = os.path.join(model_dir, model_name)
+model_path = model_name
 log_model = os.path.join(logging_dir, model_name[:-4])
 os.makedirs(log_model, exist_ok=True)
 os.makedirs(model_dir, exist_ok=True)

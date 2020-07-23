@@ -10,6 +10,8 @@ parser.add_argument("-model_name", "--model_name", type=str)
 parser.add_argument("-test_partition", "--test_partition", type=str)
 parser.add_argument("-processing_tomo", "--processing_tomo", type=str)
 parser.add_argument("-tomo_name", "--tomo_name", type=str)
+parser.add_argument("-overlap", "--overlap", type=int)
+parser.add_argument("-box_shape", "--box_shape", type=int)
 
 args = parser.parse_args()
 pythonpath = args.pythonpath
@@ -47,10 +49,11 @@ if os.path.exists(partition_path):
 else:
     ModelsHeader = ModelsTableHeader()
     models_df = pd.read_csv(models_table, dtype=ModelsHeader.dtype_dict)
-    model_df = models_df[models_df[ModelsHeader.model_name] == model_name]
-    overlap = model_df.iloc[0][ModelsHeader.overlap]
 
-    box_shape = int(model_df.iloc[0][ModelsHeader.box_size])
+    model_df = models_df[models_df[ModelsHeader.model_name] == model_name]
+    overlap = args.overlap #model_df.iloc[0][ModelsHeader.overlap]
+
+    box_shape = args.box_shape #int(model_df.iloc[0][ModelsHeader.box_size])
 
     subtomogram_shape = (box_shape, box_shape, box_shape)
 

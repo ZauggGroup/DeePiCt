@@ -11,6 +11,7 @@ parser.add_argument("-dataset_table", "--dataset_table", type=str)
 parser.add_argument("-calculate_motl", "--calculate_motl", type=str)
 parser.add_argument("-statistics_file", "--statistics_file", type=str)
 parser.add_argument("-radius", "--radius", type=int)
+parser.add_argument("-segmentation_names", "--segmentation_names", nargs='+', type=str)
 
 args = parser.parse_args()
 pythonpath = args.pythonpath
@@ -40,22 +41,9 @@ dataset_table = args.dataset_table
 statistics_file = args.statistics_file
 radius = args.radius
 
-models_table = os.path.join(output_dir, "models")
-models_table = os.path.join(models_table, "models.csv")
-segmentation_label = model_name
+segmentation_label = os.path.basename(model_name)
 
-ModelsHeader = ModelsTableHeader()
-models_df = pd.read_csv(models_table,
-                        dtype={ModelsHeader.model_name: str,
-                               ModelsHeader.semantic_classes: str})
-
-model_df = models_df[models_df[ModelsHeader.model_name] == model_name]
-print(model_df)
-assert model_df.shape[0] == 1
-overlap = model_df.iloc[0][ModelsHeader.overlap]
-box_shape = int(model_df.iloc[0][ModelsHeader.box_size])
-box_shape = [box_shape, box_shape, box_shape]
-semantic_classes = model_df.iloc[0]['segmentation_names'].split(',')
+semantic_classes = args.segmentation_names
 semantic_class = semantic_classes[class_number]
 
 DTHeader = DatasetTableHeader(semantic_classes=semantic_classes)
@@ -65,20 +53,16 @@ df[DTHeader.tomo_name] = df[DTHeader.tomo_name].astype(str)
 print("Processing tomo", tomo_name)
 output_dir = os.path.join(output_dir, "predictions")
 tomo_output_dir = build_prediction_output_dir(base_output_dir=output_dir,
-                                              label_name="",
-                                              model_name=model_name,
-                                              tomo_name=tomo_name,
-                                              semantic_class=semantic_class)
+                                              label_name="", model_name=segmentation_label,
+                                              tomo_name=tomo_name, semantic_class=semantic_class)
+print(tomo_output_dir)
 os.makedirs(tomo_output_dir, exist_ok=True)
-
 motl_in_dir = [file for file in os.listdir(tomo_output_dir) if 'motl_' in file]
 assert len(motl_in_dir) == 1, "only one motive list can be filtered."
 path_to_motl_predicted = os.path.join(tomo_output_dir, motl_in_dir[0])
 
 tomo_df = df[df[DTHeader.tomo_name] == tomo_name]
 path_to_motl_true = tomo_df.iloc[0][DTHeader.clean_motls[class_number]]
-
-subtomo_shape = tuple([sh - overlap for sh in box_shape])
 
 class_name = semantic_classes[class_number]
 
