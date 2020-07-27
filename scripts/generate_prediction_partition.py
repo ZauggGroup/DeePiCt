@@ -21,7 +21,7 @@ import os
 import numpy as np
 import pandas as pd
 
-from constants.dataset_tables import DatasetTableHeader, ModelsTableHeader
+from constants.dataset_tables import DatasetTableHeader
 from file_actions.readers.tomograms import load_tomogram
 from paths.pipeline_dirs import testing_partition_path
 from tomogram_utils.volume_actions.actions import \
@@ -36,8 +36,6 @@ output_dir = args.output_dir
 work_dir = args.work_dir
 tomo_name = args.tomo_name
 print("tomo_name", tomo_name)
-models_table = os.path.join(output_dir, "models")
-models_table = os.path.join(models_table, "models.csv")
 write_on_table = True
 partition_output_dir, partition_path = testing_partition_path(output_dir=work_dir, tomo_name=tomo_name,
                                                               model_name=model_name, partition_name=test_partition)
@@ -47,23 +45,14 @@ print("output path:", partition_path)
 if os.path.exists(partition_path):
     print("Exiting, path exists.")
 else:
-    ModelsHeader = ModelsTableHeader()
-    models_df = pd.read_csv(models_table, dtype=ModelsHeader.dtype_dict)
-
-    model_df = models_df[models_df[ModelsHeader.model_name] == model_name]
-    overlap = args.overlap #model_df.iloc[0][ModelsHeader.overlap]
-
-    box_shape = args.box_shape #int(model_df.iloc[0][ModelsHeader.box_size])
-
+    overlap = args.overlap
+    box_shape = args.box_shape
     subtomogram_shape = (box_shape, box_shape, box_shape)
 
     DTHeader = DatasetTableHeader(processing_tomo=processing_tomo)
-
     df = pd.read_csv(dataset_table)
     df[DTHeader.tomo_name] = df[DTHeader.tomo_name].astype(str)
-
     print("Partitioning tomo", tomo_name)
-
 
     tomo_df = df[df[DTHeader.tomo_name] == tomo_name]
     path_to_raw = tomo_df.iloc[0][DTHeader.processing_tomo]

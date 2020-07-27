@@ -115,6 +115,7 @@ if config["training"]["active"]:
 if config["prediction"]["active"]:
     targets += expand([postprocess_prediction_done], tomo_name=prediction_tomos)
 else:
+    os.makedirs(".done_patterns", exist_ok=True)
     with open(".done_patterns/.skip_prediction", mode="w") as f:
         print("skipping prediction")
 
@@ -209,7 +210,7 @@ rule training_3dunet:
           memory="40G",
           gres='#SBATCH -p gpu\n#SBATCH --gres=gpu:2'
     resources:
-             gpu=2
+         gpu=2
     shell:
          f"""
         python3 {scriptdir}/training.py \
