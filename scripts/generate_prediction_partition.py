@@ -29,18 +29,21 @@ from tomogram_utils.volume_actions.actions import \
 from tomogram_utils.volume_actions.actions import partition_tomogram
 
 dataset_table = args.dataset_table
-model_name = args.model_name[:-4]
+model_name = os.path.basename(args.model_name)[:-4]
 test_partition = args.test_partition
 processing_tomo = args.processing_tomo
 output_dir = args.output_dir
 work_dir = args.work_dir
 tomo_name = args.tomo_name
 print("tomo_name", tomo_name)
-write_on_table = True
 partition_output_dir, partition_path = testing_partition_path(output_dir=work_dir, tomo_name=tomo_name,
                                                               model_name=model_name, partition_name=test_partition)
+print("partition_output_dir:", partition_output_dir)
+print("partition_path:", partition_path)
+print("Exists:", os.path.exists(partition_path))
 os.makedirs(partition_output_dir, exist_ok=True)
-print("output path:", partition_path)
+print("partition_path:", partition_path)
+print("Exists:", os.path.exists(partition_path))
 
 if os.path.exists(partition_path):
     print("Exiting, path exists.")

@@ -33,7 +33,7 @@ from paths.pipeline_dirs import get_probability_map_path, testing_partition_path
 
 tomo_name = args.tomo_name
 output_dir = args.output_dir
-model_name = args.model_name[:-4]
+model_name = os.path.basename(args.model_name)[:-4]
 class_number = args.class_number
 dataset_table = args.dataset_table
 test_partition = args.test_partition

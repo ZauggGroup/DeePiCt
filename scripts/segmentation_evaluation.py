@@ -34,7 +34,7 @@ output_dir = args.output_dir
 class_number = args.class_number
 statistics_file = args.statistics_file
 filtering_mask = args.filtering_mask
-model_name = args.model_name[:-4]
+model_name = os.path.basename(args.model_name)[:-4]
 label_name = model_name
 
 semantic_classes = args.segmentation_names

@@ -16,7 +16,7 @@ parser.add_argument("-depth", "--depth", type=int)
 parser.add_argument("-decoder_dropout", "--decoder_dropout", type=float)
 parser.add_argument("-encoder_dropout", "--encoder_dropout", type=float)
 parser.add_argument("-batch_size", "--batch_size", type=int)
-parser.add_argument("-batch_norm", "--batch_norm", type=bool)
+parser.add_argument("-batch_norm", "--batch_norm", type=str)
 parser.add_argument("-initial_features", "--initial_features", type=int)
 parser.add_argument("-overlap", "--overlap", type=int)
 parser.add_argument("-processing_tomo", "--processing_tomo", type=str)
@@ -36,6 +36,7 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.utils.data as du
 
+from distutils.util import strtobool
 from constants.dataset_tables import DatasetTableHeader
 from file_actions.writers.csv import write_on_models_notebook
 from networks.io import get_device
@@ -70,7 +71,7 @@ depth = args.depth
 decoder_dropout = args.decoder_dropout
 encoder_dropout = args.encoder_dropout
 batch_size = args.batch_size
-batch_norm = args.batch_norm
+batch_norm = strtobool(args.batch_norm)
 initial_features = args.initial_features
 output_classes = len(segmentation_names)
 overlap = args.overlap

@@ -31,7 +31,7 @@ from paths.pipeline_dirs import get_probability_map_path, get_post_processed_pre
 from constants.dataset_tables import DatasetTableHeader
 
 class_number = args.class_number
-model_name = args.model_name[:-4]
+model_name = os.path.basename(args.model_name)[:-4]
 output_dir = args.output_dir
 min_cluster_size = args.min_cluster_size
 max_cluster_size = args.max_cluster_size
@@ -82,7 +82,7 @@ if np.max(prediction_dataset) > 0:
         get_cluster_centroids(dataset=prediction_dataset,
                               min_cluster_size=min_cluster_size,
                               max_cluster_size=max_cluster_size,
-                              connectivity=1, compute_centroids=calculate_motl)
+                              connectivity=3, compute_centroids=calculate_motl)
 else:
     clusters_labeled_by_size = prediction_dataset
     centroids_list = []

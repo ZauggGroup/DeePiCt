@@ -231,16 +231,18 @@ def compute_global_dice(model, loader, device, overlap):
     # running loss and metric values
     numerator = 0
     denominator = 0
-    mask = np.zeros(loader[0].shape)
-    ones = np.ones(loader[0].shape)
-    mask[:, :, overlap:-overlap, overlap:-overlap, overlap:-overlap] = ones[:, :, overlap:-overlap, overlap:-overlap,
-                                                                       overlap:-overlap]
-    mask = torch.from_numpy(mask).to(device)
+
     # disable gradients during validation
     with torch.no_grad():
         # iterate over validation loader and update loss and metric values
         for index, data in enumerate(loader):
             x, y = data
+            mask = np.zeros(x.shape)
+            ones = np.ones(x.shape)
+            mask[:, :, overlap:-overlap, overlap:-overlap, overlap:-overlap] = ones[:, :, overlap:-overlap,
+                                                                               overlap:-overlap,
+                                                                               overlap:-overlap]
+            mask = torch.from_numpy(mask).to(device)
             x, y = x.to(device), y.to(device)
             prediction = model(x)
             numerator += (prediction * y.long() * mask).sum()

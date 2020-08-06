@@ -25,7 +25,7 @@ dataset_table = config["dataset_table"]
 output_dir = config["output_dir"]
 work_dir = config["work_dir"]
 model_name = config["model_name"]
-
+model_basename = os.path.basename(model_name)[:-4]
 # Tomogram lists
 training_tomos = config["tomos_sets"]["training_list"]
 prediction_tomos = config["tomos_sets"]["prediction_list"]
@@ -91,17 +91,13 @@ else:
 training_part_pattern = work_dir + "/training_data/{tomo_name}/train_partition.h5"
 training_model_pattern = model_path
 done_training_pattern = ".done_patterns/" + model_path + ".done"
-testing_part_pattern = work_dir + "/test_partitions/{tomo_name}/" + model_name[:-4] + "/test_partition.h5"
+testing_part_pattern = work_dir + "/test_partitions/{tomo_name}/" + model_basename + "/test_partition.h5"
 segmented_part_pattern = ".done_patterns/" + model_path + ".{tomo_name}.segmentation.done"
-assemble_probability_map_done = output_dir + "/predictions/" + model_name[
-                                                               :-4] + "/{tomo_name}/" + pred_class + "/probability_map.mrc"
-postprocess_prediction_done = output_dir + "/predictions/" + model_name[
-                                                             :-4] + "/{tomo_name}/" + pred_class + "/post_processed_prediction.mrc"
-particle_picking_pr_done = output_dir + "/predictions/" + model_name[
-                                                          :-4] + "/{tomo_name}/" + pred_class + "/pr_radius_" + str(
+assemble_probability_map_done = output_dir + "/predictions/" + model_basename + "/{tomo_name}/" + pred_class + "/probability_map.mrc"
+postprocess_prediction_done = output_dir + "/predictions/" + model_basename + "/{tomo_name}/" + pred_class + "/post_processed_prediction.mrc"
+particle_picking_pr_done = output_dir + "/predictions/" + model_basename + "/{tomo_name}/" + pred_class + "/pr_radius_" + str(
     pr_tolerance_radius) + "/detected/.done_pp_snakemake"
-dice_evaluation_done = output_dir + "/predictions/" + model_name[
-                                                      :-4] + "/{tomo_name}/" + pred_class + "/.done_dice_eval_snakemake"
+dice_evaluation_done = output_dir + "/predictions/" + model_basename + "/{tomo_name}/" + pred_class + "/.done_dice_eval_snakemake"
 if config["cluster"]["logdir"] is not None:
     os.makedirs(config["cluster"]["logdir"], exist_ok=True)
 
@@ -118,7 +114,9 @@ else:
     os.makedirs(".done_patterns", exist_ok=True)
     with open(".done_patterns/.skip_prediction", mode="w") as f:
         print("skipping prediction")
-
+    if config["postprocessing_clustering"]["active"]:
+        print("postprocessing active")
+        targets += expand([postprocess_prediction_done], tomo_name=prediction_tomos)
 if config["evaluation"]["particle_picking"]["active"]:
     targets += expand([particle_picking_pr_done], tomo_name=prediction_tomos)
 
@@ -126,9 +124,10 @@ if config["evaluation"]["segmentation_evaluation"]["active"]:
     targets += expand([dice_evaluation_done], tomo_name=prediction_tomos)
 
 if config["cross_validation"]["active"]:
+    print("cross validation is active!", config["cross_validation"]["active"])
     cv_folds = config["cross_validation"]["cv_folds"]
-    cv_statistics_file = "dice_" + config["cross_validation"]["statistics_file"]
-    cv_statistics_file_pp = "pp_" + config["cross_validation"]["statistics_file"]
+    cv_statistics_file = "cv_statistics_dice.csv"
+    cv_statistics_file_pp = "cv_statistics_pp.csv"
     print("todo assert len(training_tomos) > cv_folds", len(training_tomos), cv_folds)
     print("tomo assert cv_folds > 1")
     assert len(training_tomos) >= cv_folds
@@ -154,8 +153,8 @@ if config["cross_validation"]["active"]:
         del cv_data, cv_evaluation_dict, cv_training_tomos
 
     targets = []
-    done_cv_eval = ".done_patterns/" + model_path[:-4] + "_{fold}.pkl.done"
-    done_cv_pp = ".done_patterns/" + model_path[:-4] + "_{fold}.pkl.done_pp_cv_snakemake"
+    done_cv_eval = ".done_patterns/" + model_basename + "_{fold}.pkl.done"
+    done_cv_pp = ".done_patterns/" + model_basename + "_{fold}.pkl.done_pp_cv_snakemake"
     targets += expand([done_cv_pp], fold=list(range(cv_folds)))
 print("TARGETS:\n")
 print(targets)
@@ -221,7 +220,6 @@ rule training_3dunet:
         --output_dir  {{output_dir}} \
         --work_dir  {{work_dir}} \
         --box_shape  {{box_shape}} \
-        --output_dir  {{output_dir}} \
         --tomo_training_list  {{tomo_training_list}} \
         --split  {{split}} \
         --n_epochs  {{n_epochs}} \
@@ -323,9 +321,9 @@ rule segment:
           nodes=1,
           cores=4,
           memory="20G",
-          gres='#SBATCH -p gpu\n#SBATCH --gres=gpu:2'
+          gres='#SBATCH -p gpu\n#SBATCH --gres=gpu:1'
     resources:
-             gpu=2
+          gpu=1
     shell:
          f"""
         python3 {scriptdir}/segment.py \
@@ -339,7 +337,6 @@ rule segment:
         --depth  {{depth}} \
         --decoder_dropout  {{decoder_dropout}} \
         --encoder_dropout  {{encoder_dropout}} \
-        --batch_size  {{batch_size}} \
         --batch_norm  {{BatchNorm}} \
         --initial_features  {{initial_features}} \
         --segmentation_names  {{segmentation_names}} \
@@ -471,9 +468,9 @@ rule cross_validation_particle_picking:
     conda:
          "environment.yaml"
     input:
-         done_cv_eval=".done_patterns/" + model_path[:-4] + "_{fold}.pkl.done",
+         done_cv_eval=".done_patterns/" + model_basename + "_{fold}.pkl.done",
     output:
-          done=".done_patterns/" + model_path[:-4] + "_{fold}.pkl.done_pp_cv_snakemake"
+          done=".done_patterns/" + model_basename + "_{fold}.pkl.done_pp_cv_snakemake"
     params:
           config=user_config_file,
           logdir=config["cluster"]["logdir"],

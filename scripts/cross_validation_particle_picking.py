@@ -21,24 +21,6 @@ parser.add_argument("-max_cluster_size", "--max_cluster_size", type=int)
 parser.add_argument("-threshold", "--threshold", type=float)
 parser.add_argument("-filtering_mask", "--filtering_mask", type=str)
 
-# dataset_table = args.dataset_table
-# test_partition = args.test_partition
-# processing_tomo = args.processing_tomo
-# output_dir = args.output_dir
-# work_dir = args.work_dir
-# fold = args.fold
-# model_name_ext = args.model_name
-# model_name = model_name_ext[:-4] + "_" + fold
-# cv_data_path = args.cv_data_path
-# class_number = args.class_number
-# min_cluster_size = args.min_cluster_size
-# max_cluster_size = args.max_cluster_size
-# threshold = args.threshold
-# calculate_motl = strtobool(args.calculate_motl)
-# filtering_mask = args.filtering_mask
-# radius = args.radius
-# statistics_file = args.statistics_file
-
 args = parser.parse_args()
 pythonpath = args.pythonpath
 sys.path.append(pythonpath)
@@ -105,12 +87,12 @@ statistics_file = args.statistics_file
 
 models_table = os.path.join(output_dir, "models")
 models_table = os.path.join(models_table, "models.csv")
-write_on_table = True
 
 cv_data = pd.read_csv(cv_data_path)
 cv_data["cv_fold"] = cv_data["cv_fold"].apply(lambda x: str(x))
 cv_data.set_index("cv_fold", inplace=True)
 tomo_evaluation_list = cv_data.loc[fold]["cv_evaluation_list"].split(" ")[:-1]
+print("fold", fold, "; tomo_evaluation_list:", tomo_evaluation_list)
 
 for tomo_name in tomo_evaluation_list:
 
@@ -403,16 +385,6 @@ for tomo_name in tomo_evaluation_list:
             motive_list_df = pd.DataFrame({})
             motive_list_df.to_csv(motl_file_name, index=False, header=False)
 
-# import argparse
-# import sys
-#
-# parser = argparse.ArgumentParser()
-
-#
-# args = parser.parse_args()
-# pythonpath = args.pythonpath
-# sys.path.append(pythonpath)
-
 
 segmentation_label = model_name
 
@@ -434,15 +406,15 @@ DTHeader = DatasetTableHeader(semantic_classes=semantic_classes)
 df = pd.read_csv(dataset_table)
 df[DTHeader.tomo_name] = df[DTHeader.tomo_name].astype(str)
 for tomo_name in tomo_evaluation_list:
-    print("Processing tomo", tomo_name)
-    output_dir = os.path.join(output_dir, "predictions")
-    tomo_output_dir = build_prediction_output_dir(base_output_dir=output_dir,
+    print("Processing tomo", tomo_name, "fold", fold)
+    output_dir_tmp = os.path.join(output_dir, "predictions")
+    tomo_output_dir = build_prediction_output_dir(base_output_dir=output_dir_tmp,
                                                   label_name="",
                                                   model_name=model_name,
                                                   tomo_name=tomo_name,
                                                   semantic_class=semantic_class)
     os.makedirs(tomo_output_dir, exist_ok=True)
-
+    print("tomo_output_dir:", tomo_output_dir)
     motl_in_dir = [file for file in os.listdir(tomo_output_dir) if 'motl_' in file]
     assert len(motl_in_dir) == 1, "only one motive list can be filtered."
     path_to_motl_predicted = os.path.join(tomo_output_dir, motl_in_dir[0])
@@ -565,7 +537,7 @@ for tomo_name in tomo_evaluation_list:
                          stat_measure=round(max_F1, 4))
 
 ### For snakemake:
-snakemake_pattern_dir = os.path.join(".done_patterns/", path_to_model)
+snakemake_pattern_dir = os.path.join(".done_patterns/", os.path.basename(path_to_model)[:-4])
 snakemake_pattern = os.path.join(snakemake_pattern_dir, ".done_pp_cv_snakemake")
 with open(file=snakemake_pattern, mode="w") as f:
     print("Creating snakemake pattern", snakemake_pattern)
