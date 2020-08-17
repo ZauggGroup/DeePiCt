@@ -1,3 +1,5 @@
+*.pdf
+src/constants/sasha/
 scripts/test.py
 pipelines/plotting_utils.py
 src/__pycache__/

@@ -66,6 +66,7 @@ from networks.utils import build_prediction_output_dir
 from performance.statistics_utils import pr_auc_score, \
     f1_score_calculator, precision_recall_calculator
 from tomogram_utils.peak_toolbox.utils import read_motl_coordinates_and_values
+from constants.statistics import write_statistics_pp
 
 dataset_table = args.dataset_table
 test_partition = args.test_partition
@@ -80,7 +81,7 @@ class_number = args.class_number
 min_cluster_size = args.min_cluster_size
 max_cluster_size = args.max_cluster_size
 threshold = args.threshold
-calculate_motl = strtobool(args.calculate_motl)
+# calculate_motl = strtobool(args.calculate_motl)
 filtering_mask = args.filtering_mask
 radius = args.radius
 statistics_file = args.statistics_file
@@ -91,7 +92,12 @@ models_table = os.path.join(models_table, "models.csv")
 cv_data = pd.read_csv(cv_data_path)
 cv_data["cv_fold"] = cv_data["cv_fold"].apply(lambda x: str(x))
 cv_data.set_index("cv_fold", inplace=True)
-tomo_evaluation_list = cv_data.loc[fold]["cv_evaluation_list"].split(" ")[:-1]
+
+tomo_evaluation_list_tmp = cv_data.loc[fold]["cv_evaluation_list"].split(" ")
+tomo_evaluation_list = []
+for tomo_name in tomo_evaluation_list_tmp:
+    if len(tomo_name) > 0:
+        tomo_evaluation_list.append(tomo_name)
 print("fold", fold, "; tomo_evaluation_list:", tomo_evaluation_list)
 
 for tomo_name in tomo_evaluation_list:
@@ -194,16 +200,28 @@ device = get_device()
 model = UNet3D(**net_conf)
 # model = UNet(**net_conf)
 model.to(device)
+checkpoint = torch.load(path_to_model, map_location=device)
+
 if torch.cuda.device_count() > 1:
+    print("actually it only works when the number of gpus used for"
+          " testing and for training are the same")
     print("Let's use", torch.cuda.device_count(), "GPUs!")
     model = nn.DataParallel(model)
-checkpoint = torch.load(path_to_model, map_location=device)
-substring = 'module.'
-checkpoint_tmp = OrderedDict()
-for k in checkpoint['model_state_dict']:
-    new_k = k[len(substring):] if k.startswith(substring) else k
-    checkpoint_tmp[new_k] = checkpoint['model_state_dict'][k]
-checkpoint['model_state_dict'] = checkpoint_tmp
+
+    substring = 'module.'
+    checkpoint_tmp = OrderedDict()
+    for k in checkpoint['model_state_dict']:
+        new_k = substring + k if not k.startswith(substring) else k
+        checkpoint_tmp[new_k] = checkpoint['model_state_dict'][k]
+    checkpoint['model_state_dict'] = checkpoint_tmp
+else:
+    substring = 'module.'
+    checkpoint_tmp = OrderedDict()
+    for k in checkpoint['model_state_dict']:
+        new_k = k[len(substring):] if k.startswith(substring) else k
+        checkpoint_tmp[new_k] = checkpoint['model_state_dict'][k]
+    checkpoint['model_state_dict'] = checkpoint_tmp
+
 model.load_state_dict(checkpoint['model_state_dict'])
 model = model.eval()
 
@@ -327,12 +345,12 @@ semantic_class = semantic_names[class_number]
 DTHeader = DatasetTableHeader()
 for tomo_name in tomo_evaluation_list:
     print("Processing tomo", tomo_name)
-    tomo_output_dir, output_path = get_probability_map_path(output_dir, model_name, tomo_name, semantic_class)
+    tomo_output_dir, output_path = get_probability_map_path(args.output_dir, model_name, tomo_name, semantic_class)
 
-    for file in listdir(tomo_output_dir):
-        if "motl" in file:
-            print("Motive list already exists:", file)
-            calculate_motl = False
+    # for file in listdir(tomo_output_dir):
+    #     if "motl" in file:
+    #         print("Motive list already exists:", file)
+    #         calculate_motl = False
 
     assert os.path.isfile(output_path)
     prediction_dataset = load_tomogram(path_to_dataset=output_path)
@@ -361,7 +379,7 @@ for tomo_name in tomo_evaluation_list:
             get_cluster_centroids(dataset=prediction_dataset,
                                   min_cluster_size=min_cluster_size,
                                   max_cluster_size=max_cluster_size,
-                                  connectivity=1, compute_centroids=calculate_motl)
+                                  connectivity=3)
     else:
         clusters_labeled_by_size = prediction_dataset
         centroids_list = []
@@ -370,21 +388,20 @@ for tomo_name in tomo_evaluation_list:
                                                               semantic_class=semantic_class)
     write_tomogram(output_path=clusters_output_path, tomo_data=clusters_labeled_by_size)
     os.makedirs(tomo_output_dir, exist_ok=True)
-    if calculate_motl:
-        motl_name = "motl_" + str(len(centroids_list)) + ".csv"
-        motl_file_name = os.path.join(tomo_output_dir, motl_name)
 
-        if len(centroids_list) > 0:
-            motive_list_df = build_tom_motive_list(
-                list_of_peak_coordinates=centroids_list,
-                list_of_peak_scores=cluster_size_list, in_tom_format=False)
-            motive_list_df.to_csv(motl_file_name, index=False, header=False)
-            print("Motive list saved in", motl_file_name)
-        else:
-            print("Saving empty list!")
-            motive_list_df = pd.DataFrame({})
-            motive_list_df.to_csv(motl_file_name, index=False, header=False)
+    motl_name = "motl_" + str(len(centroids_list)) + ".csv"
+    motl_file_name = os.path.join(tomo_output_dir, motl_name)
 
+    if len(centroids_list) > 0:
+        motive_list_df = build_tom_motive_list(
+            list_of_peak_coordinates=centroids_list,
+            list_of_peak_scores=cluster_size_list, in_tom_format=False)
+        motive_list_df.to_csv(motl_file_name, index=False, header=False)
+        print("Motive list saved in", motl_file_name)
+    else:
+        print("Saving empty list!")
+        motive_list_df = pd.DataFrame({})
+        motive_list_df.to_csv(motl_file_name, index=False, header=False)
 
 segmentation_label = model_name
 
@@ -415,7 +432,7 @@ for tomo_name in tomo_evaluation_list:
                                                   semantic_class=semantic_class)
     os.makedirs(tomo_output_dir, exist_ok=True)
     print("tomo_output_dir:", tomo_output_dir)
-    motl_in_dir = [file for file in os.listdir(tomo_output_dir) if 'motl_' in file]
+    motl_in_dir = [file for file in os.listdir(tomo_output_dir) if 'motl' == file[:4]]
     assert len(motl_in_dir) == 1, "only one motive list can be filtered."
     path_to_motl_predicted = os.path.join(tomo_output_dir, motl_in_dir[0])
 
@@ -522,22 +539,47 @@ for tomo_name in tomo_evaluation_list:
     plt.savefig(fname=fig_name, format="png")
     plt.close()
 
-    print("statistics_file", statistics_file)
-    if statistics_file != "None":
+    print("statistics_file", args.statistics_file)
+    if args.statistics_file != "None":
         statistics_label = segmentation_label + "_pr_radius_" + str(radius)
 
-        write_statistics(statistics_file=statistics_file,
+        write_statistics(statistics_file=args.statistics_file,
                          statistics_label="auPRC_" + statistics_label,
                          tomo_name=tomo_name,
                          stat_measure=round(auPRC, 4))
 
-        write_statistics(statistics_file=statistics_file,
+        write_statistics(statistics_file=args.statistics_file,
                          statistics_label="F1_" + statistics_label,
                          tomo_name=tomo_name,
                          stat_measure=round(max_F1, 4))
 
+        if os.path.dirname(statistics_file) == "":
+            statistics_file = "pp_statistics.csv"
+            write_statistics_pp(statistics_file=statistics_file, tomo_name=tomo_name, model_name=model_name,
+                                models_table_path=models_table, statistic_variable="auPRC",
+                                statistic_value=round(auPRC, 4),
+                                pr_radius=radius, cv_fold=fold, min_cluster_size=min_cluster_size,
+                                max_cluster_size=max_cluster_size, threshold=threshold, prediction_class=semantic_class)
+            write_statistics_pp(statistics_file=statistics_file, tomo_name=tomo_name, model_name=model_name,
+                                models_table_path=models_table, statistic_variable="maxF1",
+                                statistic_value=round(max_F1, 4), pr_radius=radius, cv_fold=fold,
+                                min_cluster_size=min_cluster_size, max_cluster_size=max_cluster_size,
+                                threshold=threshold, prediction_class=semantic_class)
+        else:
+            statistics_file = os.path.dirname(statistics_file) + "/pp_statistics.csv"
+            write_statistics_pp(statistics_file=statistics_file, tomo_name=tomo_name, model_name=model_name,
+                                models_table_path=models_table, statistic_variable="auPRC",
+                                statistic_value=round(auPRC, 4),
+                                pr_radius=radius, cv_fold=fold, min_cluster_size=min_cluster_size,
+                                max_cluster_size=max_cluster_size, threshold=threshold, prediction_class=semantic_class)
+            write_statistics_pp(statistics_file=statistics_file, tomo_name=tomo_name, model_name=model_name,
+                                models_table_path=models_table, statistic_variable="maxF1",
+                                statistic_value=round(max_F1, 4), pr_radius=radius, cv_fold=fold,
+                                min_cluster_size=min_cluster_size, max_cluster_size=max_cluster_size,
+                                threshold=threshold, prediction_class=semantic_class)
+
 ### For snakemake:
-snakemake_pattern_dir = os.path.join(".done_patterns/", os.path.basename(path_to_model)[:-4])
-snakemake_pattern = os.path.join(snakemake_pattern_dir, ".done_pp_cv_snakemake")
+snakemake_pattern = os.path.join(".done_patterns/", os.path.basename(path_to_model))
+snakemake_pattern = snakemake_pattern + ".done_pp_cv_snakemake"
 with open(file=snakemake_pattern, mode="w") as f:
     print("Creating snakemake pattern", snakemake_pattern)

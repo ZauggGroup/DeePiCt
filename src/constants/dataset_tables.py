@@ -40,6 +40,8 @@ class DatasetTableHeader(object):
 class ModelsTableHeader(object):
 
     def __init__(self):
+        self.cv_fold = "cv_fold"
+        self.cv_testing_set = "cv_testing_set"
         self.batch_normalization = "BN"
         self.date = "date"
         self.depth = "depth"
@@ -63,6 +65,8 @@ class ModelsTableHeader(object):
         self.processing_tomo = "processing_tomo"
         self.overlap = "overlap"
         self.dtype_dict = {
+            self.cv_fold: str,
+            self.cv_testing_set: str,
             self.batch_normalization: bool,
             self.date: str,
             self.depth: int,

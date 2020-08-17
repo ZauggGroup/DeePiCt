@@ -514,7 +514,9 @@ def write_on_models_notebook(model_name: str, label_name:str,
                              encoder_dropout: float = np.nan,
                              decoder_dropout: float = np.nan,
                              BN: bool = False,
-                             overlap: int = 12):
+                             overlap: int = 12,
+                             cv_fold: int or None = None,
+                             cv_test_tomos: list or None = None):
     """
 
     :param model_name:
@@ -542,6 +544,8 @@ def write_on_models_notebook(model_name: str, label_name:str,
     training_paths = reduce(lambda x, y: x + ", " + y, training_paths_list)
     segmentation_names = reduce(lambda x, y: x + ", " + y, segmentation_names)
     print(training_paths, segmentation_names)
+    if cv_test_tomos is not None:
+        cv_testing_paths = reduce(lambda x, y: x + ", " + y, cv_test_tomos)
 
     now = datetime.datetime.now()
     date = str(now.day) + "/" + str(now.month) + "/" + str(now.year)

@@ -73,20 +73,18 @@ net_conf = {'final_activation': None, 'depth': depth,
             'initial_features': initial_features, "out_channels": output_classes,
             "BN": BN, "encoder_dropout": encoder_dropout,
             "decoder_dropout": decoder_dropout}
-print(net_conf)
+print("UNet configuration:", net_conf)
 device = get_device()
 model = UNet3D(**net_conf)
 # model = UNet(**net_conf)
 model.to(device)
 checkpoint = torch.load(path_to_model, map_location=device)
 
-print("saved model state_dict keys:", checkpoint['model_state_dict'].keys())
-print("\n")
-print("current 3D UNet for loading keys:", model.state_dict().keys())
+# print("saved model state_dict keys:", checkpoint['model_state_dict'].keys())
+# print("\n")
+# print("current 3D UNet for loading keys:", model.state_dict().keys())
 
 if torch.cuda.device_count() > 1:
-    print("actually it only works when the number of gpus used for"
-          " testing and for training are the same")
     print("Let's use", torch.cuda.device_count(), "GPUs!")
     model = nn.DataParallel(model)
 

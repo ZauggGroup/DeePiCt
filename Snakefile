@@ -1,5 +1,6 @@
 import os, yaml
 import pandas as pd
+import numpy as np
 from snakemake_utils import generate_cv_folds
 
 cli_config = config.copy()
@@ -62,6 +63,8 @@ assert pred_class_number >= 0, "Prediction class not among segmentation names fo
 threshold = config["postprocessing_clustering"]["threshold"]
 min_cluster_size = config["postprocessing_clustering"]["min_cluster_size"]
 max_cluster_size = config["postprocessing_clustering"]["max_cluster_size"]
+if max_cluster_size is None:
+    max_cluster_size = np.inf
 calculate_motl = config["postprocessing_clustering"]["calculate_motl"]
 ignore_border_thickness = config["postprocessing_clustering"]["ignore_border_thickness"]
 filtering_mask = config["postprocessing_clustering"]["filtering_mask"]
@@ -132,11 +135,12 @@ if config["cross_validation"]["active"]:
     print("tomo assert cv_folds > 1")
     assert len(training_tomos) >= cv_folds
     assert cv_folds >= 2
-    if config["cross_validation"]["cv_data"] is not None:
-        path_to_cv_data = config["cross_validation"]["cv_data"]
+    path_to_cv_data = "cv_data.csv"
+
+    if os.path.isfile(path_to_cv_data):
+        print("cv partition exists")
     else:
         print("generating cv_data.csv file")
-        path_to_cv_data = "cv_data.csv"
         cv_training_dict, cv_evaluation_dict = generate_cv_folds(tomo_training_list=training_tomos, cv_folds=cv_folds)
         cv_data = pd.DataFrame({"cv_fold": list(cv_training_dict.keys()),
                                 "cv_training_list": [None for _ in range(cv_folds)],
@@ -203,13 +207,13 @@ rule training_3dunet:
     params:
           config=user_config_file,
           logdir=config["cluster"]["logdir"],
-          walltime="04:30:00",
+          walltime="14:30:00",
           nodes=1,
           cores=4,
-          memory="40G",
-          gres='#SBATCH -p gpu\n#SBATCH --gres=gpu:2'
+          memory="70G",
+          gres='#SBATCH -p gpu\n#SBATCH --gres=gpu:4'
     resources:
-         gpu=2
+         gpu=4
     shell:
          f"""
         python3 {scriptdir}/training.py \
@@ -241,11 +245,11 @@ rule cross_validation_3dunet:
     input:
          training_set_done_file=expand([training_part_pattern], tomo_name=training_tomos)
     output:
-          done=".done_patterns/" + model_path[:-4] + "_{fold}.pkl.done"
+          done=".done_patterns/" + model_basename + "_{fold}.pkl.done"
     params:
           config=user_config_file,
           logdir=config["cluster"]["logdir"],
-          walltime="10:00:00",
+          walltime="12:00:00",
           nodes=1,
           cores=4,
           memory="40G",
@@ -380,13 +384,13 @@ rule postprocess_prediction:
     conda:
          "environment.yaml"
     input:
-         assemble_probability_map_done
+          assemble_probability_map_done
     output:
           postprocess_prediction_done
     params:
           config=user_config_file,
           logdir=config["cluster"]["logdir"],
-          walltime="01:30:00",
+          walltime="02:30:00",
           nodes=1,
           cores=4,
           memory="30G",
@@ -478,9 +482,10 @@ rule cross_validation_particle_picking:
           nodes=1,
           cores=4,
           memory="40G",
-          gres='#SBATCH -p gpu\n#SBATCH --gres=gpu:4'
+          # gres=''
+          gres='#SBATCH -p gpu\n#SBATCH --gres=gpu:1'
     resources:
-             gpu=4
+             gpu=1
     shell:
          f"""
          python3 {scriptdir}/cross_validation_particle_picking.py \

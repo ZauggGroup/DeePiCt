@@ -15,29 +15,27 @@ def get_clusters_within_size_range(dataset: np.array, min_cluster_size: int,
                                    max_cluster_size: int, connectivity=1):
     assert min_cluster_size <= max_cluster_size
 
-    labeled_clusters, num = morph.label(input=dataset, background=0,
+    labeled_clusters, num = morph.label(input=dataset,
+                                        background=0,
                                         return_num=True,
                                         connectivity=connectivity)
     labels_list, cluster_size = np.unique(labeled_clusters, return_counts=True)
+    # excluding the background cluster:
+    labels_list, cluster_size = labels_list[1:], cluster_size[1:]
     maximum = np.max(cluster_size)
-    print("number of clusters = ", len(labels_list))
-    print("With size ranges: from", np.min(cluster_size), "to",
+    print("number of clusters before size filtering = ", len(labels_list))
+    print("size range before size filtering: ", np.min(cluster_size), "to",
           maximum)
-    next_maximum = np.max(list(cluster_size[cluster_size < maximum]))
-    print("With size ranges: from", np.min(cluster_size), "to",
-          next_maximum)
     labels_list_within_range = labels_list[(cluster_size > min_cluster_size) & (
             cluster_size <= max_cluster_size)]
     cluster_size_within_range = list(
         cluster_size[(cluster_size > min_cluster_size) & (
                 cluster_size <= max_cluster_size)])
-    print("Clusters in subtomo before size filtering =", num)
-
     return labeled_clusters, labels_list_within_range, cluster_size_within_range
 
 
 def get_cluster_centroids(dataset: np.array, min_cluster_size: int,
-                          max_cluster_size: int, connectivity=1, compute_centroids=True) -> tuple:
+                          max_cluster_size: int, connectivity=1) -> tuple:
     labeled_clusters, labels_list_within_range, cluster_size_within_range = \
         get_clusters_within_size_range(dataset=dataset,
                                        min_cluster_size=min_cluster_size,

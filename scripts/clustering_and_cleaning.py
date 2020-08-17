@@ -8,7 +8,7 @@ parser.add_argument("-class_number", "--class_number", type=int)
 parser.add_argument("-model_name", "--model_name", type=str)
 parser.add_argument("-output_dir", "--output_dir", type=str)
 parser.add_argument("-min_cluster_size", "--min_cluster_size", type=int)
-parser.add_argument("-max_cluster_size", "--max_cluster_size", type=int)
+parser.add_argument("-max_cluster_size", "--max_cluster_size", type=float)
 parser.add_argument("-threshold", "--threshold", type=float)
 parser.add_argument("-dataset_table", "--dataset_table", type=str)
 parser.add_argument("-filtering_mask", "--filtering_mask", type=str)
@@ -35,6 +35,7 @@ model_name = os.path.basename(args.model_name)[:-4]
 output_dir = args.output_dir
 min_cluster_size = args.min_cluster_size
 max_cluster_size = args.max_cluster_size
+print("max_cluster_size", max_cluster_size)
 threshold = args.threshold
 dataset_table = args.dataset_table
 calculate_motl = True
@@ -58,7 +59,8 @@ for file in listdir(tomo_output_dir):
 assert os.path.isfile(output_path)
 prediction_dataset = load_tomogram(path_to_dataset=output_path)
 output_shape = prediction_dataset.shape
-prediction_dataset = 1 * (prediction_dataset > threshold)
+prediction_dataset_thr = 1 * (prediction_dataset > threshold)
+
 
 DTHeader = DatasetTableHeader(filtering_mask=filtering_mask)
 print("filtering mask:", DTHeader.filtering_mask)
@@ -66,25 +68,31 @@ df = pd.read_csv(dataset_table)
 df[DTHeader.tomo_name] = df[DTHeader.tomo_name].astype(str)
 tomo_df = df[df[DTHeader.tomo_name] == tomo_name]
 masking_file = tomo_df.iloc[0][DTHeader.filtering_mask]
+clusters_output_path = get_post_processed_prediction_path(output_dir=output_dir, model_name=model_name,
+                                                          tomo_name=tomo_name,
+                                                          semantic_class=semantic_class)
+# write_tomogram(output_path=os.path.dirname(clusters_output_path)+"/thresholded_map.mrc", tomo_data=prediction_dataset_thr)
+os.makedirs(tomo_output_dir, exist_ok=True)
 
 if str(masking_file) == "nan":
     print("No filtering mask...")
 else:
     mask_indicator = load_tomogram(path_to_dataset=masking_file)
     shx, shy, shz = [np.min([shl, shp]) for shl, shp in
-                     zip(mask_indicator.shape, prediction_dataset.shape)]
+                     zip(mask_indicator.shape, prediction_dataset_thr.shape)]
     mask_indicator = mask_indicator[:shx, :shy, :shz]
-    prediction_dataset = prediction_dataset[:shx, :shy, :shz]
-    prediction_dataset = np.array(mask_indicator, dtype=float) * np.array(prediction_dataset,
+    print("unique values of mask_indicator", np.unique(mask_indicator))
+    prediction_dataset_thr = prediction_dataset_thr[:shx, :shy, :shz]
+    prediction_dataset_thr = np.array(mask_indicator, dtype=float) * np.array(prediction_dataset_thr,
                                                                           dtype=float)
-if np.max(prediction_dataset) > 0:
+if np.max(prediction_dataset_thr) > 0:
     clusters_labeled_by_size, centroids_list, cluster_size_list = \
-        get_cluster_centroids(dataset=prediction_dataset,
+        get_cluster_centroids(dataset=prediction_dataset_thr,
                               min_cluster_size=min_cluster_size,
                               max_cluster_size=max_cluster_size,
-                              connectivity=3, compute_centroids=calculate_motl)
+                              connectivity=3)
 else:
-    clusters_labeled_by_size = prediction_dataset
+    clusters_labeled_by_size = prediction_dataset_thr
     centroids_list = []
 clusters_output_path = get_post_processed_prediction_path(output_dir=output_dir, model_name=model_name,
                                                           tomo_name=tomo_name,

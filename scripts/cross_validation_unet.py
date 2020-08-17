@@ -105,7 +105,19 @@ log_model = os.path.join(logging_dir, model_name)
 os.makedirs(log_model, exist_ok=True)
 os.makedirs(model_dir, exist_ok=True)
 
-if os.path.isfile(model_path):
+device = get_device()
+
+final_activation = nn.Sigmoid()
+net_conf = {'final_activation': final_activation, 'depth': depth,
+            'initial_features': initial_features,
+            "out_channels": output_classes, "BN": batch_norm,
+            "encoder_dropout": encoder_dropout,
+            "decoder_dropout": decoder_dropout}
+
+net = UNet3D(**net_conf)
+net = net.to(device)
+
+if not os.path.exists(model_path):
     training_partition_paths = list()
     data_aug_rounds_list = list()
     for tomo_name in tomo_training_list:
@@ -120,7 +132,6 @@ if os.path.isfile(model_path):
         data_aug_rounds_list += [0]
 
     print(training_partition_paths)
-    device = get_device()
     train_data, train_labels, val_data, val_labels = \
         load_and_normalize_dataset_list(training_partition_paths,
                                         data_aug_rounds_list,
@@ -137,16 +148,6 @@ if os.path.isfile(model_path):
 
     train_loader = du.DataLoader(train_set, shuffle=True, batch_size=batch_size)
     val_loader = du.DataLoader(val_set, batch_size=batch_size)
-
-    final_activation = nn.Sigmoid()
-    net_conf = {'final_activation': final_activation, 'depth': depth,
-                'initial_features': initial_features,
-                "out_channels": output_classes, "BN": batch_norm,
-                "encoder_dropout": encoder_dropout,
-                "decoder_dropout": decoder_dropout}
-
-    net = UNet3D(**net_conf)
-    net = net.to(device)
 
     if torch.cuda.device_count() > 1:
         print("Let's use", torch.cuda.device_count(), "GPUs!")
@@ -208,7 +209,9 @@ if os.path.isfile(model_path):
             print("The best epoch was", best_epoch)
 
     del train_loader, val_loader, train_set, val_set, train_data, train_labels, val_data, val_labels
-    evaluation_partition_paths = []
+
+evaluation_partition_paths = []
+data_aug_rounds_list = []
 
 for tomo_name in tomo_evaluation_list:
     print(tomo_name)
@@ -254,7 +257,7 @@ os.makedirs(os.path.dirname(snakemake_pattern), exist_ok=True)
 with open(file=snakemake_pattern, mode="w") as f:
     print("Creating snakemake pattern", snakemake_pattern)
 
-snakemake_pattern = ".done_patterns/" + model_path[:-6] + ".pkl.done"
+snakemake_pattern = ".done_patterns/" + os.path.basename(model_path) + ".done"
 os.makedirs(os.path.dirname(snakemake_pattern), exist_ok=True)
 with open(file=snakemake_pattern, mode="w") as f:
     print("Creating snakemake pattern", snakemake_pattern)
