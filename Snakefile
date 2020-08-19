@@ -158,7 +158,7 @@ if config["cross_validation"]["active"]:
 
     targets = []
     done_cv_eval = ".done_patterns/" + model_basename + "_{fold}.pkl.done"
-    done_cv_pp = ".done_patterns/" + model_basename + "_{fold}.pkl.done_pp_cv_snakemake"
+    done_cv_pp = ".done_patterns/" + semantic_class + "/" + model_basename + "_{fold}.pkl.done_pp_cv_snakemake"
     targets += expand([done_cv_pp], fold=list(range(cv_folds)))
 print("TARGETS:\n")
 print(targets)
@@ -362,8 +362,8 @@ rule assemble_prediction:
           walltime="00:20:00",
           nodes=1,
           cores=2,
-          memory="10G",
-          gres='#SBATCH -p gpu\n#SBATCH --gres=gpu:2'
+          memory="20G",
+          gres=''
     shell:
          f"""
         python3 {scriptdir}/assemble_prediction.py \
@@ -438,6 +438,7 @@ rule particle_picking_evaluation:
         --statistics_file {{pr_statistics_file}} \
         --radius {{pr_tolerance_radius}} \
         --segmentation_names  {{segmentation_names}} \
+        --yaml_file {{user_config_file}} \
         """ + "--tomo_name {wildcards.tomo_name}"
 
 rule segmentation_evaluation:
@@ -466,6 +467,7 @@ rule segmentation_evaluation:
         --filtering_mask {{filtering_mask}} \
         --statistics_file {{dice_eval_statistics_file}} \
         --segmentation_names  {{segmentation_names}} \
+        --yaml_file {{user_config_file}} \
         """ + "--tomo_name {wildcards.tomo_name}"
 
 rule cross_validation_particle_picking:
@@ -474,7 +476,7 @@ rule cross_validation_particle_picking:
     input:
          done_cv_eval=".done_patterns/" + model_basename + "_{fold}.pkl.done",
     output:
-          done=".done_patterns/" + model_basename + "_{fold}.pkl.done_pp_cv_snakemake"
+          done=".done_patterns/" + semantic_class + "/" + model_basename + "_{fold}.pkl.done_pp_cv_snakemake"
     params:
           config=user_config_file,
           logdir=config["cluster"]["logdir"],

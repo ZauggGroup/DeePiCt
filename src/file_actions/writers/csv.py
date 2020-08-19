@@ -546,6 +546,8 @@ def write_on_models_notebook(model_name: str, label_name:str,
     print(training_paths, segmentation_names)
     if cv_test_tomos is not None:
         cv_testing_paths = reduce(lambda x, y: x + ", " + y, cv_test_tomos)
+    else:
+        cv_testing_paths = ""
 
     now = datetime.datetime.now()
     date = str(now.day) + "/" + str(now.month) + "/" + str(now.year)
@@ -560,6 +562,8 @@ def write_on_models_notebook(model_name: str, label_name:str,
     mini_notebook_df[ModelsHeader.dropout] = dropout
     mini_notebook_df[ModelsHeader.epochs] = n_epochs
     mini_notebook_df[ModelsHeader.training_set] = training_paths
+    mini_notebook_df[ModelsHeader.cv_testing_set] = cv_testing_paths
+    mini_notebook_df[ModelsHeader.cv_fold] = cv_fold
     mini_notebook_df[ModelsHeader.train_split] = split
     mini_notebook_df[ModelsHeader.output_classes] = output_classes
     mini_notebook_df[ModelsHeader.semantic_classes] = segmentation_names

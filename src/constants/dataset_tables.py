@@ -5,8 +5,6 @@ class DatasetTableHeader(object):
                  processing_tomo='eman2_filtered_tomo',
                  image_acquisition_parameter='vpp'):
 
-
-
         self.processing_tomo = processing_tomo
         self.original_tomo = 'original_tomo'
         self.tomo_name = 'tomo_name'

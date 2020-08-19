@@ -12,6 +12,7 @@ parser.add_argument("-calculate_motl", "--calculate_motl", type=str)
 parser.add_argument("-statistics_file", "--statistics_file", type=str)
 parser.add_argument("-radius", "--radius", type=int)
 parser.add_argument("-segmentation_names", "--segmentation_names", nargs='+', type=str)
+parser.add_argument("-yaml_file", "--yaml_file", help="yaml_file", type=str)
 
 args = parser.parse_args()
 pythonpath = args.pythonpath
@@ -20,18 +21,24 @@ sys.path.append(pythonpath)
 import os
 from os.path import join
 
+import yaml
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import matplotlib
 
-from constants.dataset_tables import ModelsTableHeader, DatasetTableHeader
+from constants.dataset_tables import DatasetTableHeader
 from file_actions.writers.csv import motl_writer
 from file_actions.writers.csv import write_statistics
 from networks.utils import build_prediction_output_dir
 from performance.statistics_utils import pr_auc_score, \
     f1_score_calculator, precision_recall_calculator
 from tomogram_utils.peak_toolbox.utils import read_motl_coordinates_and_values
+from constants.statistics import write_statistics_pp
+
+
+yaml_file = args.yaml_file
+config = yaml.safe_load(open(yaml_file))
 
 tomo_name = args.tomo_name
 output_dir = args.output_dir
@@ -175,6 +182,41 @@ if statistics_file != "None":
                      statistics_label="F1_" + statistics_label,
                      tomo_name=tomo_name,
                      stat_measure=round(max_F1, 4))
+
+
+models_table = os.path.join(args.output_dir, "models")
+models_table = os.path.join(models_table, "models.csv")
+fold = None
+threshold = config["postprocessing_clustering"]["threshold"]
+min_cluster_size = config["postprocessing_clustering"]["min_cluster_size"]
+max_cluster_size = config["postprocessing_clustering"]["max_cluster_size"]
+if max_cluster_size is None:
+    max_cluster_size = np.inf
+
+if os.path.dirname(statistics_file) == "":
+    statistics_file = "pp_statistics.csv"
+    write_statistics_pp(statistics_file=statistics_file, tomo_name=tomo_name, model_name=model_name,
+                        models_table_path=models_table, statistic_variable="auPRC",
+                        statistic_value=round(auPRC, 4),
+                        pr_radius=radius, cv_fold=fold, min_cluster_size=min_cluster_size,
+                        max_cluster_size=max_cluster_size, threshold=threshold, prediction_class=semantic_class)
+    write_statistics_pp(statistics_file=statistics_file, tomo_name=tomo_name, model_name=model_name,
+                        models_table_path=models_table, statistic_variable="maxF1",
+                        statistic_value=round(max_F1, 4), pr_radius=radius, cv_fold=fold,
+                        min_cluster_size=min_cluster_size, max_cluster_size=max_cluster_size,
+                        threshold=threshold, prediction_class=semantic_class)
+else:
+    statistics_file = os.path.dirname(statistics_file) + "/pp_statistics.csv"
+    write_statistics_pp(statistics_file=statistics_file, tomo_name=tomo_name, model_name=model_name,
+                        models_table_path=models_table, statistic_variable="auPRC",
+                        statistic_value=round(auPRC, 4),
+                        pr_radius=radius, cv_fold=fold, min_cluster_size=min_cluster_size,
+                        max_cluster_size=max_cluster_size, threshold=threshold, prediction_class=semantic_class)
+    write_statistics_pp(statistics_file=statistics_file, tomo_name=tomo_name, model_name=model_name,
+                        models_table_path=models_table, statistic_variable="maxF1",
+                        statistic_value=round(max_F1, 4), pr_radius=radius, cv_fold=fold,
+                        min_cluster_size=min_cluster_size, max_cluster_size=max_cluster_size,
+                        threshold=threshold, prediction_class=semantic_class)
 
 ### For snakemake:
 snakemake_pattern = os.path.join(path_to_detected_predicted, ".done_pp_snakemake")

@@ -180,7 +180,7 @@ for epoch in range(n_epochs):
     current_validation_loss = validate(model=net, loader=val_loader, loss_function=loss,
                                        metric=metric,
                                        device=device, step=step,
-                                       tb_logger=logger)
+                                       tb_logger=logger, log_image_interval=None)
     if current_validation_loss <= validation_loss:
         best_epoch = new_epoch
         print("Best epoch! -->", best_epoch, "with validation loss:", current_validation_loss)

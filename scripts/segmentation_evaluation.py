@@ -11,6 +11,7 @@ parser.add_argument("-output_dir", "--output_dir", type=str)
 parser.add_argument("-filtering_mask", "--filtering_mask", type=str)
 parser.add_argument("-model_name", "--model_name", type=str)
 parser.add_argument("-segmentation_names", "--segmentation_names", nargs='+', type=str)
+parser.add_argument("-yaml_file", "--yaml_file", help="yaml_file", type=str)
 
 args = parser.parse_args()
 pythonpath = args.pythonpath
@@ -19,7 +20,7 @@ import os
 
 import numpy as np
 import pandas as pd
-import torch
+import torch, yaml
 
 from constants.dataset_tables import DatasetTableHeader, ModelsTableHeader
 from file_actions.readers.tomograms import load_tomogram
@@ -28,6 +29,9 @@ from pytorch_cnn.classes.loss import DiceCoefficient
 from paths.pipeline_dirs import get_post_processed_prediction_path
 
 args = parser.parse_args()
+yaml_file = args.yaml_file
+config = yaml.safe_load(open(yaml_file))
+
 dataset_table = args.dataset_table
 tomo_name = args.tomo_name
 output_dir = args.output_dir
@@ -90,6 +94,31 @@ if statistics_file != "None":
                      statistics_label=statistics_label,
                      tomo_name=tomo_name,
                      stat_measure=dice_statistic)
+
+from constants.statistics import write_statistics_pp
+models_table = os.path.join(args.output_dir, "models")
+models_table = os.path.join(models_table, "models.csv")
+fold = None
+threshold = config["postprocessing_clustering"]["threshold"]
+min_cluster_size = config["postprocessing_clustering"]["min_cluster_size"]
+max_cluster_size = config["postprocessing_clustering"]["max_cluster_size"]
+if max_cluster_size is None:
+    max_cluster_size = np.inf
+
+if os.path.dirname(statistics_file) == "":
+    statistics_file = "pp_statistics.csv"
+    write_statistics_pp(statistics_file=statistics_file, tomo_name=tomo_name, model_name=model_name,
+                        models_table_path=models_table, statistic_variable="dice",
+                        statistic_value=round(dice_statistic, 4), pr_radius=None, cv_fold=fold,
+                        min_cluster_size=min_cluster_size, max_cluster_size=max_cluster_size,
+                        threshold=threshold, prediction_class=semantic_class)
+else:
+    statistics_file = os.path.dirname(statistics_file) + "/pp_statistics.csv"
+    write_statistics_pp(statistics_file=statistics_file, tomo_name=tomo_name, model_name=model_name,
+                        models_table_path=models_table, statistic_variable="dice",
+                        statistic_value=round(dice_statistic, 4), pr_radius=None, cv_fold=fold,
+                        min_cluster_size=min_cluster_size, max_cluster_size=max_cluster_size,
+                        threshold=threshold, prediction_class=semantic_class)
 
 print("Dice coefficient =", dice_statistic)
 

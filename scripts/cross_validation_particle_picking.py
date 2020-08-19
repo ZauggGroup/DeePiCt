@@ -157,17 +157,6 @@ for tomo_name in tomo_evaluation_list:
                                             subtomo_shape=subtomogram_shape,
                                             overlap=overlap)
 
-#### Segmentation
-
-#
-# parser = argparse.ArgumentParser()
-
-#
-# args = parser.parse_args()
-# pythonpath = args.pythonpath
-# sys.path.append(pythonpath)
-
-
 gpu = args.gpu
 if gpu is None:
     print("No CUDA_VISIBLE_DEVICES passed...")
@@ -238,36 +227,6 @@ for tomo_name in tomo_evaluation_list:
     segment_and_write(data_path=partition_path, model=model, label_name=label_name)
     print("The segmentation has finished!")
 
-    ### For snakemake:
-    # model_path = os.path.join(models_dir, args.model_name)
-    # snakemake_pattern = ".done_patterns/" + model_path + "." + tomo_name + ".done"
-    # snakemake_pattern_dir = os.path.dirname(snakemake_pattern)
-    # os.makedirs(snakemake_pattern_dir, exist_ok=True)
-    # with open(file=snakemake_pattern, mode="w") as f:
-    #     print("Creating snakemake pattern", snakemake_pattern)
-
-#### start assembling prediction
-
-# import argparse
-# import sys
-#
-# from paths.pipeline_dirs import get_models_table_path
-#
-
-#
-# args = parser.parse_args()
-# pythonpath = args.pythonpath
-# sys.path.append(pythonpath)
-
-
-# tomo_name = args.tomo_name
-# output_dir = args.output_dir
-# model_name = args.model_name[:-4]
-# dataset_table = args.dataset_table
-# test_partition = args.test_partition
-# work_dir = args.work_dir
-# processing_tomo = args.processing_tomo
-
 for tomo_name in tomo_evaluation_list:
     output_dir_tomo, data_partition = fold_testing_partition_path(output_dir=work_dir, tomo_name=tomo_name,
                                                                   model_name=model_name, partition_name=test_partition,
@@ -317,16 +276,6 @@ for tomo_name in tomo_evaluation_list:
     print("Assembling prediction has finalized.")
 
 ####### clustering and cleaning
-
-# import argparse
-# import sys
-#
-# parser = argparse.ArgumentParser()
-#
-#
-# args = parser.parse_args()
-# pythonpath = args.pythonpath
-# sys.path.append(pythonpath)
 
 
 ModelsHeader = ModelsTableHeader()
@@ -579,7 +528,8 @@ for tomo_name in tomo_evaluation_list:
                                 threshold=threshold, prediction_class=semantic_class)
 
 ### For snakemake:
-snakemake_pattern = os.path.join(".done_patterns/", os.path.basename(path_to_model))
+snakemake_pattern = os.path.join(".done_patterns/" + semantic_class, os.path.basename(path_to_model))
+os.makedirs(os.path.dirname(snakemake_pattern), exist_ok=True)
 snakemake_pattern = snakemake_pattern + ".done_pp_cv_snakemake"
 with open(file=snakemake_pattern, mode="w") as f:
     print("Creating snakemake pattern", snakemake_pattern)

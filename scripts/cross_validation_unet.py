@@ -87,8 +87,19 @@ work_dir = args.work_dir
 cv_data = pd.read_csv(cv_data_path)
 cv_data["cv_fold"] = cv_data["cv_fold"].apply(lambda x: str(x))
 cv_data.set_index("cv_fold", inplace=True)
-tomo_training_list = cv_data.loc[fold]["cv_training_list"].split(" ")[:-1]
-tomo_evaluation_list = cv_data.loc[fold]["cv_evaluation_list"].split(" ")[:-1]
+
+
+def split_list(tomo_list_str: str, sep: str = " "):
+    tomo_list = tomo_list_str.split(sep)
+    tomo_list_spl = []
+    for tomo in tomo_list:
+        if len(tomo) > 0:
+            tomo_list_spl.append(tomo)
+    return tomo_list_spl
+
+
+tomo_training_list = split_list(tomo_list_str=cv_data.loc[fold]["cv_training_list"])
+tomo_evaluation_list = split_list(tomo_list_str=cv_data.loc[fold]["cv_evaluation_list"])
 
 logging_dir = os.path.join(output_dir, "logging")
 model_dir = os.path.join(output_dir, "models")
@@ -162,23 +173,15 @@ if not os.path.exists(model_path):
     metric = loss
 
     write_on_models_notebook(model_name=model_name, label_name=model_name, model_dir=model_dir,
-                             log_dir=log_model, depth=depth,
-                             initial_features=initial_features, n_epochs=n_epochs,
-                             training_paths_list=training_partition_paths,
-                             split=split, output_classes=output_classes,
-                             segmentation_names=segmentation_names, box_size=box_size,
-                             overlap=overlap,
-                             processing_tomo=processing_tomo,
-                             partition_name=partition_name,
-                             retrain=False,
-                             path_to_old_model="",
-                             models_notebook_path=models_table,
-                             encoder_dropout=encoder_dropout,
-                             decoder_dropout=decoder_dropout,
-                             BN=batch_norm)
+                             log_dir=log_model, depth=depth, initial_features=initial_features,
+                             n_epochs=n_epochs, training_paths_list=training_partition_paths, split=split,
+                             output_classes=output_classes, segmentation_names=segmentation_names, box_size=box_size,
+                             overlap=overlap, processing_tomo=processing_tomo, partition_name=partition_name,
+                             retrain=False, path_to_old_model="", models_notebook_path=models_table,
+                             encoder_dropout=encoder_dropout, decoder_dropout=decoder_dropout, BN=batch_norm,
+                             cv_fold=fold, cv_test_tomos=tomo_evaluation_list)
 
-    lr_scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=0.1,
-                                                        patience=10, verbose=True)
+    lr_scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=0.1, patience=10, verbose=True)
 
     print("The neural network training is now starting...")
     validation_loss = np.inf
@@ -191,9 +194,8 @@ if not os.path.exists(model_path):
               log_image=False, lr_scheduler=lr_scheduler)
         step = new_epoch * len(train_loader.dataset)
         current_validation_loss = validate(model=net, loader=val_loader, loss_function=loss,
-                                           metric=metric,
-                                           device=device, step=step,
-                                           tb_logger=logger)
+                                           metric=metric, device=device, step=step,
+                                           tb_logger=logger, log_image_interval=None)
         if current_validation_loss <= validation_loss:
             best_epoch = new_epoch
             print("Best epoch! -->", best_epoch, "with validation loss:", current_validation_loss)
