@@ -25,7 +25,7 @@ def generate_training_list_str(training_tomos: list) -> str:
 dataset_table = config["dataset_table"]
 output_dir = config["output_dir"]
 work_dir = config["work_dir"]
-model_name = config["model_name"]
+model_name = config["model_path"]
 model_basename = os.path.basename(model_name)[:-4]
 # Tomogram lists
 training_tomos = config["tomos_sets"]["training_list"]
@@ -33,28 +33,26 @@ prediction_tomos = config["tomos_sets"]["prediction_list"]
 # Training
 overlap = config["training"]["overlap"]
 partition_name = "train_partition"
-segmentation_names = config["training"]["semantic_classes"]
+semantic_classes = config["training"]["semantic_classes"]
 processing_tomo = config["training"]["processing_tomo"]
-box_shape = config["training"]["box_shape"]
+box_shape = config["training"]["box_size"]
 min_label_fraction = config["training"]["min_label_fraction"]
 max_label_fraction = 1
 
 #unet_hyperparameters:
 depth = config["training"]["unet_hyperparameters"]["depth"]
 initial_features = config["training"]["unet_hyperparameters"]["initial_features"]
-n_epochs = config["training"]["unet_hyperparameters"]["n_epochs"]
-split = config["training"]["unet_hyperparameters"]["split"]
-BatchNorm = config["training"]["unet_hyperparameters"]["BatchNorm"]
+epochs = config["training"]["unet_hyperparameters"]["epochs"]
+split = config["training"]["unet_hyperparameters"]["train_split"]
+BatchNorm = config["training"]["unet_hyperparameters"]["batch_norm"]
 encoder_dropout = config["training"]["unet_hyperparameters"]["encoder_dropout"]
 decoder_dropout = config["training"]["unet_hyperparameters"]["decoder_dropout"]
-batch_size = config["training"]["unet_hyperparameters"]["batch_size"]
+batch_size = config["training"]["batch_size"]
 
 # prediction:
-pred_processing_tomo = config["prediction"]["processing_tomo"]
-pred_partition_name = "test_partition"
 pred_class = config["prediction"]["semantic_class"]
 pred_class_number = -1
-for class_number, semantic_class in enumerate(segmentation_names):
+for class_number, semantic_class in enumerate(semantic_classes):
     if semantic_class == pred_class:
         pred_class_number = class_number
 assert pred_class_number >= 0, "Prediction class not among segmentation names for this model!"
@@ -67,7 +65,7 @@ if max_cluster_size is None:
     max_cluster_size = np.inf
 calculate_motl = config["postprocessing_clustering"]["calculate_motl"]
 ignore_border_thickness = config["postprocessing_clustering"]["ignore_border_thickness"]
-filtering_mask = config["postprocessing_clustering"]["filtering_mask"]
+filtering_mask = config["postprocessing_clustering"]["region_mask"]
 
 # evaluation:
 # a. For precision recall in particle picking
@@ -80,7 +78,7 @@ dice_eval_active = config["evaluation"]["segmentation_evaluation"]["active"]
 dice_eval_statistics_file = config["evaluation"]["segmentation_evaluation"]["statistics_file"]
 
 str_segmentation_names = ""
-for name in segmentation_names:
+for name in semantic_classes:
     str_segmentation_names += name + " "
 
 tomo_training_list = generate_training_list_str(training_tomos=training_tomos)
@@ -98,8 +96,8 @@ testing_part_pattern = work_dir + "/test_partitions/{tomo_name}/" + model_basena
 segmented_part_pattern = ".done_patterns/" + model_path + ".{tomo_name}.segmentation.done"
 assemble_probability_map_done = output_dir + "/predictions/" + model_basename + "/{tomo_name}/" + pred_class + "/probability_map.mrc"
 postprocess_prediction_done = output_dir + "/predictions/" + model_basename + "/{tomo_name}/" + pred_class + "/post_processed_prediction.mrc"
-particle_picking_pr_done = output_dir + "/predictions/" + model_basename + "/{tomo_name}/" + pred_class + "/pr_radius_" + str(
-    pr_tolerance_radius) + "/detected/.done_pp_snakemake"
+particle_picking_pr_done = output_dir + "/predictions/" + model_basename + "/{tomo_name}/" + pred_class + \
+                           "/pr_radius_" + str(pr_tolerance_radius) + "/detected/.done_pp_snakemake"
 dice_evaluation_done = output_dir + "/predictions/" + model_basename + "/{tomo_name}/" + pred_class + "/.done_dice_eval_snakemake"
 if config["cluster"]["logdir"] is not None:
     os.makedirs(config["cluster"]["logdir"], exist_ok=True)
@@ -112,6 +110,8 @@ if config["training"]["active"]:
     targets.append(done_training_pattern)
 
 if config["prediction"]["active"]:
+    targets += expand([assemble_probability_map_done], tomo_name=prediction_tomos)
+if config["postprocessing_clustering"]["active"]:
     targets += expand([postprocess_prediction_done], tomo_name=prediction_tomos)
 else:
     os.makedirs(".done_patterns", exist_ok=True)
@@ -122,7 +122,10 @@ else:
         targets += expand([postprocess_prediction_done], tomo_name=prediction_tomos)
 if config["evaluation"]["particle_picking"]["active"]:
     targets += expand([particle_picking_pr_done], tomo_name=prediction_tomos)
-
+else:
+    os.makedirs(".done_patterns", exist_ok=True)
+    with open(".done_patterns/.skip_pr", mode="w") as f:
+        print("skipping prediction")
 if config["evaluation"]["segmentation_evaluation"]["active"]:
     targets += expand([dice_evaluation_done], tomo_name=prediction_tomos)
 
@@ -142,10 +145,10 @@ if config["cross_validation"]["active"]:
     else:
         print("generating cv_data.csv file")
         cv_training_dict, cv_evaluation_dict = generate_cv_folds(tomo_training_list=training_tomos, cv_folds=cv_folds)
-        cv_data = pd.DataFrame({"cv_fold": list(cv_training_dict.keys()),
+        cv_data = pd.DataFrame({"fold": list(cv_training_dict.keys()),
                                 "cv_training_list": [None for _ in range(cv_folds)],
                                 "cv_evaluation_list": [None for _ in range(cv_folds)]})
-        cv_data.set_index("cv_fold", inplace=True)
+        cv_data.set_index("fold", inplace=True)
         for fold in cv_training_dict.keys():
             print("fold:", fold)
             cv_training_tomos = cv_training_dict[fold]
@@ -184,16 +187,7 @@ rule partition_training:
          f"""
          python3 {scriptdir}/generate_training_data.py \
          --pythonpath {srcdir} \
-         --overlap {{overlap}}  \
-         --partition_name {{partition_name}} \
-         --segmentation_names {{str_segmentation_names}} \
-         --dataset_table {{dataset_table}} \
-         --output_dir {{output_dir}} \
-         --work_dir {{work_dir}} \
-         --processing_tomo {{processing_tomo}} \
-         --box_shape {{box_shape}} \
-         --min_label_fraction {{min_label_fraction}} \
-         --max_label_fraction {{max_label_fraction}} \
+         --config_file {user_config_file} \
          """ + "--tomo_name {wildcards.tomo_name}"
 
 rule training_3dunet:
@@ -218,25 +212,7 @@ rule training_3dunet:
          f"""
         python3 {scriptdir}/training.py \
         --pythonpath {srcdir} \
-        --partition_name  {{partition_name}} \
-        --segmentation_names  {{segmentation_names}} \
-        --dataset_table  {{dataset_table}} \
-        --output_dir  {{output_dir}} \
-        --work_dir  {{work_dir}} \
-        --box_shape  {{box_shape}} \
-        --tomo_training_list  {{tomo_training_list}} \
-        --split  {{split}} \
-        --n_epochs  {{n_epochs}} \
-        --depth  {{depth}} \
-        --decoder_dropout  {{decoder_dropout}} \
-        --encoder_dropout  {{encoder_dropout}} \
-        --batch_size  {{batch_size}} \
-        --batch_norm  {{BatchNorm}} \
-        --initial_features  {{initial_features}} \
-        --overlap  {{overlap}} \
-        --processing_tomo  {{processing_tomo}} \
-        --partition_name  {{partition_name}} \
-        --model_name {{model_name}} \
+        --config_file {user_config_file} \
         """ + "--gpu $CUDA_VISIBLE_DEVICES"
 
 rule cross_validation_3dunet:
@@ -261,13 +237,13 @@ rule cross_validation_3dunet:
          python3 {scriptdir}/cross_validation_unet.py \
          --pythonpath {srcdir} \
          --partition_name  {{partition_name}} \
-         --segmentation_names  {{segmentation_names}} \
+         --semantic_classes  {{semantic_classes}} \
          --dataset_table  {{dataset_table}} \
-         --output_dir  {{output_dir}} \
+         --pred_output_dir  {{pred_output_dir}} \
          --work_dir  {{work_dir}} \
          --box_shape  {{box_shape}} \
          --split  {{split}} \
-         --n_epochs  {{n_epochs}} \
+         --epochs  {{epochs}} \
          --depth  {{depth}} \
          --decoder_dropout  {{decoder_dropout}} \
          --encoder_dropout  {{encoder_dropout}} \
@@ -277,7 +253,7 @@ rule cross_validation_3dunet:
          --overlap  {{overlap}} \
          --processing_tomo  {{processing_tomo}} \
          --partition_name  {{partition_name}} \
-         --model_name {{model_name}} \
+         --model_path {{model_path}} \
          --statistics_file {{cv_statistics_file}} \
          --cv_data_path {{path_to_cv_data}} \
          --fold {{wildcards.fold}} \
@@ -300,14 +276,7 @@ rule predict_partition:
          f"""
         python3 {scriptdir}/generate_prediction_partition.py \
         --pythonpath {srcdir} \
-        --dataset_table {{dataset_table}} \
-        --output_dir {{output_dir}} \
-        --work_dir {{work_dir}} \
-        --model_name {{model_name}} \
-        --test_partition {{pred_partition_name}} \
-        --processing_tomo {{pred_processing_tomo}} \
-        --box_shape  {{box_shape}} \
-        --overlap  {{overlap}} \
+        --config_file {user_config_file} \
         """ + "--tomo_name {wildcards.tomo_name}"
 
 rule segment:
@@ -324,28 +293,15 @@ rule segment:
           walltime="00:30:00",
           nodes=1,
           cores=4,
-          memory="20G",
-          gres='#SBATCH -p gpu\n#SBATCH --gres=gpu:1'
+          memory="50G",
+          gres='#SBATCH -p gpu\n#SBATCH --gres=gpu:2'
     resources:
-          gpu=1
+          gpu=2
     shell:
          f"""
         python3 {scriptdir}/segment.py \
         --pythonpath {srcdir} \
-        --dataset_table {{dataset_table}} \
-        --output_dir {{output_dir}} \
-        --work_dir {{work_dir}} \
-        --model_name {{model_name}} \
-        --test_partition {{pred_partition_name}} \
-        --processing_tomo {{pred_processing_tomo}} \
-        --depth  {{depth}} \
-        --decoder_dropout  {{decoder_dropout}} \
-        --encoder_dropout  {{encoder_dropout}} \
-        --batch_norm  {{BatchNorm}} \
-        --initial_features  {{initial_features}} \
-        --segmentation_names  {{segmentation_names}} \
-        --box_shape  {{box_shape}} \
-        --overlap  {{overlap}} \
+        --config_file {user_config_file} \
         """ + "--tomo_name {wildcards.tomo_name} \
          --gpu $CUDA_VISIBLE_DEVICES"
 
@@ -368,16 +324,7 @@ rule assemble_prediction:
          f"""
         python3 {scriptdir}/assemble_prediction.py \
         --pythonpath {srcdir} \
-        --dataset_table {{dataset_table}} \
-        --output_dir {{output_dir}} \
-        --work_dir {{work_dir}} \
-        --model_name {{model_name}} \
-        --test_partition {{pred_partition_name}} \
-        --class_number {{pred_class_number}} \
-        --processing_tomo {{pred_processing_tomo}} \
-        --segmentation_names  {{segmentation_names}} \
-        --box_shape  {{box_shape}} \
-        --overlap  {{overlap}} \
+        --config_file {user_config_file} \
         """ + "--tomo_name {wildcards.tomo_name}"
 
 rule postprocess_prediction:
@@ -399,16 +346,7 @@ rule postprocess_prediction:
          f"""
         python3 {scriptdir}/clustering_and_cleaning.py \
         --pythonpath {srcdir} \
-        --dataset_table {{dataset_table}} \
-        --output_dir {{output_dir}} \
-        --model_name {{model_name}} \
-        --class_number {{pred_class_number}} \
-        --min_cluster_size {{min_cluster_size}} \
-        --max_cluster_size {{max_cluster_size}} \
-        --threshold {{threshold}} \
-        --dataset_table {{dataset_table}} \
-        --filtering_mask {{filtering_mask}} \
-        --segmentation_names  {{segmentation_names}} \
+        --config_file {user_config_file} \
         """ + "--tomo_name {wildcards.tomo_name}"
 
 rule particle_picking_evaluation:
@@ -430,22 +368,14 @@ rule particle_picking_evaluation:
          f"""
         python3 {scriptdir}/particle_picking_evaluation.py \
         --pythonpath {srcdir} \
-        --dataset_table {{dataset_table}} \
-        --output_dir {{output_dir}} \
-        --model_name {{model_name}} \
-        --class_number {{pred_class_number}} \
-        --calculate_motl {{calculate_motl}} \
-        --statistics_file {{pr_statistics_file}} \
-        --radius {{pr_tolerance_radius}} \
-        --segmentation_names  {{segmentation_names}} \
-        --yaml_file {{user_config_file}} \
+        --config_file {user_config_file} \
         """ + "--tomo_name {wildcards.tomo_name}"
 
 rule segmentation_evaluation:
     conda:
          "environment.yaml"
     input:
-          postprocess_prediction_done if config["prediction"]["active"] else ".done_patterns/.skip_prediction"
+          file=postprocess_prediction_done # if config["prediction"]["active"] else ".done_patterns/.skip_prediction",
     output:
           file=dice_evaluation_done
     params:
@@ -460,14 +390,7 @@ rule segmentation_evaluation:
          f"""
         python3 {scriptdir}/segmentation_evaluation.py \
         --pythonpath {srcdir} \
-        --dataset_table {{dataset_table}} \
-        --output_dir {{output_dir}} \
-        --model_name {{model_name}} \
-        --class_number {{pred_class_number}} \
-        --filtering_mask {{filtering_mask}} \
-        --statistics_file {{dice_eval_statistics_file}} \
-        --segmentation_names  {{segmentation_names}} \
-        --yaml_file {{user_config_file}} \
+        --config_file {user_config_file} \
         """ + "--tomo_name {wildcards.tomo_name}"
 
 rule cross_validation_particle_picking:
@@ -494,10 +417,10 @@ rule cross_validation_particle_picking:
          --pythonpath {srcdir} \
          --test_partition  {{pred_partition_name}} \
          --dataset_table  {{dataset_table}} \
-         --output_dir  {{output_dir}} \
+         --pred_output_dir  {{pred_output_dir}} \
          --work_dir  {{work_dir}} \
          --processing_tomo  {{pred_processing_tomo}} \
-         --model_name {{model_name}} \
+         --model_path {{model_path}} \
          --statistics_file {{cv_statistics_file_pp}} \
          --cv_data_path {{path_to_cv_data}} \
          --fold {{wildcards.fold}} \
@@ -506,7 +429,7 @@ rule cross_validation_particle_picking:
          --max_cluster_size {{max_cluster_size}} \
          --threshold {{threshold}} \
          --dataset_table {{dataset_table}} \
-         --filtering_mask {{filtering_mask}} \
+         --region_mask {{region_mask}} \
          --calculate_motl {{calculate_motl}} \
          --radius {{pr_tolerance_radius}} \
          """ + "--gpu $CUDA_VISIBLE_DEVICES"

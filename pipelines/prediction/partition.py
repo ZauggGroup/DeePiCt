@@ -21,10 +21,10 @@ config = yaml.safe_load(open(yaml_file))
 tomos_set = args.tomos_set
 tomo_list = config['tomos_sets'][tomos_set]['test_list']
 dataset_table = config['dataset_table']
-output_dir = config["output_dir"]
+output_dir = config["pred_output_dir"]
 models_table = os.path.join(output_dir, "models")
 models_table = os.path.join(models_table, "models.csv")
-model_name = config["model_name"][:-4]
+model_name = config["model_path"][:-4]
 
 write_on_table = True
 
@@ -47,7 +47,7 @@ df[DTHeader.tomo_name] = df[DTHeader.tomo_name].astype(str)
 if write_on_table:
     for tomo_name in tomo_list:
         print("Partitioning tomo", tomo_name)
-        output_dir = config['output_dir']
+        output_dir = config['pred_output_dir']
         output_dir_tomo = os.path.join(output_dir, tomo_name)
         os.makedirs(output_dir_tomo, exist_ok=True)
         partition_path = os.path.join(output_dir_tomo, test_partition + ".h5")

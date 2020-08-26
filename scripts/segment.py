@@ -4,21 +4,8 @@ import sys
 parser = argparse.ArgumentParser()
 parser.add_argument("-gpu", "--gpu", help="cuda visible devices", type=str)
 parser.add_argument("-pythonpath", "--pythonpath", type=str)
-parser.add_argument("-dataset_table", "--dataset_table", type=str)
-parser.add_argument("-output_dir", "--output_dir", type=str)
-parser.add_argument("-work_dir", "--work_dir", type=str)
-parser.add_argument("-model_name", "--model_name", type=str)
-parser.add_argument("-test_partition", "--test_partition", type=str)
-parser.add_argument("-processing_tomo", "--processing_tomo", type=str)
+parser.add_argument("-config_file", "--config_file", type=str)
 parser.add_argument("-tomo_name", "--tomo_name", type=str)
-parser.add_argument("-depth", "--depth", type=int)
-parser.add_argument("-decoder_dropout", "--decoder_dropout", type=float)
-parser.add_argument("-encoder_dropout", "--encoder_dropout", type=float)
-parser.add_argument("-batch_norm", "--batch_norm", type=str)
-parser.add_argument("-initial_features", "--initial_features", type=int)
-parser.add_argument("-segmentation_names", "--segmentation_names", nargs='+', type=str)
-parser.add_argument("-overlap", "--overlap", type=int)
-parser.add_argument("-box_shape", "--box_shape", type=int)
 
 args = parser.parse_args()
 pythonpath = args.pythonpath
@@ -26,16 +13,14 @@ sys.path.append(pythonpath)
 
 import os
 
-import pandas as pd
 import torch
 import torch.nn as nn
 
-from distutils.util import strtobool
 from collections import OrderedDict
-from constants.dataset_tables import DatasetTableHeader
 from file_actions.writers.h5 import segment_and_write
+from constants.config import Config
 from networks.io import get_device
-from networks.unet import UNet3D, UNet
+from networks.unet import UNet3D
 from paths.pipeline_dirs import testing_partition_path
 
 gpu = args.gpu
@@ -46,43 +31,27 @@ if gpu is None:
 else:
     os.environ["CUDA_VISIBLE_DEVICES"] = gpu
 
-dataset_table = args.dataset_table
-output_dir = args.output_dir
-work_dir = args.work_dir
-model_name = os.path.basename(args.model_name)[:-4]
-test_partition = args.test_partition
-processing_tomo = args.processing_tomo
+
+config_file = args.config_file
+config = Config(user_config_file=config_file)
 tomo_name = args.tomo_name
 
-output_dir_tomo, partition_path = testing_partition_path(output_dir=work_dir, tomo_name=tomo_name,
-                                                         model_name=model_name, partition_name=test_partition)
-overlap = args.overlap
-box_shape = args.box_shape
-box_shape = [box_shape, box_shape, box_shape]
-path_to_model = args.model_name
-depth = args.depth
-decoder_dropout = args.decoder_dropout
-encoder_dropout = args.encoder_dropout
-BN = strtobool(args.batch_norm)
-initial_features = args.initial_features
-label_name = model_name
-segmentation_names = args.segmentation_names
-output_classes = len(segmentation_names)
+output_dir_tomo, partition_path = testing_partition_path(output_dir=config.work_dir, tomo_name=tomo_name,
+                                                         model_name=config.model_name)
+box_shape = [config.box_size, config.box_size, config.box_size]
+path_to_model = config.model_path
+label_name = config.model_name
+output_classes = len(config.semantic_classes)
 
-net_conf = {'final_activation': None, 'depth': depth,
-            'initial_features': initial_features, "out_channels": output_classes,
-            "BN": BN, "encoder_dropout": encoder_dropout,
-            "decoder_dropout": decoder_dropout}
-print("UNet configuration:", net_conf)
+net_conf = {'final_activation': None, 'depth': config.depth,
+            'initial_features': config.initial_features, "out_channels": output_classes,
+            "BN": config.batch_norm, "encoder_dropout": config.encoder_dropout,
+            "decoder_dropout": config.decoder_dropout}
+
 device = get_device()
 model = UNet3D(**net_conf)
-# model = UNet(**net_conf)
 model.to(device)
 checkpoint = torch.load(path_to_model, map_location=device)
-
-# print("saved model state_dict keys:", checkpoint['model_state_dict'].keys())
-# print("\n")
-# print("current 3D UNet for loading keys:", model.state_dict().keys())
 
 if torch.cuda.device_count() > 1:
     print("Let's use", torch.cuda.device_count(), "GPUs!")
@@ -105,16 +74,11 @@ else:
 model.load_state_dict(checkpoint['model_state_dict'])
 model = model.eval()
 
-DTHeader = DatasetTableHeader(partition_name=test_partition)
-df = pd.read_csv(dataset_table, dtype={DTHeader.tomo_name: str})
-
 print("Segmenting tomo", tomo_name)
-
-print("test_partition", partition_path)
 segment_and_write(data_path=partition_path, model=model, label_name=label_name)
 print("The segmentation has finished!")
 
-### For snakemake:
+# For snakemake:
 snakemake_pattern = ".done_patterns/" + path_to_model + "." + tomo_name + ".segmentation.done"
 snakemake_pattern_dir = os.path.dirname(snakemake_pattern)
 os.makedirs(snakemake_pattern_dir, exist_ok=True)

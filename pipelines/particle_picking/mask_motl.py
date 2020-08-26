@@ -24,17 +24,17 @@ tomos_set = args.tomos_set
 tomo_list = config['tomos_sets'][tomos_set]['test_list']
 
 tomo_list = config['tomos_sets'][tomos_set]['test_list']
-output_dir = config["output_dir"]
+output_dir = config["pred_output_dir"]
 models_table = os.path.join(output_dir, "models")
 models_table = os.path.join(models_table, "models.csv")
-model_name = config["model_name"][:-4]
+model_name = config["model_path"][:-4]
 segmentation_label = model_name
 class_number = config['prediction']['class_number']
 
 ModelsHeader = ModelsTableHeader()
 models_df = pd.read_csv(models_table,
                         dtype={ModelsHeader.model_name: str,
-                               ModelsHeader.semantic_classes: str})
+                               ModelsHeader.segmentation_names: str})
 
 model_df = models_df[models_df[ModelsHeader.model_name] == model_name]
 print(model_df)
@@ -44,7 +44,7 @@ box_shape = int(model_df.iloc[0][ModelsHeader.box_size])
 box_shape = [box_shape, box_shape, box_shape]
 
 # label_name = unet_hyperparameters['label_name']
-# models_table = unet_hyperparameters['models_table']
+# model_parameters = unet_hyperparameters['model_parameters']
 motl_parameters = config['clustering_parameters']
 min_cluster_size = motl_parameters['min_cluster_size']
 max_cluster_size = motl_parameters['max_cluster_size']
@@ -53,19 +53,19 @@ dataset_table = config['dataset_table']
 ModelsHeader = ModelsTableHeader()
 models_df = pd.read_csv(models_table,
                         dtype={ModelsHeader.model_name: str,
-                               ModelsHeader.semantic_classes: str})
+                               ModelsHeader.segmentation_names: str})
 model_df = models_df[models_df[ModelsHeader.model_name] == model_name]
-semantic_names = model_df.iloc[0]['segmentation_names'].split(',')
+semantic_names = model_df.iloc[0]['semantic_classes'].split(',')
 semantic_class = semantic_names[class_number]
 ignore_border_thickness = motl_parameters['ignore_border_thickness']
-filtering_mask = motl_parameters['filtering_mask']
+filtering_mask = motl_parameters['region_mask']
 
 DTHeader = DatasetTableHeader(filtering_mask=filtering_mask)
 df = pd.read_csv(dataset_table)
 df[DTHeader.tomo_name] = df[DTHeader.tomo_name].astype(str)
 
 for tomo_name in tomo_list:
-    output_dir = os.path.join(config["output_dir"], "predictions")
+    output_dir = os.path.join(config["pred_output_dir"], "predictions")
     output_dir = build_prediction_output_dir(base_output_dir=output_dir,
                                              label_name="",
                                              model_name=model_name,

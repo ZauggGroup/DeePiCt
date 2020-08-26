@@ -6,7 +6,6 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.utils import data as du
 
 from constants import h5_internal_paths
 from file_actions.readers.h5 import read_training_data
@@ -14,6 +13,11 @@ from image.filters import preprocess_data
 from networks.io import get_device
 from networks.unet import UNet
 from tomogram_utils.volume_actions.actions import split_and_preprocess_dataset
+import torch.utils.data as du
+from tomogram_utils.volume_actions.actions import \
+    load_and_normalize_dataset_list
+from paths.pipeline_dirs import training_partition_path
+from constants.config import Config
 
 
 def load_unet_model(path_to_model: str, confs: dict, net: nn.Module = UNet,
@@ -146,3 +150,36 @@ def build_prediction_output_dir(base_output_dir: str, label_name: str,
     output_dir = os.path.join(output_dir, tomo_name)
     output_dir = os.path.join(output_dir, semantic_class)
     return output_dir
+
+
+def generate_data_loaders(config: Config):
+    # DTHeader = DatasetTableHeader(partition_name=config.partition_name,
+    #                               semantic_classes=config.semantic_classes)
+    # df = pd.read_csv(config.dataset_table, dtype={DTHeader.tomo_name: str})
+
+    training_partition_paths = list()
+    data_aug_rounds_list = list()
+    for tomo_name in config.training_tomos:
+        print(tomo_name)
+        _, partition_path = training_partition_path(output_dir=config.work_dir, tomo_name=tomo_name,
+                                                    partition_name=config.partition_name)
+        training_partition_paths += [partition_path]
+        data_aug_rounds_list += [0]
+
+    train_data, train_labels, val_data, val_labels = \
+        load_and_normalize_dataset_list(training_partition_paths,
+                                        data_aug_rounds_list,
+                                        config.semantic_classes, config.split)
+    print("Train data: mean = {}, std = {}".format(np.mean(train_data), np.std(train_data)))
+    print("unique labels = {}".format(np.unique(train_labels)))
+    print("training data shape =", train_data.shape)
+    print("validation data shape =", val_data.shape)
+
+    train_set = du.TensorDataset(torch.from_numpy(train_data),
+                                 torch.from_numpy(train_labels))
+    val_set = du.TensorDataset(torch.from_numpy(val_data),
+                               torch.from_numpy(val_labels))
+
+    train_loader = du.DataLoader(train_set, shuffle=True, batch_size=config.batch_size)
+    val_loader = du.DataLoader(val_set, batch_size=config.batch_size)
+    return train_loader, val_loader

@@ -121,7 +121,7 @@ def read_training_data_dice_multi_class(training_data_path: str,
     data: an array of shape N x 1 x Dx x Dy x Dz, where N is the total number
     of raw volumes
     labels: an array of shape N x S x Dx x Dy x Dz, where S is the number of
-    semantic classes (or labels) in segmentation_names
+    semantic classes (or labels) in semantic_classes
 
     """
     data = []
@@ -161,6 +161,20 @@ def read_training_data_dice_multi_class(training_data_path: str,
     print("Data shape from the reader", data.shape)
     print("Labels shape from the reader", labels.shape)
     return data, labels
+
+
+def read_partition_data(data_path, internal_path=h5_internal_paths.RAW_SUBTOMOGRAMS, split: int = -1):
+    data = []
+    with h5py.File(data_path, 'r') as f:
+        if len(list(f)) > 0:
+            if split == -1:
+                subtomo_names = list(f[internal_path])
+            else:
+                subtomo_names = list(f[internal_path])[:split]
+            for subtomo_name in subtomo_names:
+                subtomo_internal_path = join(internal_path, subtomo_name)
+                data += [[f[subtomo_internal_path][:]]]
+    pass
 
 
 # Todo: remove after testing transformations

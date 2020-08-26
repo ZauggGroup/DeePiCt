@@ -26,8 +26,8 @@ tomos_set = args.set
 tomo_list = config['tomos_sets'][tomos_set]['test_list']
 
 class_number = config['prediction']['class_number']
-model_name = config["model_name"][:-4]
-output_dir = config["output_dir"]
+model_name = config["model_path"][:-4]
+output_dir = config["pred_output_dir"]
 models_table = os.path.join(output_dir, "models")
 models_table = os.path.join(models_table, "models.csv")
 
@@ -47,14 +47,14 @@ box_shape = int(model_df.iloc[0][ModelsHeader.box_size])
 box_shape = [box_shape, box_shape, box_shape]
 
 segmentation_label = model_name
-semantic_names = model_df.iloc[0][ModelsHeader.semantic_classes].split(',')
+semantic_names = model_df.iloc[0][ModelsHeader.segmentation_names].split(',')
 semantic_class = semantic_names[class_number]
 
 dataset_table = config['dataset_table']
 
 DTHeader = DatasetTableHeader()
 
-output_dir = os.path.join(config['output_dir'], "predictions")
+output_dir = os.path.join(config['pred_output_dir'], "predictions")
 output_dir = os.path.join(output_dir, model_name)
 for tomo_name in tomo_list:
     print("Processing tomo", tomo_name)

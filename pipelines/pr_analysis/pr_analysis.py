@@ -26,17 +26,17 @@ yaml_file = args.yaml_file
 config = yaml.safe_load(open(yaml_file))
 
 tomo_list = config['tomos_sets'][tomos_set]['test_list']
-output_dir = config["output_dir"]
+output_dir = config["pred_output_dir"]
 models_table = os.path.join(output_dir, "models")
 models_table = os.path.join(models_table, "models.csv")
-model_name = config["model_name"][:-4]
+model_name = config["model_path"][:-4]
 segmentation_label = model_name
 class_number = config['prediction']['class_number']
 
 ModelsHeader = ModelsTableHeader()
 models_df = pd.read_csv(models_table,
                         dtype={ModelsHeader.model_name: str,
-                               ModelsHeader.semantic_classes: str})
+                               ModelsHeader.segmentation_names: str})
 
 model_df = models_df[models_df[ModelsHeader.model_name] == model_name]
 print(model_df)
@@ -44,22 +44,22 @@ assert model_df.shape[0] == 1
 overlap = model_df.iloc[0][ModelsHeader.overlap]
 box_shape = int(model_df.iloc[0][ModelsHeader.box_size])
 box_shape = [box_shape, box_shape, box_shape]
-semantic_classes = model_df.iloc[0]['segmentation_names'].split(',')
+semantic_classes = model_df.iloc[0]['semantic_classes'].split(',')
 semantic_class = semantic_classes[class_number]
 motl_parameters = config['clustering_parameters']
-filtering_mask = motl_parameters['filtering_mask']
+filtering_mask = motl_parameters['region_mask']
 
 dataset_table = config['dataset_table']
 DTHeader = DatasetTableHeader(semantic_classes=semantic_classes)
 df = pd.read_csv(dataset_table)
 df[DTHeader.tomo_name] = df[DTHeader.tomo_name].astype(str)
 
-output_dir = config["output_dir"]
+output_dir = config["pred_output_dir"]
 output_dir = os.path.join(output_dir, "predictions")
 output_dir = os.path.join(output_dir, model_name)
 for tomo_name in tomo_list:
     print("Processing tomo", tomo_name)
-    output_dir = os.path.join(config["output_dir"], "predictions")
+    output_dir = os.path.join(config["pred_output_dir"], "predictions")
     tomo_output_dir = build_prediction_output_dir(base_output_dir=output_dir,
                                                   label_name="",
                                                   model_name=model_name,

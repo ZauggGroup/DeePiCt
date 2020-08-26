@@ -2,20 +2,16 @@ import argparse
 import sys
 
 parser = argparse.ArgumentParser()
+parser.add_argument("-config_file", "--config_file", type=str)
 parser.add_argument("-pythonpath", "--pythonpath", type=str)
-parser.add_argument("-dataset_table", "--dataset_table", type=str)
-parser.add_argument("-output_dir", "--output_dir", type=str)
-parser.add_argument("-work_dir", "--work_dir", type=str)
-parser.add_argument("-model_name", "--model_name", type=str)
-parser.add_argument("-test_partition", "--test_partition", type=str)
-parser.add_argument("-processing_tomo", "--processing_tomo", type=str)
 parser.add_argument("-tomo_name", "--tomo_name", type=str)
-parser.add_argument("-overlap", "--overlap", type=int)
-parser.add_argument("-box_shape", "--box_shape", type=int)
 
 args = parser.parse_args()
 pythonpath = args.pythonpath
 sys.path.append(pythonpath)
+config_file = args.config_file
+tomo_name = args.tomo_name
+
 import os
 
 import numpy as np
@@ -27,62 +23,52 @@ from paths.pipeline_dirs import testing_partition_path
 from tomogram_utils.volume_actions.actions import \
     partition_raw_intersecting_mask
 from tomogram_utils.volume_actions.actions import partition_tomogram
+from constants.config import Config
 
-dataset_table = args.dataset_table
-model_name = os.path.basename(args.model_name)[:-4]
-test_partition = args.test_partition
-processing_tomo = args.processing_tomo
-output_dir = args.output_dir
-work_dir = args.work_dir
-tomo_name = args.tomo_name
+config = Config(args.config_file)
 print("tomo_name", tomo_name)
-partition_output_dir, partition_path = testing_partition_path(output_dir=work_dir, tomo_name=tomo_name,
-                                                              model_name=model_name, partition_name=test_partition)
-print("partition_output_dir:", partition_output_dir)
-print("partition_path:", partition_path)
-print("Exists:", os.path.exists(partition_path))
+partition_output_dir, partition_path = testing_partition_path(output_dir=config.work_dir,
+                                                              tomo_name=tomo_name,
+                                                              model_name=config.model_name)
 os.makedirs(partition_output_dir, exist_ok=True)
-print("partition_path:", partition_path)
-print("Exists:", os.path.exists(partition_path))
 
 if os.path.exists(partition_path):
     print("Exiting, path exists.")
 else:
-    overlap = args.overlap
-    box_shape = args.box_shape
-    subtomogram_shape = (box_shape, box_shape, box_shape)
+    overlap = config.overlap
+    box_size = config.box_size
+    box_shape = (box_size, box_size, box_size)
 
-    DTHeader = DatasetTableHeader(processing_tomo=processing_tomo)
-    df = pd.read_csv(dataset_table)
+    DTHeader = DatasetTableHeader(processing_tomo=config.processing_tomo)
+    df = pd.read_csv(config.dataset_table)
     df[DTHeader.tomo_name] = df[DTHeader.tomo_name].astype(str)
-    print("Partitioning tomo", tomo_name)
 
     tomo_df = df[df[DTHeader.tomo_name] == tomo_name]
     path_to_raw = tomo_df.iloc[0][DTHeader.processing_tomo]
-    path_to_lamella = tomo_df.iloc[0][DTHeader.filtering_mask]
+    intersecting_mask_path = tomo_df.iloc[0][DTHeader.filtering_mask]
     raw_dataset = load_tomogram(path_to_dataset=path_to_raw)
-    if isinstance(path_to_lamella, float):
+    if isinstance(intersecting_mask_path, float):
         print("No filtering mask file available.")
         partition_tomogram(dataset=raw_dataset,
                            output_h5_file_path=partition_path,
-                           subtomo_shape=subtomogram_shape,
+                           subtomo_shape=box_shape,
                            overlap=overlap)
     else:
-        path_to_lamella = tomo_df.iloc[0][DTHeader.filtering_mask]
-        lamella_mask = load_tomogram(path_to_dataset=path_to_lamella)
+        intersecting_mask_path = tomo_df.iloc[0][DTHeader.filtering_mask]
+        intersecting_mask = load_tomogram(path_to_dataset=intersecting_mask_path)
 
-        lamella_shape = lamella_mask.shape
+        mask_shape = intersecting_mask.shape
         dataset_shape = raw_dataset.shape
 
-        minimum_shape = [np.min([data_dim, lamella_dim]) for
-                         data_dim, lamella_dim in zip(dataset_shape, lamella_shape)]
+        minimum_shape = [np.min([data_dim, mask_dim]) for
+                         data_dim, mask_dim in zip(dataset_shape, mask_shape)]
         minz, miny, minx = minimum_shape
 
-        lamella_mask = lamella_mask[:minz, :miny, :minx]
+        intersecting_mask = intersecting_mask[:minz, :miny, :minx]
         raw_dataset = raw_dataset[:minz, :miny, :minx]
 
         partition_raw_intersecting_mask(dataset=raw_dataset,
-                                        mask_dataset=lamella_mask,
+                                        mask_dataset=intersecting_mask,
                                         output_h5_file_path=partition_path,
-                                        subtomo_shape=subtomogram_shape,
+                                        subtomo_shape=box_shape,
                                         overlap=overlap)

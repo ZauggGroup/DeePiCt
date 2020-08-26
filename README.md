@@ -1,4 +1,4 @@
-# 3d-cnn
+# 3d-UNet
 
 ## 1. Description.
 

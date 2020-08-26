@@ -498,27 +498,14 @@ def unite_motls(path_to_motl1: str, path_to_motl2: str,
                 motl_name=output_motl_name)
 
 
-def write_on_models_notebook(model_name: str, label_name:str,
-                             model_dir: str,
-                             log_dir: str, depth: int,
-                             initial_features: int, n_epochs: int,
-                             training_paths_list: list,
-                             split: float, output_classes: int,
-                             segmentation_names: list,
-                             box_size: int,
-                             partition_name: str,
-                             processing_tomo: str,
-                             retrain: str or bool,
-                             path_to_old_model: str, models_notebook_path: str,
-                             dropout: np.nan or float = np.nan,
-                             encoder_dropout: float = np.nan,
-                             decoder_dropout: float = np.nan,
-                             BN: bool = False,
-                             overlap: int = 12,
-                             cv_fold: int or None = None,
-                             cv_test_tomos: list or None = None):
+def record_model_descriptor(model_name: str, model_path, model_dir: str, log_dir: str, depth: int,
+                             initial_features: int, n_epochs: int, training_paths_list: list, split: float,
+                             output_classes: int, segmentation_names: list, box_size: int, partition_name: str,
+                             processing_tomo: str, retrain: str or bool, path_to_old_model: str,
+                             models_notebook_path: str, encoder_dropout: float = np.nan,
+                             decoder_dropout: float = np.nan, batch_norm: bool = False, overlap: int = 12,
+                             cv_fold: int or None = None, cv_test_tomos: list or None = None):
     """
-
     :param model_name:
     :param label_name:
     :param model_dir:
@@ -533,10 +520,50 @@ def write_on_models_notebook(model_name: str, label_name:str,
     :param retrain:
     :param path_to_old_model:
     :param models_notebook_path:
-    :param dropout:
     :param encoder_dropout:
     :param decoder_dropout:
-    :param BN:
+    :param batch_norm:
+    :return:
+    """
+    training_paths = reduce(lambda x, y: x + ", " + y, training_paths_list)
+    segmentation_names = reduce(lambda x, y: x + ", " + y, segmentation_names)
+    print(training_paths, segmentation_names)
+    if cv_test_tomos is not None:
+        cv_testing_paths = reduce(lambda x, y: x + ", " + y, cv_test_tomos)
+    else:
+        cv_testing_paths = ""
+
+    now = datetime.datetime.now()
+    date = str(now.day) + "/" + str(now.month) + "/" + str(now.year)
+
+    pass
+
+
+def write_on_models_notebook(model_name: str, label_name: str, model_dir: str, log_dir: str, depth: int,
+                             initial_features: int, n_epochs: int, training_paths_list: list, split: float,
+                             output_classes: int, segmentation_names: list, box_size: int, partition_name: str,
+                             processing_tomo: str, retrain: str or bool, path_to_old_model: str,
+                             models_notebook_path: str, encoder_dropout: float = np.nan,
+                             decoder_dropout: float = np.nan, batch_norm: bool = False, overlap: int = 12,
+                             cv_fold: int or None = None, cv_test_tomos: list or None = None):
+    """
+    :param model_name:
+    :param label_name:
+    :param model_dir:
+    :param log_dir:
+    :param depth:
+    :param initial_features:
+    :param n_epochs:
+    :param training_paths_list:
+    :param split:
+    :param output_classes:
+    :param segmentation_names:
+    :param retrain:
+    :param path_to_old_model:
+    :param models_notebook_path:
+    :param encoder_dropout:
+    :param decoder_dropout:
+    :param batch_norm:
     :return:
     """
     model_path = os.path.join(model_dir, model_name + ".pkl")
@@ -556,21 +583,20 @@ def write_on_models_notebook(model_name: str, label_name:str,
     mini_notebook_df[ModelsHeader.model_name] = model_name
     mini_notebook_df[ModelsHeader.label_name] = label_name
     mini_notebook_df[ModelsHeader.model_path] = model_path
-    mini_notebook_df[ModelsHeader.logging_path] = log_dir
+    mini_notebook_df[ModelsHeader.log_path] = log_dir
     mini_notebook_df[ModelsHeader.depth] = depth
     mini_notebook_df[ModelsHeader.initial_features] = initial_features
-    mini_notebook_df[ModelsHeader.dropout] = dropout
     mini_notebook_df[ModelsHeader.epochs] = n_epochs
     mini_notebook_df[ModelsHeader.training_set] = training_paths
-    mini_notebook_df[ModelsHeader.cv_testing_set] = cv_testing_paths
-    mini_notebook_df[ModelsHeader.cv_fold] = cv_fold
+    mini_notebook_df[ModelsHeader.testing_set] = cv_testing_paths
+    mini_notebook_df[ModelsHeader.fold] = cv_fold
     mini_notebook_df[ModelsHeader.train_split] = split
     mini_notebook_df[ModelsHeader.output_classes] = output_classes
-    mini_notebook_df[ModelsHeader.semantic_classes] = segmentation_names
+    mini_notebook_df[ModelsHeader.segmentation_names] = segmentation_names
     mini_notebook_df[ModelsHeader.retrain] = str(retrain)
     mini_notebook_df[ModelsHeader.old_model] = path_to_old_model
-    mini_notebook_df[ModelsHeader.date] = date
-    mini_notebook_df[ModelsHeader.batch_normalization] = str(BN)
+    mini_notebook_df[ModelsHeader.training_date] = date
+    mini_notebook_df[ModelsHeader.batch_norm] = str(batch_norm)
     mini_notebook_df[ModelsHeader.encoder_dropout] = encoder_dropout
     mini_notebook_df[ModelsHeader.decoder_dropout] = decoder_dropout
     mini_notebook_df[ModelsHeader.box_size] = box_size

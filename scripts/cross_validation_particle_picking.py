@@ -4,9 +4,9 @@ import sys
 parser = argparse.ArgumentParser()
 parser.add_argument("-pythonpath", "--pythonpath", type=str)
 parser.add_argument("-dataset_table", "--dataset_table", type=str)
-parser.add_argument("-output_dir", "--output_dir", type=str)
+parser.add_argument("-pred_output_dir", "--pred_output_dir", type=str)
 parser.add_argument("-work_dir", "--work_dir", type=str)
-parser.add_argument("-model_name", "--model_name", type=str)
+parser.add_argument("-model_path", "--model_path", type=str)
 parser.add_argument("-test_partition", "--test_partition", type=str)
 parser.add_argument("-processing_tomo", "--processing_tomo", type=str)
 parser.add_argument("-cv_data_path", "--cv_data_path", type=str)
@@ -19,7 +19,7 @@ parser.add_argument("-radius", "--radius", type=int)
 parser.add_argument("-min_cluster_size", "--min_cluster_size", type=int)
 parser.add_argument("-max_cluster_size", "--max_cluster_size", type=int)
 parser.add_argument("-threshold", "--threshold", type=float)
-parser.add_argument("-filtering_mask", "--filtering_mask", type=str)
+parser.add_argument("-region_mask", "--region_mask", type=str)
 
 args = parser.parse_args()
 pythonpath = args.pythonpath
@@ -90,8 +90,8 @@ models_table = os.path.join(output_dir, "models")
 models_table = os.path.join(models_table, "models.csv")
 
 cv_data = pd.read_csv(cv_data_path)
-cv_data["cv_fold"] = cv_data["cv_fold"].apply(lambda x: str(x))
-cv_data.set_index("cv_fold", inplace=True)
+cv_data["fold"] = cv_data["fold"].apply(lambda x: str(x))
+cv_data.set_index("fold", inplace=True)
 
 tomo_evaluation_list_tmp = cv_data.loc[fold]["cv_evaluation_list"].split(" ")
 tomo_evaluation_list = []
@@ -177,7 +177,7 @@ path_to_model = model_df.iloc[0][ModelsHeader.model_path]
 initial_features = model_df.iloc[0][ModelsHeader.initial_features]
 depth = model_df.iloc[0][ModelsHeader.depth]
 output_classes = model_df.iloc[0][ModelsHeader.output_classes]
-BN = model_df.iloc[0][ModelsHeader.batch_normalization].astype(bool)
+BN = model_df.iloc[0][ModelsHeader.batch_norm].astype(bool)
 encoder_dropout = model_df.iloc[0][ModelsHeader.encoder_dropout]
 decoder_dropout = model_df.iloc[0][ModelsHeader.decoder_dropout]
 label_name = model_name
@@ -237,7 +237,7 @@ for tomo_name in tomo_evaluation_list:
     ModelsHeader = ModelsTableHeader()
     models_df = pd.read_csv(models_table,
                             dtype={ModelsHeader.model_name: str,
-                                   ModelsHeader.semantic_classes: str})
+                                   ModelsHeader.segmentation_names: str})
 
     model_df = models_df[models_df[ModelsHeader.model_name] == model_name]
     assert model_df.shape[0] < 2, "several models have the same name in models.csv"
@@ -246,7 +246,7 @@ for tomo_name in tomo_evaluation_list:
     overlap = model_df.iloc[0][ModelsHeader.overlap]
     box_shape = int(model_df.iloc[0][ModelsHeader.box_size])
     box_shape = [box_shape, box_shape, box_shape]
-    semantic_names = model_df.iloc[0]['segmentation_names'].split(',')
+    semantic_names = model_df.iloc[0]['semantic_classes'].split(',')
     semantic_class = semantic_names[class_number]
 
     tomo_output_dir, output_path = get_probability_map_path(output_dir, model_name, tomo_name, semantic_class)
@@ -288,7 +288,7 @@ box_shape = int(model_df.iloc[0][ModelsHeader.box_size])
 box_shape = [box_shape, box_shape, box_shape]
 
 segmentation_label = model_name
-semantic_names = model_df.iloc[0][ModelsHeader.semantic_classes].split(',')
+semantic_names = model_df.iloc[0][ModelsHeader.segmentation_names].split(',')
 semantic_class = semantic_names[class_number]
 
 DTHeader = DatasetTableHeader()
@@ -357,7 +357,7 @@ segmentation_label = model_name
 ModelsHeader = ModelsTableHeader()
 models_df = pd.read_csv(models_table,
                         dtype={ModelsHeader.model_name: str,
-                               ModelsHeader.semantic_classes: str})
+                               ModelsHeader.segmentation_names: str})
 
 model_df = models_df[models_df[ModelsHeader.model_name] == model_name]
 print(model_df)
@@ -365,7 +365,7 @@ assert model_df.shape[0] == 1
 overlap = model_df.iloc[0][ModelsHeader.overlap]
 box_shape = int(model_df.iloc[0][ModelsHeader.box_size])
 box_shape = [box_shape, box_shape, box_shape]
-semantic_classes = model_df.iloc[0]['segmentation_names'].split(',')
+semantic_classes = model_df.iloc[0]['semantic_classes'].split(',')
 semantic_class = semantic_classes[class_number]
 
 DTHeader = DatasetTableHeader(semantic_classes=semantic_classes)
@@ -505,25 +505,25 @@ for tomo_name in tomo_evaluation_list:
         if os.path.dirname(statistics_file) == "":
             statistics_file = "pp_statistics.csv"
             write_statistics_pp(statistics_file=statistics_file, tomo_name=tomo_name, model_name=model_name,
-                                models_table_path=models_table, statistic_variable="auPRC",
+                                model_parameters=models_table, statistic_variable="auPRC",
                                 statistic_value=round(auPRC, 4),
-                                pr_radius=radius, cv_fold=fold, min_cluster_size=min_cluster_size,
+                                pr_radius=radius, min_cluster_size=min_cluster_size,
                                 max_cluster_size=max_cluster_size, threshold=threshold, prediction_class=semantic_class)
             write_statistics_pp(statistics_file=statistics_file, tomo_name=tomo_name, model_name=model_name,
-                                models_table_path=models_table, statistic_variable="maxF1",
-                                statistic_value=round(max_F1, 4), pr_radius=radius, cv_fold=fold,
+                                model_parameters=models_table, statistic_variable="maxF1",
+                                statistic_value=round(max_F1, 4), pr_radius=radius,
                                 min_cluster_size=min_cluster_size, max_cluster_size=max_cluster_size,
                                 threshold=threshold, prediction_class=semantic_class)
         else:
             statistics_file = os.path.dirname(statistics_file) + "/pp_statistics.csv"
             write_statistics_pp(statistics_file=statistics_file, tomo_name=tomo_name, model_name=model_name,
-                                models_table_path=models_table, statistic_variable="auPRC",
+                                model_parameters=models_table, statistic_variable="auPRC",
                                 statistic_value=round(auPRC, 4),
-                                pr_radius=radius, cv_fold=fold, min_cluster_size=min_cluster_size,
+                                pr_radius=radius, min_cluster_size=min_cluster_size,
                                 max_cluster_size=max_cluster_size, threshold=threshold, prediction_class=semantic_class)
             write_statistics_pp(statistics_file=statistics_file, tomo_name=tomo_name, model_name=model_name,
-                                models_table_path=models_table, statistic_variable="maxF1",
-                                statistic_value=round(max_F1, 4), pr_radius=radius, cv_fold=fold,
+                                model_parameters=models_table, statistic_variable="maxF1",
+                                statistic_value=round(max_F1, 4), pr_radius=radius,
                                 min_cluster_size=min_cluster_size, max_cluster_size=max_cluster_size,
                                 threshold=threshold, prediction_class=semantic_class)
 

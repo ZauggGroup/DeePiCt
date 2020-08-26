@@ -3,15 +3,15 @@ import sys
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-pythonpath", "--pythonpath", type=str)
-parser.add_argument("-segmentation_names", "--segmentation_names", nargs='+', type=str)
+parser.add_argument("-semantic_classes", "--semantic_classes", nargs='+', type=str)
 parser.add_argument("-dataset_table", "--dataset_table", type=str)
-parser.add_argument("-box_shape", "--box_shape", type=int)
+parser.add_argument("-box_size", "--box_size", type=int)
 parser.add_argument("-gpu", "--gpu", help="cuda visible devices", type=str)
-parser.add_argument("-output_dir", "--output_dir", type=str)
+parser.add_argument("-pred_output_dir", "--pred_output_dir", type=str)
 parser.add_argument("-work_dir", "--work_dir", type=str)
 parser.add_argument("-cv_data_path", "--cv_data_path", type=str)
 parser.add_argument("-split", "--split", type=float)
-parser.add_argument("-n_epochs", "--n_epochs", type=int)
+parser.add_argument("-epochs", "--epochs", type=int)
 parser.add_argument("-depth", "--depth", type=int)
 parser.add_argument("-decoder_dropout", "--decoder_dropout", type=float)
 parser.add_argument("-encoder_dropout", "--encoder_dropout", type=float)
@@ -22,7 +22,7 @@ parser.add_argument("-fold", "--fold", type=str)
 parser.add_argument("-overlap", "--overlap", type=int)
 parser.add_argument("-processing_tomo", "--processing_tomo", type=str)
 parser.add_argument("-partition_name", "--partition_name", type=str)
-parser.add_argument("-model_name", "--model_name", type=str)
+parser.add_argument("-model_path", "--model_path", type=str)
 parser.add_argument("-statistics_file", "--statistics_file", type=str)
 
 args = parser.parse_args()
@@ -85,8 +85,8 @@ model_name = model_name_ext[:-4] + "_" + fold
 work_dir = args.work_dir
 
 cv_data = pd.read_csv(cv_data_path)
-cv_data["cv_fold"] = cv_data["cv_fold"].apply(lambda x: str(x))
-cv_data.set_index("cv_fold", inplace=True)
+cv_data["fold"] = cv_data["fold"].apply(lambda x: str(x))
+cv_data.set_index("fold", inplace=True)
 
 
 def split_list(tomo_list_str: str, sep: str = " "):
@@ -172,14 +172,14 @@ if not os.path.exists(model_path):
     old_epoch = 0
     metric = loss
 
-    write_on_models_notebook(model_name=model_name, label_name=model_name, model_dir=model_dir,
-                             log_dir=log_model, depth=depth, initial_features=initial_features,
-                             n_epochs=n_epochs, training_paths_list=training_partition_paths, split=split,
-                             output_classes=output_classes, segmentation_names=segmentation_names, box_size=box_size,
-                             overlap=overlap, processing_tomo=processing_tomo, partition_name=partition_name,
-                             retrain=False, path_to_old_model="", models_notebook_path=models_table,
-                             encoder_dropout=encoder_dropout, decoder_dropout=decoder_dropout, BN=batch_norm,
-                             cv_fold=fold, cv_test_tomos=tomo_evaluation_list)
+    write_on_models_notebook(model_name=model_name, label_name=model_name, model_dir=model_dir, log_dir=log_model,
+                             depth=depth, initial_features=initial_features, n_epochs=n_epochs,
+                             training_paths_list=training_partition_paths, split=split, output_classes=output_classes,
+                             segmentation_names=segmentation_names, box_size=box_size, partition_name=partition_name,
+                             processing_tomo=processing_tomo, retrain=False, path_to_old_model="",
+                             models_notebook_path=models_table, encoder_dropout=encoder_dropout,
+                             decoder_dropout=decoder_dropout, batch_norm=batch_norm, overlap=overlap, cv_fold=fold,
+                             cv_test_tomos=tomo_evaluation_list)
 
     lr_scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=0.1, patience=10, verbose=True)
 

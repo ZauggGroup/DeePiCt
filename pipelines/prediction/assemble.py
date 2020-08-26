@@ -22,17 +22,17 @@ tomos_set = args.tomos_set
 tomo_list = config['tomos_sets'][tomos_set]['test_list']
 # unet_hyperparameters = config['unet_hyperparameters']
 
-output_dir = config["output_dir"]
+output_dir = config["pred_output_dir"]
 models_table = os.path.join(output_dir, "models")
 models_table = os.path.join(models_table, "models.csv")
-model_name = config["model_name"][:-4]
+model_name = config["model_path"][:-4]
 segmentation_label = model_name
 class_number = config['prediction']['class_number']
 
 ModelsHeader = ModelsTableHeader()
 models_df = pd.read_csv(models_table,
                         dtype={ModelsHeader.model_name: str,
-                               ModelsHeader.semantic_classes: str})
+                               ModelsHeader.segmentation_names: str})
 
 model_df = models_df[models_df[ModelsHeader.model_name] == model_name]
 print(model_df)
@@ -41,7 +41,7 @@ overlap = model_df.iloc[0][ModelsHeader.overlap]
 box_shape = int(model_df.iloc[0][ModelsHeader.box_size])
 box_shape = [box_shape, box_shape, box_shape]
 
-semantic_names = model_df.iloc[0]['segmentation_names'].split(',')
+semantic_names = model_df.iloc[0]['semantic_classes'].split(',')
 semantic_class = semantic_names[class_number]
 dataset_table = config['dataset_table']
 test_partition = config["prediction"]['partition_name']

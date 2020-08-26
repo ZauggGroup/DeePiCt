@@ -4,57 +4,43 @@ import sys
 parser = argparse.ArgumentParser()
 parser.add_argument("-pythonpath", "--pythonpath", type=str)
 parser.add_argument("-tomo_name", "--tomo_name", type=str)
-parser.add_argument("-dataset_table", "--dataset_table", type=str)
-parser.add_argument("-statistics_file", "--statistics_file", type=str)
-parser.add_argument("-class_number", "--class_number", type=int)
-parser.add_argument("-output_dir", "--output_dir", type=str)
-parser.add_argument("-filtering_mask", "--filtering_mask", type=str)
-parser.add_argument("-model_name", "--model_name", type=str)
-parser.add_argument("-segmentation_names", "--segmentation_names", nargs='+', type=str)
-parser.add_argument("-yaml_file", "--yaml_file", help="yaml_file", type=str)
+parser.add_argument("-fold", "--fold", type=int or None, default=None)
+parser.add_argument("-config_file", "--config_file", help="yaml_file", type=str)
 
 args = parser.parse_args()
 pythonpath = args.pythonpath
 sys.path.append(pythonpath)
+
 import os
 
 import numpy as np
 import pandas as pd
-import torch, yaml
+import torch
 
-from constants.dataset_tables import DatasetTableHeader, ModelsTableHeader
+from constants.dataset_tables import DatasetTableHeader
 from file_actions.readers.tomograms import load_tomogram
-from file_actions.writers.csv import write_statistics
 from pytorch_cnn.classes.loss import DiceCoefficient
 from paths.pipeline_dirs import get_post_processed_prediction_path
+from constants.config import Config
+from constants.statistics import write_statistics_pp
+from constants.config import model_descriptor_from_config
 
-args = parser.parse_args()
-yaml_file = args.yaml_file
-config = yaml.safe_load(open(yaml_file))
-
-dataset_table = args.dataset_table
+config_file = args.config_file
+config = Config(user_config_file=config_file)
 tomo_name = args.tomo_name
-output_dir = args.output_dir
-class_number = args.class_number
-statistics_file = args.statistics_file
-filtering_mask = args.filtering_mask
-model_name = os.path.basename(args.model_name)[:-4]
-label_name = model_name
 
-semantic_classes = args.segmentation_names
-semantic_class = semantic_classes[class_number]
 
-prediction_path = get_post_processed_prediction_path(output_dir=output_dir,
-                                                     model_name=model_name,
+prediction_path = get_post_processed_prediction_path(output_dir=config.output_dir,
+                                                     model_name=config.model_name,
                                                      tomo_name=tomo_name,
-                                                     semantic_class=semantic_class)
+                                                     semantic_class=config.pred_class)
 print(prediction_path)
 assert os.path.isfile(prediction_path), "The prediction file does not exist!"
 
-DTHeader = DatasetTableHeader(semantic_classes=semantic_classes, filtering_mask=filtering_mask)
-df = pd.read_csv(dataset_table)
+DTHeader = DatasetTableHeader(semantic_classes=config.semantic_classes, filtering_mask=config.region_mask)
+df = pd.read_csv(config.dataset_table)
 df[DTHeader.tomo_name] = df[DTHeader.tomo_name].astype(str)
-clean_mask_name = DTHeader.masks_names[class_number]
+clean_mask_name = DTHeader.masks_names[config.pred_class_number]
 
 tomo_df = df[df[DTHeader.tomo_name] == tomo_name]
 lamella_file = tomo_df.iloc[0][DTHeader.filtering_mask]
@@ -86,43 +72,26 @@ target = torch.from_numpy(target).float()
 measure = DiceCoefficient()
 dice_statistic = measure.forward(prediction=prediction, target=target)
 dice_statistic = float(dice_statistic)
-statistics_label = label_name + "_dice"
 
-print("statistics_file", statistics_file)
-if statistics_file != "None":
-    write_statistics(statistics_file=statistics_file,
-                     statistics_label=statistics_label,
-                     tomo_name=tomo_name,
-                     stat_measure=dice_statistic)
-
-from constants.statistics import write_statistics_pp
-models_table = os.path.join(args.output_dir, "models")
+models_table = os.path.join(config.output_dir, "models")
 models_table = os.path.join(models_table, "models.csv")
-fold = None
-threshold = config["postprocessing_clustering"]["threshold"]
-min_cluster_size = config["postprocessing_clustering"]["min_cluster_size"]
-max_cluster_size = config["postprocessing_clustering"]["max_cluster_size"]
-if max_cluster_size is None:
-    max_cluster_size = np.inf
-
-if os.path.dirname(statistics_file) == "":
-    statistics_file = "pp_statistics.csv"
-    write_statistics_pp(statistics_file=statistics_file, tomo_name=tomo_name, model_name=model_name,
-                        models_table_path=models_table, statistic_variable="dice",
-                        statistic_value=round(dice_statistic, 4), pr_radius=None, cv_fold=fold,
-                        min_cluster_size=min_cluster_size, max_cluster_size=max_cluster_size,
-                        threshold=threshold, prediction_class=semantic_class)
+if args.fold is None:
+    models_table_path = model_descriptor_from_config(config)
 else:
-    statistics_file = os.path.dirname(statistics_file) + "/pp_statistics.csv"
-    write_statistics_pp(statistics_file=statistics_file, tomo_name=tomo_name, model_name=model_name,
-                        models_table_path=models_table, statistic_variable="dice",
-                        statistic_value=round(dice_statistic, 4), pr_radius=None, cv_fold=fold,
-                        min_cluster_size=min_cluster_size, max_cluster_size=max_cluster_size,
-                        threshold=threshold, prediction_class=semantic_class)
+    models_table_path = os.path.join(config.output_dir, "models/models.csv")
+
+statistics_file = os.path.join(config.output_dir, "pp_statistics.csv")
+
+write_statistics_pp(statistics_file=statistics_file, tomo_name=tomo_name, model_name=config.model_name,
+                    model_parameters=models_table_path, statistic_variable="dice",
+                    statistic_value=round(dice_statistic, 4), pr_radius=None,
+                    min_cluster_size=config.min_cluster_size, max_cluster_size=config.max_cluster_size,
+                    threshold=config.threshold, prediction_class=config.pred_class,
+                    clustering_connectivity=config.clustering_connectivity)
 
 print("Dice coefficient =", dice_statistic)
 
-### For snakemake:
+# For snakemake:
 prediction_dir = os.path.dirname(prediction_path)
 snakemake_pattern = os.path.join(prediction_dir, ".done_dice_eval_snakemake")
 with open(file=snakemake_pattern, mode="w") as f:

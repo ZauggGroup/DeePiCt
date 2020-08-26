@@ -1,11 +1,19 @@
 import re
+import matplotlib
+import os
 
 import numpy as np
 import pandas as pd
 
+import matplotlib.pyplot as plt
+
+from performance.statistics_utils import get_max_F1
+from performance.statistics_utils import pr_auc_score
+
 default_dict_sample = {'ED': 'ED_1h', 'healthy': 'WT', 'energy depleted': 'ED_1h',
                        'ED_6h': 'ED_6h', 'S.pombe': 'S.pombe', 'S.cerevisiae': 'S.cerevisiae'}
 default_excluded_labels = ['tomo_name']
+
 
 def get_tomo_names_dict(tomos_names):
     tomo_names_dict = {}
@@ -124,9 +132,6 @@ def extract_parameter_from_label(label, param):
     return param_value
 
 
-
-
-
 def load_plot_df(statistics_df, dataset_df, test_tomos, tomo_names_dict, excluded_labels=None,
                  radius=8, dict_sample_type=None, dice=False):
     if excluded_labels is None:
@@ -219,7 +224,7 @@ def sample_type_dictionary(sample_type: str):
 
 
 def load_plot_df_from_full_tomo(statistics_df, dataset_df, test_tomos, tomo_names_dict,
-                                excluded_labels=None, radius=8,dict_sample_type=None,
+                                excluded_labels=None, radius=8, dict_sample_type=None,
                                 dice=False, name_with_frac=True, statistic=None):
     if excluded_labels is None:
         excluded_labels = default_excluded_labels
@@ -310,3 +315,74 @@ def load_plot_df_from_full_tomo(statistics_df, dataset_df, test_tomos, tomo_name
                         print('label', label, 'not present for tomo', tomo_name)
                         print(tmp_stats_df[label].shape)
     return stats_df, labels, plot_df
+
+
+def generate_histogram(fig_file: str, x: list, label: str, bins: int, plot_title: str, plot_num: int = 1) -> None:
+    matplotlib.use('Agg')
+    plt.figure(plot_num)
+    plt.hist(x, bins=bins, label=label)
+    plt.xlabel("score value")
+    plt.ylabel("frequency")
+    plt.title(plot_title)
+    plt.legend()
+    plt.gcf()
+    plt.savefig(fname=fig_file, format="png")
+    return
+
+
+def generate_bi_histogram(fig_file: str, tp: list, fp: list, bins: int, plot_title: str, plot_num: int = 1) -> None:
+    matplotlib.use('Agg')
+    plt.figure(plot_num)
+    plt.hist(tp, bins=bins, label="true positives", fc=(0, 0, 1, 0.5))
+    plt.hist(fp, bins=bins, label="false positives", fc=(1, 0, 0, 0.5))
+    plt.xlabel("score value")
+    plt.ylabel("frequency")
+    plt.title(plot_title)
+    plt.legend()
+    plt.gcf()
+    plt.savefig(fname=fig_file, format="png")
+    return
+
+
+def generate_prc_plot(x: list or np.array, y: list or np.array, legend: str, xlabel: str, ylabel: str,
+                      title_str: str, fig_file: str, plot_num: int) -> None:
+    plt.figure(plot_num)
+    plt.plot(x, y, label=legend)
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    plt.xlim((0, 1))
+    plt.ylim((0, 1))
+    plt.title(title_str)
+    plt.legend()
+    plt.gcf()
+    plt.savefig(fname=fig_file, format="png")
+    return
+
+
+def generate_performance_plots(recall, prec, F1_score, predicted_values, tp_pred_scores,
+                               fp_pred_scores, figures_dir):
+    fig_name = os.path.join(figures_dir, "histogram_predicted.png")
+    plot_title = str(len(predicted_values)) + " peaks"
+    generate_histogram(fig_file=fig_name, x=predicted_values, label="predicted",
+                       bins=45, plot_title=plot_title, plot_num=1)
+
+    fig_name = os.path.join(figures_dir, "histogram_tp_fp.png")
+    plot_title = str(len(fp_pred_scores)) + " peaks"
+    generate_bi_histogram(fig_file=fig_name, tp=tp_pred_scores, fp=fp_pred_scores,
+                          bins=45, plot_title=plot_title, plot_num=2)
+
+    max_F1, optimal_peak = get_max_F1(F1_score)
+    f1_legend_str = "(max_F1, best_peaks) = ({}, {})".format(round(max_F1, 4), optimal_peak)
+    n = len(F1_score)
+    title_str = str(n) + " peaks"
+    fig_name = os.path.join(figures_dir, "f1_score_" + title_str + ".png")
+    generate_prc_plot(x=F1_score, y=np.linspace(start=0, stop=1, num=n), legend=f1_legend_str,
+                      xlabel="number of peaks", ylabel="F1 score", title_str=title_str,
+                      fig_file=fig_name, plot_num=3)
+
+    auPRC = pr_auc_score(precision=prec, recall=recall)
+    pr_legend_str = "auPRC = {}".format(auPRC)
+    fig_name = os.path.join(figures_dir, "pr_" + title_str + ".png")
+    generate_prc_plot(x=recall, y=prec, legend=pr_legend_str, xlabel="recall", ylabel="precision",
+                      title_str=title_str, fig_file=fig_name, plot_num=3)
+    return

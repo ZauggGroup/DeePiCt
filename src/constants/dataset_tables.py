@@ -38,21 +38,21 @@ class DatasetTableHeader(object):
 class ModelsTableHeader(object):
 
     def __init__(self):
-        self.cv_fold = "cv_fold"
-        self.cv_testing_set = "cv_testing_set"
-        self.batch_normalization = "BN"
-        self.date = "date"
+        self.fold = "fold"
+        self.total_folds = "total_folds"
+        self.testing_set = "testing_set"
+        self.batch_norm = "batch_norm"
+        self.training_date = "training_date"
         self.depth = "depth"
-        self.dropout = "dropout"
-        self.initial_features = 'if'
-        self.logging_path = 'log_path'
-        self.model_name = "model_name"
+        self.initial_features = 'initial_features'
+        self.log_path = 'log_path'
+        self.model_name = "model_path"
         self.model_path = "model_path"
-        self.epochs = "n_epochs"
+        self.epochs = "epochs"
         self.old_model = "old_model"
         self.output_classes = "output_classes"
         self.retrain = "retrain"
-        self.semantic_classes = "segmentation_names"
+        self.segmentation_names = "semantic_classes"
         self.train_split = "train_split"
         self.training_set = "training_set"
         self.encoder_dropout = "encoder_dropout"
@@ -63,14 +63,13 @@ class ModelsTableHeader(object):
         self.processing_tomo = "processing_tomo"
         self.overlap = "overlap"
         self.dtype_dict = {
-            self.cv_fold: str,
-            self.cv_testing_set: str,
-            self.batch_normalization: bool,
-            self.date: str,
+            self.fold: str,
+            self.testing_set: str,
+            self.batch_norm: bool,
+            self.training_date: str,
             self.depth: int,
-            self.dropout: float,
             self.initial_features: int,
-            self.logging_path: str,
+            self.log_path: str,
             self.model_name: str,
             self.model_path: str,
             self.epochs: int,
@@ -83,3 +82,4 @@ class ModelsTableHeader(object):
             self.label_name: str
         }
         return
+

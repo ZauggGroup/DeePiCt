@@ -1,6 +1,16 @@
 import numpy as np
 
 
+def get_max_F1(F1_score: list):
+    if len(F1_score) > 0:
+        max_F1 = np.max(F1_score)
+        optimal_peak_number = np.min(np.where(F1_score == max_F1)[0])
+    else:
+        max_F1 = 0
+        optimal_peak_number = np.nan
+    return max_F1, optimal_peak_number
+
+
 def get_clean_points_close2point(point, clean, radius):
     close_to_point = list()
     for clean_p in clean:

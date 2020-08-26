@@ -25,10 +25,10 @@ overlap = config["training"]["overlap"]
 partition_name = config["training"]['partition_name']
 segmentation_names = config["training"]['semantic_classes']
 dataset_table = config['dataset_table']
-output_dir = config["output_dir"]
+output_dir = config["pred_output_dir"]
 output_dir = os.path.join(output_dir, "training_data")
 processing_tomo = config["training"]["processing_tomo"]
-box_shape = config["training"]["box_shape"]
+box_shape = config["training"]["box_size"]
 min_label_fraction = config["training"]["min_label_fraction"]
 max_label_fraction = config["training"]["max_label_fraction"]
 

@@ -4,15 +4,8 @@ import sys
 parser = argparse.ArgumentParser()
 parser.add_argument("-pythonpath", "--pythonpath", type=str)
 parser.add_argument("-tomo_name", "--tomo_name", type=str)
-parser.add_argument("-class_number", "--class_number", type=int)
-parser.add_argument("-model_name", "--model_name", type=str)
-parser.add_argument("-output_dir", "--output_dir", type=str)
-parser.add_argument("-dataset_table", "--dataset_table", type=str)
-parser.add_argument("-calculate_motl", "--calculate_motl", type=str)
-parser.add_argument("-statistics_file", "--statistics_file", type=str)
-parser.add_argument("-radius", "--radius", type=int)
-parser.add_argument("-segmentation_names", "--segmentation_names", nargs='+', type=str)
-parser.add_argument("-yaml_file", "--yaml_file", help="yaml_file", type=str)
+parser.add_argument("-fold", "--fold", type=int or None, default=None)
+parser.add_argument("-config_file", "--config_file", help="yaml_file", type=str)
 
 args = parser.parse_args()
 pythonpath = args.pythonpath
@@ -21,47 +14,33 @@ sys.path.append(pythonpath)
 import os
 from os.path import join
 
-import yaml
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import matplotlib
 
 from constants.dataset_tables import DatasetTableHeader
 from file_actions.writers.csv import motl_writer
-from file_actions.writers.csv import write_statistics
 from networks.utils import build_prediction_output_dir
 from performance.statistics_utils import pr_auc_score, \
-    f1_score_calculator, precision_recall_calculator
+    f1_score_calculator, precision_recall_calculator, get_max_F1
 from tomogram_utils.peak_toolbox.utils import read_motl_coordinates_and_values
 from constants.statistics import write_statistics_pp
+from constants.config import Config
+from constants.config import model_descriptor_from_config
+from plotting.statistics import generate_performance_plots
 
-
-yaml_file = args.yaml_file
-config = yaml.safe_load(open(yaml_file))
-
+config_file = args.config_file
+config = Config(user_config_file=config_file)
 tomo_name = args.tomo_name
-output_dir = args.output_dir
-model_name = os.path.basename(args.model_name)[:-4]
-class_number = args.class_number
-dataset_table = args.dataset_table
-statistics_file = args.statistics_file
-radius = args.radius
 
-segmentation_label = os.path.basename(model_name)
-
-semantic_classes = args.segmentation_names
-semantic_class = semantic_classes[class_number]
-
-DTHeader = DatasetTableHeader(semantic_classes=semantic_classes)
-df = pd.read_csv(dataset_table)
+DTHeader = DatasetTableHeader(semantic_classes=config.semantic_classes)
+df = pd.read_csv(config.dataset_table)
 df[DTHeader.tomo_name] = df[DTHeader.tomo_name].astype(str)
 
 print("Processing tomo", tomo_name)
-output_dir = os.path.join(output_dir, "predictions")
-tomo_output_dir = build_prediction_output_dir(base_output_dir=output_dir,
-                                              label_name="", model_name=segmentation_label,
-                                              tomo_name=tomo_name, semantic_class=semantic_class)
+pred_output_dir = os.path.join(config.output_dir, "predictions")
+tomo_output_dir = build_prediction_output_dir(base_output_dir=pred_output_dir,
+                                              label_name="", model_name=config.model_name,
+                                              tomo_name=tomo_name, semantic_class=config.pred_class)
 print(tomo_output_dir)
 os.makedirs(tomo_output_dir, exist_ok=True)
 motl_in_dir = [file for file in os.listdir(tomo_output_dir) if 'motl_' in file]
@@ -69,9 +48,7 @@ assert len(motl_in_dir) == 1, "only one motive list can be filtered."
 path_to_motl_predicted = os.path.join(tomo_output_dir, motl_in_dir[0])
 
 tomo_df = df[df[DTHeader.tomo_name] == tomo_name]
-path_to_motl_true = tomo_df.iloc[0][DTHeader.clean_motls[class_number]]
-
-class_name = semantic_classes[class_number]
+path_to_motl_true = tomo_df.iloc[0][DTHeader.clean_motls[config.pred_class_number]]
 
 figures_dir = os.path.join(tomo_output_dir, "figures")
 os.makedirs(figures_dir, exist_ok=True)
@@ -90,21 +67,15 @@ prec, recall, tp_true, tp_pred, fp_pred, tp_pred_scores, fp_pred_scores, *_ = \
         predicted_coordinates=predicted_coordinates,
         value_predicted=predicted_values,
         true_coordinates=true_coordinates,
-        radius=radius)
+        radius=config.pr_tolerance_radius)
 
 F1_score = f1_score_calculator(prec, recall)
-
-if len(F1_score) > 0:
-    max_F1 = np.max(F1_score)
-    optimal_peak_number = np.min(np.where(F1_score == max_F1)[0])
-else:
-    max_F1 = 0
-    optimal_peak_number = np.nan
-
 auPRC = pr_auc_score(precision=prec, recall=recall)
+max_F1, optimal_peak_number = get_max_F1(F1_score)
+
 print("auPRC = ", auPRC, "and max_F1 = ", max_F1)
 
-tomo_output_dir = os.path.join(tomo_output_dir, "pr_radius_" + str(radius))
+tomo_output_dir = os.path.join(tomo_output_dir, "pr_radius_" + str(config.pr_tolerance_radius))
 path_to_detected_predicted = join(tomo_output_dir, "detected")
 path_to_undetected_predicted = join(tomo_output_dir, "undetected")
 
@@ -119,106 +90,32 @@ motl_writer(path_to_output_folder=path_to_undetected_predicted,
             list_of_peak_coords=fp_pred,
             list_of_peak_scores=fp_pred_scores,
             in_tom_format=True)
-matplotlib.use('Agg')
-plt.figure(1)
-plt.hist(predicted_values, bins=45, label="predicted")
-plt.xlabel("score value")
-plt.ylabel("frequency")
-plt.title(str(len(predicted_values)) + " peaks")
-plt.legend()
-plt.gcf()
-fig_name = join(figures_dir, "histogram_predicted.png")
-plt.savefig(fname=fig_name, format="png")
 
-plt.figure(2)
-plt.hist(tp_pred_scores, bins=45, label="true positives", fc=(0, 0, 1, 0.5))
-plt.hist(fp_pred_scores, bins=45, label="false positives", fc=(1, 0, 0, 0.5))
-plt.xlabel("score value")
-plt.ylabel("frequency")
-plt.title(str(len(fp_pred)) + " peaks")
-plt.legend()
-plt.gcf()
-fig_name = join(figures_dir, "histogram-detected-undetected.png")
-plt.savefig(fname=fig_name, format="png")
+# save performance figures
+generate_performance_plots(recall=recall, prec=prec, F1_score=F1_score, predicted_values=predicted_values,
+                           tp_pred_scores=tp_pred_scores, fp_pred_scores=fp_pred_scores, figures_dir=figures_dir)
 
-plt.figure(3)
-pr_legend_str = "auPRC = " + str(round(auPRC, 4))
-f1_legend_str = "(max_F1, best_peaks) = ({}, {})".format(round(max_F1, 4), optimal_peak_number)
-title_str = str(len(predicted_coordinates)) + " peaks"
-plt.plot(F1_score, label=f1_legend_str)
-plt.xlabel("number of peaks")
-plt.ylabel("F1 score")
-plt.xlim((0, 1))
-plt.ylim((0, 1))
-plt.title(title_str)
-plt.legend()
-plt.gcf()
-fig_name = join(figures_dir, "f1_score_" + title_str + ".png")
-plt.savefig(fname=fig_name, format="png")
+stats_dir = os.path.dirname(config.pr_statistics_file)
+statistics_file = os.path.join(stats_dir, "pp_statistics.csv")
 
-plt.figure(4)
-plt.plot(recall, prec, label=pr_legend_str)
-plt.xlabel("recall")
-plt.ylabel("precision")
-plt.title(title_str)
-plt.legend()
-plt.xlim((0, 1))
-plt.ylim((0, 1))
-plt.gcf()
-fig_name = join(figures_dir, "pr_" + title_str + ".png")
-plt.savefig(fname=fig_name, format="png")
-plt.close()
-
-print("statistics_file", statistics_file)
-if statistics_file != "None":
-    statistics_label = segmentation_label + "_pr_radius_" + str(radius)
-
-    write_statistics(statistics_file=statistics_file,
-                     statistics_label="auPRC_" + statistics_label,
-                     tomo_name=tomo_name,
-                     stat_measure=round(auPRC, 4))
-
-    write_statistics(statistics_file=statistics_file,
-                     statistics_label="F1_" + statistics_label,
-                     tomo_name=tomo_name,
-                     stat_measure=round(max_F1, 4))
-
-
-models_table = os.path.join(args.output_dir, "models")
-models_table = os.path.join(models_table, "models.csv")
-fold = None
-threshold = config["postprocessing_clustering"]["threshold"]
-min_cluster_size = config["postprocessing_clustering"]["min_cluster_size"]
-max_cluster_size = config["postprocessing_clustering"]["max_cluster_size"]
-if max_cluster_size is None:
-    max_cluster_size = np.inf
-
-if os.path.dirname(statistics_file) == "":
-    statistics_file = "pp_statistics.csv"
-    write_statistics_pp(statistics_file=statistics_file, tomo_name=tomo_name, model_name=model_name,
-                        models_table_path=models_table, statistic_variable="auPRC",
-                        statistic_value=round(auPRC, 4),
-                        pr_radius=radius, cv_fold=fold, min_cluster_size=min_cluster_size,
-                        max_cluster_size=max_cluster_size, threshold=threshold, prediction_class=semantic_class)
-    write_statistics_pp(statistics_file=statistics_file, tomo_name=tomo_name, model_name=model_name,
-                        models_table_path=models_table, statistic_variable="maxF1",
-                        statistic_value=round(max_F1, 4), pr_radius=radius, cv_fold=fold,
-                        min_cluster_size=min_cluster_size, max_cluster_size=max_cluster_size,
-                        threshold=threshold, prediction_class=semantic_class)
+if args.fold is None:
+    models_table_path = model_descriptor_from_config(config)
 else:
-    statistics_file = os.path.dirname(statistics_file) + "/pp_statistics.csv"
-    write_statistics_pp(statistics_file=statistics_file, tomo_name=tomo_name, model_name=model_name,
-                        models_table_path=models_table, statistic_variable="auPRC",
-                        statistic_value=round(auPRC, 4),
-                        pr_radius=radius, cv_fold=fold, min_cluster_size=min_cluster_size,
-                        max_cluster_size=max_cluster_size, threshold=threshold, prediction_class=semantic_class)
-    write_statistics_pp(statistics_file=statistics_file, tomo_name=tomo_name, model_name=model_name,
-                        models_table_path=models_table, statistic_variable="maxF1",
-                        statistic_value=round(max_F1, 4), pr_radius=radius, cv_fold=fold,
-                        min_cluster_size=min_cluster_size, max_cluster_size=max_cluster_size,
-                        threshold=threshold, prediction_class=semantic_class)
+    models_table_path = os.path.join(config.output_dir, "models/models.csv")
 
-### For snakemake:
+write_statistics_pp(statistics_file, tomo_name, config.model_name, models_table_path, statistic_variable="auPRC",
+                    statistic_value=round(auPRC, 4), pr_radius=config.pr_tolerance_radius,
+                    min_cluster_size=config.min_cluster_size, max_cluster_size=config.max_cluster_size,
+                    threshold=config.threshold, prediction_class=config.pred_class,
+                    clustering_connectivity=config.clustering_connectivity)
+
+write_statistics_pp(statistics_file, tomo_name, config.model_name, models_table_path, statistic_variable="max_F1",
+                    statistic_value=round(max_F1, 4), pr_radius=config.pr_tolerance_radius,
+                    min_cluster_size=config.min_cluster_size, max_cluster_size=config.max_cluster_size,
+                    threshold=config.threshold, prediction_class=config.pred_class,
+                    clustering_connectivity=config.clustering_connectivity)
+
+# For snakemake:
 snakemake_pattern = os.path.join(path_to_detected_predicted, ".done_pp_snakemake")
 with open(file=snakemake_pattern, mode="w") as f:
     print("Creating snakemake pattern", snakemake_pattern)

@@ -44,8 +44,8 @@ config = yaml.safe_load(open(yaml_file))
 tomos_set = args.set
 
 dataset_table = config['dataset_table']
-logging_dir = os.path.join(config["output_dir"], "logging")
-model_dir = os.path.join(config["output_dir"], "models")
+logging_dir = os.path.join(config["pred_output_dir"], "logging")
+model_dir = os.path.join(config["pred_output_dir"], "models")
 models_table = os.path.join(model_dir, "models.csv")
 
 tomo_training_list = config['tomos_sets'][tomos_set]['training_list']
@@ -64,7 +64,7 @@ output_classes = len(segmentation_names)
 overlap = config["training"]["overlap"]
 processing_tomo = config["training"]['processing_tomo']
 partition_name = config["training"]['partition_name']
-box_size = config["training"]['box_shape']
+box_size = config["training"]['box_size']
 box_shape = [box_size, box_size, box_size]
 
 DTHeader = DatasetTableHeader(partition_name=partition_name,
@@ -126,28 +126,20 @@ optimizer = optim.Adam(net.parameters())
 old_epoch = 0
 metric = loss
 
-model_name = config["model_name"]
+model_name = config["model_path"]
 
 model_path = os.path.join(model_dir, model_name)
 log_model = os.path.join(logging_dir, model_name[:-4])
 os.makedirs(log_model, exist_ok=True)
 os.makedirs(model_dir, exist_ok=True)
 
-write_on_models_notebook(model_name=model_name[:-4], label_name=model_name[:-4], model_dir=model_dir,
-                         log_dir=log_model, depth=depth,
-                         initial_features=initial_features, n_epochs=n_epochs,
-                         training_paths_list=training_partition_paths,
-                         split=split, output_classes=output_classes,
-                         segmentation_names=segmentation_names, box_size=box_size,
-                         overlap=overlap,
-                         processing_tomo=processing_tomo,
-                         partition_name=partition_name,
-                         retrain=False,
-                         path_to_old_model="",
-                         models_notebook_path=models_table,
-                         encoder_dropout=encoder_dropout,
-                         decoder_dropout=decoder_dropout,
-                         BN=batch_norm)
+write_on_models_notebook(model_name=model_name[:-4], label_name=model_name[:-4], model_dir=model_dir, log_dir=log_model,
+                         depth=depth, initial_features=initial_features, n_epochs=n_epochs,
+                         training_paths_list=training_partition_paths, split=split, output_classes=output_classes,
+                         segmentation_names=segmentation_names, box_size=box_size, partition_name=partition_name,
+                         processing_tomo=processing_tomo, retrain=False, path_to_old_model="",
+                         models_notebook_path=models_table, encoder_dropout=encoder_dropout,
+                         decoder_dropout=decoder_dropout, batch_norm=batch_norm, overlap=overlap)
 
 lr_scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=0.1,
                                                     patience=10, verbose=True)
