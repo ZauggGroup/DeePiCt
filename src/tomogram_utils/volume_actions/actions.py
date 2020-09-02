@@ -294,7 +294,6 @@ def load_and_normalize_dataset_list(training_partition_paths: list,
             train_labels += list(labels)
         else:
             # Normalize data
-            # raw_data = preprocess_data(raw_data)
             raw_data = np.array(raw_data)
             labels = np.array(labels, dtype=np.long)
 
@@ -454,7 +453,7 @@ def generate_strongly_labeled_partition(path_to_raw: str,
                                         overlap: int,
                                         min_label_fraction: float = 0,
                                         max_label_fraction: float = 1) -> list:
-    raw_dataset = load_tomogram(path_to_raw)
+    raw_dataset = load_tomogram(path_to_dataset=path_to_raw, dtype=float)
     min_shape = raw_dataset.shape
     labels_dataset_list = []
     for path_to_labeled in labels_dataset_paths_list:

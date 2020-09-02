@@ -7,7 +7,7 @@ from file_actions.readers.hdf import _load_hdf_dataset
 from file_actions.readers.mrc import read_mrc
 
 
-def load_tomogram(path_to_dataset: str) -> np.array:
+def load_tomogram(path_to_dataset: str, dtype=None) -> np.array:
     """
     Verified that they open according to same coordinate system
     """
@@ -20,5 +20,5 @@ def load_tomogram(path_to_dataset: str) -> np.array:
     elif data_file_extension == ".hdf":
         dataset = _load_hdf_dataset(hdf_file_path=path_to_dataset)
     elif data_file_extension in [".mrc", ".rec"]:
-        dataset = read_mrc(path_to_mrc=path_to_dataset)
+        dataset = read_mrc(path_to_mrc=path_to_dataset, dtype=dtype)
     return dataset

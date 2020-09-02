@@ -5,23 +5,22 @@ config_file=$1
 export PYTHONPATH=${srcdir}/src
 echo PYTHONPATH=$PYTHONPATH
 
-source ~/.bashrc
-conda activate snakemake
-srun -t 10:00:00 -c 1 --mem 4G \
-    snakemake \
-    --snakefile "${srcdir}/Snakefile" \
-    --cluster "sbatch" \
-    --config config="${config_file}" gpu=$CUDA_VISIBLE_DEVICES \
-    --jobscript "${srcdir}/jobscript.sh" \
-    --jobs 20 \
-    --use-conda \
-    --printshellcmds \
-    --latency-wait 30
-
-#snakemake \
-#    --snakefile "${srcdir}/Snakefile" \
+#source ~/.bashrc
+#conda activate snakemake
+#srun -t 10:00:00 -c 1 --mem 4G \
+#    snakemake \
+#    --snakefile "${srcdir}/Snakefile_old" \
+#    --cluster "sbatch" \
 #    --config config="${config_file}" gpu=$CUDA_VISIBLE_DEVICES \
-#    --forceall \
+#    --jobscript "${srcdir}/jobscript.sh" \
+#    --jobs 20 \
 #    --use-conda \
 #    --printshellcmds \
-#    --cores 1 --resources gpu=1
+#    --latency-wait 30
+
+snakemake \
+    --snakefile "${srcdir}/snakemake_test" \
+    --config config="${config_file}" gpu=$CUDA_VISIBLE_DEVICES \
+    --use-conda \
+    --printshellcmds \
+    --cores 1 --resources gpu=1

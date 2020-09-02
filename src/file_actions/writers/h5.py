@@ -302,6 +302,7 @@ def write_subtomograms_from_dataset(output_path, padded_dataset,
                                                     crop_shape=crop_shape,
                                                     window_center=window_center)
             f[subtomo_h5_internal_path] = subtomo_data
+    print("Partition written to", output_path)
 
 
 def write_joint_raw_and_labels_subtomograms(output_path: str,

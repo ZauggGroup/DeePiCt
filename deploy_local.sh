@@ -7,7 +7,7 @@ export PYTHONPATH=${srcdir}/src
 echo PYTHONPATH=$PYTHONPATH
 
 snakemake \
-    --snakefile "${srcdir}/Snakefile" \
+    --snakefile "${srcdir}/snakefile" \
     --config config="${config_file}" gpu=$CUDA_VISIBLE_DEVICES \
     --use-conda \
     --printshellcmds \

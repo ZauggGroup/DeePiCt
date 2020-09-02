@@ -1,9 +1,10 @@
 import os
+from dataclasses import dataclass
 
+import numpy as np
 import pandas as pd
 
 from constants.dataset_tables import ModelsTableHeader
-from dataclasses import dataclass
 
 
 @dataclass
@@ -32,6 +33,12 @@ class ModelDescriptor:
     testing_set: list or None
     total_folds: int or None
     fold: int or None
+    da_rounds: int
+    da_rot_angle: float
+    da_elastic_alpha: float
+    da_sigma_gauss: float
+    da_salt_pepper_p: float
+    da_salt_pepper_ampl: float
 
     @staticmethod
     def from_data_frame(df: pd.DataFrame) -> "ModelDescriptor":
@@ -45,13 +52,20 @@ class ModelDescriptor:
         return pd.DataFrame([model_descriptor.__dict__])
 
     @staticmethod
-    def add_descriptor_to_table(table_path, model_descriptor) -> None:
+    def add_descriptor_to_table(table_path, model_descriptor, force_retrain=False) -> None:
         model_descriptor_row = model_descriptor.to_data_frame(model_descriptor)
         models_notebook_dir = os.path.dirname(table_path)
         os.makedirs(models_notebook_dir, exist_ok=True)
         if os.path.isfile(table_path):
             models_table = pd.read_csv(table_path)
-            models_table = models_table.append(model_descriptor_row, sort="False")
+            print("model names in table:", models_table["model_name"].values)
+            print("model_descriptor.model_name:", model_descriptor.model_name)
+            if model_descriptor.model_name in models_table["model_name"].values and force_retrain:
+                select_indices = list(np.where(models_table["model_name"] == model_descriptor.model_name)[0])
+                models_table = models_table.drop(select_indices)
+                models_table = models_table.append(model_descriptor_row, sort="False")
+            else:
+                models_table = models_table.append(model_descriptor_row, sort="False")
             models_table.to_csv(path_or_buf=table_path, index=False)
         else:
             model_descriptor_row.to_csv(path_or_buf=table_path, index=False)
@@ -83,6 +97,7 @@ class ModelPerformanceVector:
 def add_model_performance_statistics(model_performance_vector, file):
     data = model_performance_vector.model_descriptor.__dict__
     data.update(model_performance_vector.model_performance.__dict__)
+    # noinspection PyTypeChecker
     model_performance_row = pd.DataFrame.from_dict([data])
     if os.path.exists(file):
         statistics_df = pd.read_csv(file)
@@ -108,13 +123,17 @@ def write_statistics_pp(statistics_file, tomo_name, model_name, model_parameters
                         "statistic_variable": statistic_variable,
                         "statistic_value": statistic_value,
                         "prediction_class": prediction_class}
+    assert isinstance(model_parameters, dict) or isinstance(model_parameters, str)
     if isinstance(model_parameters, str):
         models_header = ModelsTableHeader()
         models_df = pd.read_csv(model_parameters, dtype={models_header.model_name: str})
+        print(models_df[models_header.model_name].values)
         model_df = models_df[models_df[models_header.model_name] == model_name]
-        assert model_df.shape[0] == 1
-    elif isinstance(model_parameters, dict):
+        assert model_df.shape[0] == 1, str(model_df.shape[0]) + " models in the table with same name"
+    else:
         model_df = pd.DataFrame([model_parameters])
-    model_performance_vector = ModelPerformanceVector(model_df=model_df, performance_dict=performance_dict)
+    model_performance_vector = ModelPerformanceVector(performance_dict=performance_dict, model_df=model_df)
     add_model_performance_statistics(model_performance_vector=model_performance_vector, file=statistics_file)
     return
+
+

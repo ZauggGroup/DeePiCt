@@ -3,21 +3,23 @@ from os.path import join
 
 import h5py
 import numpy as np
+import pandas as pd
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import torch.utils.data as du
 
 from constants import h5_internal_paths
+from constants.config import Config, CV_DATA_FILE
 from file_actions.readers.h5 import read_training_data
 from image.filters import preprocess_data
 from networks.io import get_device
 from networks.unet import UNet
-from tomogram_utils.volume_actions.actions import split_and_preprocess_dataset
-import torch.utils.data as du
+from paths.pipeline_dirs import training_partition_path
+from tensors.transformations import apply_transformation_iteration
 from tomogram_utils.volume_actions.actions import \
     load_and_normalize_dataset_list
-from paths.pipeline_dirs import training_partition_path
-from constants.config import Config
+from tomogram_utils.volume_actions.actions import split_and_preprocess_dataset
 
 
 def load_unet_model(path_to_model: str, confs: dict, net: nn.Module = UNet,
@@ -152,17 +154,38 @@ def build_prediction_output_dir(base_output_dir: str, label_name: str,
     return output_dir
 
 
-def generate_data_loaders(config: Config):
-    # DTHeader = DatasetTableHeader(partition_name=config.partition_name,
-    #                               semantic_classes=config.semantic_classes)
-    # df = pd.read_csv(config.dataset_table, dtype={DTHeader.tomo_name: str})
+def get_training_testing_lists(config: Config, fold: int):
+    if fold is not None:
+        cv_data = pd.read_csv(CV_DATA_FILE)
+        print(cv_data)
+        cv_data["fold"] = cv_data["fold"].apply(lambda x: str(x))
+        cv_data.set_index("fold", inplace=True)
 
+        def split_list(tomo_list_str: str, sep: str = " "):
+            tomo_list = tomo_list_str.split(sep)
+            tomo_list_spl = []
+            for tomo in tomo_list:
+                if len(tomo) > 0:
+                    tomo_list_spl.append(tomo)
+            return tomo_list_spl
+
+        tomo_training_list = split_list(tomo_list_str=cv_data.loc[str(fold)]["cv_training_list"])
+        tomo_testing_list = split_list(tomo_list_str=cv_data.loc[str(fold)]["cv_validation_list"])
+    else:
+        tomo_training_list = config.training_tomos
+        tomo_testing_list = []
+
+    return tomo_training_list, tomo_testing_list
+
+
+def generate_data_loaders(config: Config, tomo_training_list: list, fold: int or None = None):
     training_partition_paths = list()
     data_aug_rounds_list = list()
-    for tomo_name in config.training_tomos:
+    for tomo_name in tomo_training_list:
         print(tomo_name)
-        _, partition_path = training_partition_path(output_dir=config.work_dir, tomo_name=tomo_name,
-                                                    partition_name=config.partition_name)
+        _, partition_path = training_partition_path(output_dir=config.work_dir,
+                                                    tomo_name=tomo_name,
+                                                    fold=fold)
         training_partition_paths += [partition_path]
         data_aug_rounds_list += [0]
 
@@ -170,11 +193,11 @@ def generate_data_loaders(config: Config):
         load_and_normalize_dataset_list(training_partition_paths,
                                         data_aug_rounds_list,
                                         config.semantic_classes, config.split)
+
     print("Train data: mean = {}, std = {}".format(np.mean(train_data), np.std(train_data)))
     print("unique labels = {}".format(np.unique(train_labels)))
     print("training data shape =", train_data.shape)
     print("validation data shape =", val_data.shape)
-
     train_set = du.TensorDataset(torch.from_numpy(train_data),
                                  torch.from_numpy(train_labels))
     val_set = du.TensorDataset(torch.from_numpy(val_data),
@@ -183,3 +206,77 @@ def generate_data_loaders(config: Config):
     train_loader = du.DataLoader(train_set, shuffle=True, batch_size=config.batch_size)
     val_loader = du.DataLoader(val_set, batch_size=config.batch_size)
     return train_loader, val_loader
+
+
+def generate_data_loaders_data_augmentation(config: Config, tomo_training_list: list, fold: int or None = None):
+    training_partition_paths = list()
+    data_aug_rounds_list = list()
+    for tomo_name in tomo_training_list:
+        print(tomo_name)
+        _, partition_path = training_partition_path(output_dir=config.work_dir,
+                                                    tomo_name=tomo_name,
+                                                    fold=fold)
+        training_partition_paths += [partition_path]
+        data_aug_rounds_list += [0]
+
+    train_data, train_labels, val_data, val_labels = \
+        load_and_normalize_dataset_list(training_partition_paths,
+                                        data_aug_rounds_list,
+                                        config.semantic_classes, config.split)
+
+    # Data augmentation rounds:
+    if train_data.shape[0] > 0:
+        data_aug_rounds = config.da_rounds
+        rot_angle = config.da_rot_angle
+        elastic_alpha = config.da_elastic_alpha
+        sigma_gauss = config.da_sigma_gauss
+        salt_pepper_p = config.da_salt_pepper_p
+        salt_pepper_ampl = config.da_salt_pepper_ampl
+        print(train_labels.shape)
+        assert len(train_labels.shape) in [5, 6]
+        if len(train_labels.shape) == 6:
+            src_label_data = train_labels
+        else:
+            print("one single label")
+            src_label_data = train_labels[None, :]
+        train_data_aug = train_data.copy()
+        train_labels_aug = src_label_data.copy()
+        for iteration in range(data_aug_rounds):
+            transf_raw_tensor, transf_label_tensors = \
+                apply_transformation_iteration(
+                    src_raw=train_data,
+                    src_label_data=src_label_data,
+                    rot_range=rot_angle,
+                    elastic_alpha=elastic_alpha,
+                    sigma_noise=sigma_gauss,
+                    salt_pepper_p=salt_pepper_p,
+                    salt_pepper_ampl=salt_pepper_ampl)
+            train_data_aug = np.append(train_data_aug, np.array(transf_raw_tensor), axis=0)
+            train_labels_aug = np.append(train_labels_aug, np.array(transf_label_tensors), axis=1)
+        print("train_labels_aug.shape", train_labels_aug.shape)
+        print("train_data_aug.shape", train_data_aug.shape)
+    train_set = du.TensorDataset(torch.from_numpy(train_data),
+                                 torch.from_numpy(train_labels))
+    val_set = du.TensorDataset(torch.from_numpy(val_data),
+                               torch.from_numpy(val_labels))
+
+    train_loader = du.DataLoader(train_set, shuffle=True, batch_size=config.batch_size)
+    val_loader = du.DataLoader(val_set, batch_size=config.batch_size)
+    return train_loader, val_loader
+
+
+if __name__ == "__main__":
+    from constants.config import Config
+    from networks.utils import get_training_testing_lists
+
+    config_file = "test_config.yaml"
+    src_data_path = "test_work/training_data/induced/partition.h5"
+    config = Config(config_file)
+
+    tomo_training_list, tomo_testing_list = get_training_testing_lists(config=config, fold=None)
+
+    train_loader, val_loader = generate_data_loaders_data_augmentation(config=config,
+                                                                       tomo_training_list=tomo_training_list,
+                                                                       fold=None)
+
+

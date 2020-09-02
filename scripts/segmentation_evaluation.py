@@ -4,7 +4,7 @@ import sys
 parser = argparse.ArgumentParser()
 parser.add_argument("-pythonpath", "--pythonpath", type=str)
 parser.add_argument("-tomo_name", "--tomo_name", type=str)
-parser.add_argument("-fold", "--fold", type=int or None, default=None)
+parser.add_argument("-fold", "--fold", type=str, default="None")
 parser.add_argument("-config_file", "--config_file", help="yaml_file", type=str)
 
 args = parser.parse_args()
@@ -12,6 +12,7 @@ pythonpath = args.pythonpath
 sys.path.append(pythonpath)
 
 import os
+import ast
 
 import numpy as np
 import pandas as pd
@@ -24,14 +25,19 @@ from paths.pipeline_dirs import get_post_processed_prediction_path
 from constants.config import Config
 from constants.statistics import write_statistics_pp
 from constants.config import model_descriptor_from_config
+from constants.config import get_model_name
 
 config_file = args.config_file
 config = Config(user_config_file=config_file)
 tomo_name = args.tomo_name
+fold = ast.literal_eval(args.fold)
 
-
+model_path, model_name = get_model_name(config, fold)
+snakemake_pattern = config.output_dir + "/predictions/" + model_name + "/" + tomo_name + "/" + \
+                    config.pred_class + "/.{fold}.done_dice_eval_snakemake".format(fold=str(fold))
+print("model_name", model_name)
 prediction_path = get_post_processed_prediction_path(output_dir=config.output_dir,
-                                                     model_name=config.model_name,
+                                                     model_name=model_name,
                                                      tomo_name=tomo_name,
                                                      semantic_class=config.pred_class)
 print(prediction_path)
@@ -82,7 +88,7 @@ else:
 
 statistics_file = os.path.join(config.output_dir, "pp_statistics.csv")
 
-write_statistics_pp(statistics_file=statistics_file, tomo_name=tomo_name, model_name=config.model_name,
+write_statistics_pp(statistics_file=statistics_file, tomo_name=tomo_name, model_name=model_name,
                     model_parameters=models_table_path, statistic_variable="dice",
                     statistic_value=round(dice_statistic, 4), pr_radius=None,
                     min_cluster_size=config.min_cluster_size, max_cluster_size=config.max_cluster_size,
@@ -92,7 +98,7 @@ write_statistics_pp(statistics_file=statistics_file, tomo_name=tomo_name, model_
 print("Dice coefficient =", dice_statistic)
 
 # For snakemake:
-prediction_dir = os.path.dirname(prediction_path)
-snakemake_pattern = os.path.join(prediction_dir, ".done_dice_eval_snakemake")
+snakemake_pattern_dir = os.path.dirname(snakemake_pattern)
+os.makedirs(snakemake_pattern_dir, exist_ok=True)
 with open(file=snakemake_pattern, mode="w") as f:
     print("Creating snakemake pattern", snakemake_pattern)

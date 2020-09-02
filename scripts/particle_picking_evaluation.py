@@ -4,7 +4,7 @@ import sys
 parser = argparse.ArgumentParser()
 parser.add_argument("-pythonpath", "--pythonpath", type=str)
 parser.add_argument("-tomo_name", "--tomo_name", type=str)
-parser.add_argument("-fold", "--fold", type=int or None, default=None)
+parser.add_argument("-fold", "--fold", type=str, default="None")
 parser.add_argument("-config_file", "--config_file", help="yaml_file", type=str)
 
 args = parser.parse_args()
@@ -12,6 +12,8 @@ pythonpath = args.pythonpath
 sys.path.append(pythonpath)
 
 import os
+import ast
+
 from os.path import join
 
 import numpy as np
@@ -27,10 +29,18 @@ from constants.statistics import write_statistics_pp
 from constants.config import Config
 from constants.config import model_descriptor_from_config
 from plotting.statistics import generate_performance_plots
+from constants.config import get_model_name
 
 config_file = args.config_file
 config = Config(user_config_file=config_file)
 tomo_name = args.tomo_name
+fold = ast.literal_eval(args.fold)
+
+model_path, model_name = get_model_name(config, fold)
+
+snakemake_pattern = config.output_dir + "/predictions/" + model_name + "/" + tomo_name + "/" + config.pred_class + \
+                    "/pr_radius_" + str(config.pr_tolerance_radius) + \
+                    "/detected/.{fold}.done_pp_snakemake".format(fold=str(fold))
 
 DTHeader = DatasetTableHeader(semantic_classes=config.semantic_classes)
 df = pd.read_csv(config.dataset_table)
@@ -39,7 +49,7 @@ df[DTHeader.tomo_name] = df[DTHeader.tomo_name].astype(str)
 print("Processing tomo", tomo_name)
 pred_output_dir = os.path.join(config.output_dir, "predictions")
 tomo_output_dir = build_prediction_output_dir(base_output_dir=pred_output_dir,
-                                              label_name="", model_name=config.model_name,
+                                              label_name="", model_name=model_name,
                                               tomo_name=tomo_name, semantic_class=config.pred_class)
 print(tomo_output_dir)
 os.makedirs(tomo_output_dir, exist_ok=True)
@@ -103,19 +113,20 @@ if args.fold is None:
 else:
     models_table_path = os.path.join(config.output_dir, "models/models.csv")
 
-write_statistics_pp(statistics_file, tomo_name, config.model_name, models_table_path, statistic_variable="auPRC",
+write_statistics_pp(statistics_file, tomo_name, model_name, models_table_path, statistic_variable="auPRC",
                     statistic_value=round(auPRC, 4), pr_radius=config.pr_tolerance_radius,
                     min_cluster_size=config.min_cluster_size, max_cluster_size=config.max_cluster_size,
                     threshold=config.threshold, prediction_class=config.pred_class,
                     clustering_connectivity=config.clustering_connectivity)
 
-write_statistics_pp(statistics_file, tomo_name, config.model_name, models_table_path, statistic_variable="max_F1",
+write_statistics_pp(statistics_file, tomo_name, model_name, models_table_path, statistic_variable="max_F1",
                     statistic_value=round(max_F1, 4), pr_radius=config.pr_tolerance_radius,
                     min_cluster_size=config.min_cluster_size, max_cluster_size=config.max_cluster_size,
                     threshold=config.threshold, prediction_class=config.pred_class,
                     clustering_connectivity=config.clustering_connectivity)
 
 # For snakemake:
-snakemake_pattern = os.path.join(path_to_detected_predicted, ".done_pp_snakemake")
+snakemake_pattern_dir = os.path.dirname(snakemake_pattern)
+os.makedirs(snakemake_pattern_dir, exist_ok=True)
 with open(file=snakemake_pattern, mode="w") as f:
     print("Creating snakemake pattern", snakemake_pattern)

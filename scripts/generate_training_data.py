@@ -4,6 +4,7 @@ import sys
 parser = argparse.ArgumentParser()
 parser.add_argument("-tomo_name", "--tomo_name", type=str)
 parser.add_argument("-config_file", "--config_file", type=str)
+parser.add_argument("-fold", "--fold", type=str, default="None")
 parser.add_argument("-pythonpath", "--pythonpath", type=str)
 
 args = parser.parse_args()
@@ -14,6 +15,7 @@ config_file = args.config_file
 sys.path.append(pythonpath)
 
 import os
+import ast
 import numpy as np
 import pandas as pd
 
@@ -25,6 +27,7 @@ from paths.pipeline_dirs import training_partition_path
 config = Config(config_file)
 df = pd.read_csv(config.dataset_table)
 df['tomo_name'] = df['tomo_name'].astype(str)
+fold = ast.literal_eval(args.fold)
 
 print(tomo_name)
 tomo_df = df[df['tomo_name'] == tomo_name]
@@ -33,13 +36,12 @@ labels_dataset_list = list()
 for semantic_class in config.semantic_classes:
     mask_name = semantic_class + '_mask'
     path_to_mask = tomo_df.iloc[0][mask_name]
-    print("path_to_mask = {}".format(path_to_mask))
     labels_dataset_list.append(path_to_mask)
 
 box_shape = (config.box_size, config.box_size, config.box_size)
 output_path_dir, output_path = training_partition_path(output_dir=config.work_dir,
                                                        tomo_name=tomo_name,
-                                                       partition_name=config.partition_name)
+                                                       fold=fold)
 print(output_path_dir)
 os.makedirs(name=output_path_dir, exist_ok=True)
 if os.path.isfile(output_path):
@@ -62,3 +64,9 @@ else:
     else:
         selected_cubes = selected_cubes[0]
     print("{} out of {} cubes in partition file.".format(selected_cubes, len(label_fractions_list)))
+
+# For snakemake
+snakemake_pattern = "training_data/{tomo_name}/.train_partition.{fold}.done".format(tomo_name=tomo_name, fold=str(fold))
+snakemake_pattern = os.path.join(config.work_dir, snakemake_pattern)
+with open(snakemake_pattern, "w") as f:
+    print("Creating snakemake pattern")

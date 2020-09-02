@@ -6,6 +6,8 @@ import numpy as np
 
 from constants.statistics import ModelDescriptor
 
+CV_DATA_FILE = "cv_data.csv"
+
 
 class Config:
     def __init__(self, user_config_file: str):
@@ -28,6 +30,14 @@ class Config:
         self.min_label_fraction = config["training"]["min_label_fraction"]
         self.max_label_fraction = 1
         self.batch_size = config["training"]["batch_size"]
+        self.force_retrain = config["training"]["force_retrain"]
+
+        self.da_rounds = config["training"]["data_augmentation"]["rounds"]
+        self.da_rot_angle = config["training"]["data_augmentation"]["rot_angle"]
+        self.da_elastic_alpha = config["training"]["data_augmentation"]["elastic_alpha"]
+        self.da_sigma_gauss = config["training"]["data_augmentation"]["sigma_gauss"]
+        self.da_salt_pepper_p = config["training"]["data_augmentation"]["salt_pepper_p"]
+        self.da_salt_pepper_ampl = config["training"]["data_augmentation"]["salt_pepper_ampl"]
 
         # unet_hyperparameters:
         self.depth = config["training"]["unet_hyperparameters"]["depth"]
@@ -69,39 +79,46 @@ class Config:
 
         self.old_model = None
         self.retrain = False
-
         self.total_folds = config["cross_validation"]["folds"] if config["cross_validation"] == 'active' else None
 
 
-def record_model(config: Config, fold: int = None):
+def get_model_name(config: Config, fold: int):
+    if fold is not None:
+        model_name = config.model_name + "_" + str(fold)
+        model_path = config.output_dir + "/models/" + model_name + ".pkl"
+    else:
+        model_path = config.model_path
+        model_name = config.model_name
+    return model_path, model_name
+
+
+def record_model(config: Config, training_tomos: list, testing_tomos: list, fold: int = None):
     now = datetime.datetime.now()
     training_date = str(now.day) + "/" + str(now.month) + "/" + str(now.year)
     logging_dir = os.path.join(config.output_dir, "logging")
     model_dir = os.path.join(config.output_dir, "models")
     models_table = os.path.join(model_dir, "models.csv")
     log_path = os.path.join(logging_dir, config.model_name)
-    if fold is None:
-        testing_set = None
-        training_set = config.training_tomos
+    model_path, model_name = get_model_name(config, fold)
 
-        model_descriptor = ModelDescriptor(batch_norm=config.batch_norm, box_size=config.box_size,
-                                           training_date=training_date,
-                                           decoder_dropout=config.decoder_dropout,
-                                           encoder_dropout=config.encoder_dropout,
-                                           depth=config.depth, initial_features=config.initial_features,
-                                           log_path=log_path,
-                                           model_name=config.model_name, model_path=config.model_path,
-                                           epochs=config.epochs,
-                                           old_model=config.old_model, output_classes=len(config.semantic_classes),
-                                           overlap=config.overlap,
-                                           partition_name=config.partition_name, processing_tomo=config.processing_tomo,
-                                           retrain=config.retrain, semantic_classes=config.semantic_classes,
-                                           train_split=config.split, training_set=training_set,
-                                           testing_set=testing_set, total_folds=config.total_folds, fold=fold)
+    # TODO Add da params to Model descriptor
+    model_descriptor = ModelDescriptor(batch_norm=config.batch_norm, box_size=config.box_size,
+                                       training_date=training_date, decoder_dropout=config.decoder_dropout,
+                                       encoder_dropout=config.encoder_dropout, depth=config.depth,
+                                       initial_features=config.initial_features, log_path=log_path,
+                                       model_name=model_name, model_path=config.model_path, epochs=config.epochs,
+                                       old_model=config.old_model, output_classes=len(config.semantic_classes),
+                                       overlap=config.overlap, partition_name=config.partition_name,
+                                       processing_tomo=config.processing_tomo, retrain=config.retrain,
+                                       semantic_classes=config.semantic_classes, train_split=config.split,
+                                       training_set=training_tomos, testing_set=testing_tomos,
+                                       total_folds=config.total_folds, fold=fold, da_rounds=config.da_rounds,
+                                       da_rot_angle=config.da_rot_angle, da_elastic_alpha=config.da_elastic_alpha,
+                                       da_sigma_gauss=config.da_sigma_gauss, da_salt_pepper_p=config.da_salt_pepper_p,
+                                       da_salt_pepper_ampl=config.da_salt_pepper_ampl)
 
-        model_descriptor.add_descriptor_to_table(table_path=models_table, model_descriptor=model_descriptor)
-    else:
-        print("To do!")
+    model_descriptor.add_descriptor_to_table(table_path=models_table, model_descriptor=model_descriptor,
+                                             force_retrain=config.force_retrain)
 
 
 def model_descriptor_from_config(config: Config):
@@ -122,6 +139,13 @@ def model_descriptor_from_config(config: Config):
         "training_set": None,
         "testing_set": None,
         "total_folds": None,
-        "fold": None}
+        "fold": None,
+        "da_rounds": config.da_rounds,
+        "da_rot_angle": config.da_rot_angle,
+        "da_elastic_alpha": config.da_elastic_alpha,
+        "da_sigma_gauss": config.da_sigma_gauss,
+        "da_salt_pepper_p": config.da_salt_pepper_p,
+        "da_salt_pepper_ampl": config.da_salt_pepper_ampl,
+    }
     model_parameters.update(training_parameters)
     return model_parameters

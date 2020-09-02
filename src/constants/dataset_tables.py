@@ -46,7 +46,7 @@ class ModelsTableHeader(object):
         self.depth = "depth"
         self.initial_features = 'initial_features'
         self.log_path = 'log_path'
-        self.model_name = "model_path"
+        self.model_name = "model_name"
         self.model_path = "model_path"
         self.epochs = "epochs"
         self.old_model = "old_model"

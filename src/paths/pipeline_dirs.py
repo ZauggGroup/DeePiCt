@@ -1,20 +1,25 @@
 import os
 
 
-def training_partition_path(output_dir: str, tomo_name: str, partition_name: str):
-    output_path_dir = os.path.join(output_dir, "training_data")
+def partition_path(output_dir: str, tomo_name: str, partition_name: str, fold: int or None = None):
+    output_path_dir = os.path.join(output_dir, partition_name)
     output_path_dir = os.path.join(output_path_dir, tomo_name)
-    output_h5_file_name = partition_name + ".h5"
+    if fold is not None:
+        output_path_dir = os.path.join(output_path_dir, "fold_" + str(fold))
+    output_h5_file_name = "partition.h5"
     output_path = os.path.join(output_path_dir, output_h5_file_name)
     return output_path_dir, output_path
 
 
-def testing_partition_path(output_dir: str, tomo_name: str, model_name: str):
-    output_path_dir = os.path.join(output_dir, "test_partitions")
-    output_path_dir = os.path.join(output_path_dir, tomo_name)
-    output_path_dir = os.path.join(output_path_dir, model_name)
-    output_h5_file_name = "test_partition.h5"
-    output_path = os.path.join(output_path_dir, output_h5_file_name)
+def training_partition_path(output_dir: str, tomo_name: str, fold: int or None = None):
+    output_path_dir, output_path = partition_path(output_dir=output_dir, tomo_name=tomo_name,
+                                                  partition_name="training_data", fold=fold)
+    return output_path_dir, output_path
+
+
+def testing_partition_path(output_dir: str, tomo_name: str, fold: int or None = None):
+    output_path_dir, output_path = partition_path(output_dir=output_dir, tomo_name=tomo_name,
+                                                  partition_name="testing_data", fold=fold)
     return output_path_dir, output_path
 
 

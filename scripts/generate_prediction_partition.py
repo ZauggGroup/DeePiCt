@@ -4,15 +4,16 @@ import sys
 parser = argparse.ArgumentParser()
 parser.add_argument("-config_file", "--config_file", type=str)
 parser.add_argument("-pythonpath", "--pythonpath", type=str)
+parser.add_argument("-fold", "--fold", type=str, default="None")
 parser.add_argument("-tomo_name", "--tomo_name", type=str)
 
 args = parser.parse_args()
 pythonpath = args.pythonpath
 sys.path.append(pythonpath)
-config_file = args.config_file
-tomo_name = args.tomo_name
+
 
 import os
+import ast
 
 import numpy as np
 import pandas as pd
@@ -25,11 +26,21 @@ from tomogram_utils.volume_actions.actions import \
 from tomogram_utils.volume_actions.actions import partition_tomogram
 from constants.config import Config
 
+config_file = args.config_file
+tomo_name = args.tomo_name
+fold = ast.literal_eval(args.fold)
 config = Config(args.config_file)
+
+snakemake_pattern = config.work_dir + "/testing_data/" + tomo_name + \
+                    "/.test_partition.{fold}.done".format(fold=str(fold))
+
+
 print("tomo_name", tomo_name)
 partition_output_dir, partition_path = testing_partition_path(output_dir=config.work_dir,
                                                               tomo_name=tomo_name,
-                                                              model_name=config.model_name)
+                                                              fold=fold)
+
+print("partition_path =", partition_path)
 os.makedirs(partition_output_dir, exist_ok=True)
 
 if os.path.exists(partition_path):
@@ -46,9 +57,9 @@ else:
     tomo_df = df[df[DTHeader.tomo_name] == tomo_name]
     path_to_raw = tomo_df.iloc[0][DTHeader.processing_tomo]
     intersecting_mask_path = tomo_df.iloc[0][DTHeader.filtering_mask]
-    raw_dataset = load_tomogram(path_to_dataset=path_to_raw)
+    raw_dataset = load_tomogram(path_to_dataset=path_to_raw, dtype=float)
     if isinstance(intersecting_mask_path, float):
-        print("No filtering mask file available.")
+        print("No region mask file available.")
         partition_tomogram(dataset=raw_dataset,
                            output_h5_file_path=partition_path,
                            subtomo_shape=box_shape,
@@ -72,3 +83,7 @@ else:
                                         output_h5_file_path=partition_path,
                                         subtomo_shape=box_shape,
                                         overlap=overlap)
+
+# For snakemake
+with open(snakemake_pattern, "w") as f:
+    print("Creating snakemake pattern")
