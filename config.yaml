@@ -56,6 +56,7 @@ postprocessing_clustering:
   threshold: 0.001                       # Threshold for the probability score to make the predicted segmentation
   min_cluster_size: 100                  # Minimum number of voxels per cluster
   max_cluster_size: 35000                # Maximum number of voxels per cluster
+  clustering_connectivity: 3             # watershed algorithm clustering connectivity
   calculate_motl: False                  # Get the motl of centroids for each cluster
   ignore_border_thickness: 10            # ignore border for motl generation if calculate_motl is True
   region_mask: 'lamella_file'            # column name in metadata table for masking segmentation, e.g. lamella_file
