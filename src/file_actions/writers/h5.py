@@ -514,6 +514,7 @@ def _get_subtomos_names_to_segment(file: h5py.File, label_name: str, flag: str):
 
 
 def segment_and_write(data_path: str, model: UNet3D, label_name: str) -> None:
+    model = model.to(torch.float)
     device = get_device()
     subtomos_data = []
     with h5py.File(data_path, 'r') as data_file:
@@ -535,7 +536,7 @@ def segment_and_write(data_path: str, model: UNet3D, label_name: str) -> None:
             if subtomo_name not in predicted_subtomos_names:
                 subtomo_data = np.array([subtomo_data])
                 subtomo_data = subtomo_data[:, None]
-                segmented_data = model(torch.from_numpy(subtomo_data).to(device))
+                segmented_data = model(torch.from_numpy(subtomo_data).to(device).to(torch.float))
                 segmented_data = segmented_data.cpu().detach().numpy()
                 _write_segmented_subtomo_data(data_file=data_file,
                                               segmented_data=segmented_data,

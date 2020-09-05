@@ -60,7 +60,7 @@ class ModelDescriptor:
             models_table = pd.read_csv(table_path)
             print("model names in table:", models_table["model_name"].values)
             print("model_descriptor.model_name:", model_descriptor.model_name)
-            if model_descriptor.model_name in models_table["model_name"].values and force_retrain:
+            if model_descriptor.model_name in models_table["model_name"].values:
                 select_indices = list(np.where(models_table["model_name"] == model_descriptor.model_name)[0])
                 models_table = models_table.drop(select_indices)
                 models_table = models_table.append(model_descriptor_row, sort="False")

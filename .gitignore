@@ -1,3 +1,5 @@
+stats
+stats/*
 *.pdf
 src/constants/sasha/
 scripts/test.py

@@ -103,7 +103,6 @@ else:
         targets += expand([done_training_pattern], fold=folds)
 
     if config["prediction"]["active"]:
-        print(folds)
         targets += expand([assemble_probability_map_done], tomo_name=prediction_tomos, fold=folds)
 
     if config["postprocessing_clustering"]["active"]:
@@ -125,8 +124,9 @@ else:
     if config["evaluation"]["segmentation_evaluation"]["active"]:
         targets += expand([dice_evaluation_done], tomo_name=prediction_tomos, fold=folds)
 
-print("TARGETS:\n")
-print(targets)
+if config["debug"]:
+    print("TARGETS:\n")
+    print(targets)
 
 rule all:
     input:
@@ -200,7 +200,7 @@ rule segment:
     conda:
          "environment.yaml"
     input:
-         done=[model_path, done_training_pattern, done_testing_part_pattern] if
+         done=[done_training_pattern, done_testing_part_pattern] if
          config["training"]["active"] or config["cross_validation"]["active"] else
          done_testing_part_pattern
     output:
