@@ -20,7 +20,7 @@ import torch.nn as nn
 
 from collections import OrderedDict
 from file_actions.writers.h5 import segment_and_write
-from constants.config import Config, get_model_name
+from constants.config import Config, get_model_name, model_descriptor_from_config
 from networks.io import get_device
 from networks.unet import UNet3D
 from paths.pipeline_dirs import testing_partition_path
@@ -33,7 +33,6 @@ if gpu is None:
 else:
     os.environ["CUDA_VISIBLE_DEVICES"] = gpu
 
-
 config_file = args.config_file
 config = Config(user_config_file=config_file)
 tomo_name = args.tomo_name
@@ -41,7 +40,8 @@ fold = ast.literal_eval(args.fold)
 
 model_path, model_name = get_model_name(config, fold)
 
-snakemake_pattern = ".done_patterns/" + model_name + "." + tomo_name + ".{fold}.segmentation.done".format(fold=str(fold))
+snakemake_pattern = ".done_patterns/" + model_name + "." + tomo_name + ".{fold}.segmentation.done".format(
+    fold=str(fold))
 
 output_dir_tomo, partition_path = testing_partition_path(output_dir=config.work_dir,
                                                          tomo_name=tomo_name,
@@ -59,6 +59,18 @@ device = get_device()
 model = UNet3D(**net_conf)
 model.to(device)
 checkpoint = torch.load(model_path, map_location=device)
+
+if 'model_descriptor' not in checkpoint.keys():
+    print("WARNING: model without model descriptor... it will be added")
+    model_descriptor = model_descriptor_from_config(config)
+    checkpoint["model_descriptor"] = model_descriptor
+    torch.save({
+        'model_descriptor': model_descriptor,
+        'epoch': checkpoint['epoch'],
+        'model_state_dict': checkpoint['model_state_dict'],
+        'optimizer_state_dict': checkpoint['optimizer_state_dict'],
+        'loss': checkpoint['loss'],
+    }, model_path)
 
 if torch.cuda.device_count() > 1:
     print("Let's use", torch.cuda.device_count(), "GPUs!")

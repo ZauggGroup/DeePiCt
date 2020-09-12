@@ -13,7 +13,7 @@ sys.path.append(pythonpath)
 
 import os
 import ast
-
+import torch
 from os.path import join
 
 import numpy as np
@@ -26,10 +26,10 @@ from performance.statistics_utils import pr_auc_score, \
     f1_score_calculator, precision_recall_calculator, get_max_F1
 from tomogram_utils.peak_toolbox.utils import read_motl_coordinates_and_values
 from constants.statistics import write_statistics_pp
-from constants.config import Config
-from constants.config import model_descriptor_from_config
+from constants.config import Config, model_descriptor_from_config
 from plotting.statistics import generate_performance_plots
 from constants.config import get_model_name
+from networks.io import get_device
 
 config_file = args.config_file
 config = Config(user_config_file=config_file)
@@ -108,18 +108,32 @@ generate_performance_plots(recall=recall, prec=prec, F1_score=F1_score, predicte
 stats_dir = os.path.dirname(config.pr_statistics_file)
 statistics_file = os.path.join(stats_dir, "pp_statistics.csv")
 
-if args.fold is None:
-    models_table_path = model_descriptor_from_config(config)
+device = get_device()
+checkpoint = torch.load(model_path, map_location=device)
+if 'model_descriptor' in checkpoint.keys():
+    model_descriptor = checkpoint["model_descriptor"]
 else:
-    models_table_path = os.path.join(config.output_dir, "models/models.csv")
+    print("WARNING: model without model descriptor")
+    model_descriptor = model_descriptor_from_config(config)
+    checkpoint["model_descriptor"] = model_descriptor
+    torch.save({
+        'model_descriptor': model_descriptor,
+        'epoch': checkpoint['epoch'],
+        'model_state_dict': checkpoint['model_state_dict'],
+        'optimizer_state_dict': checkpoint['optimizer_state_dict'],
+        'loss': checkpoint['loss'],
+    }, model_path)
 
-write_statistics_pp(statistics_file, tomo_name, model_name, models_table_path, statistic_variable="auPRC",
+
+write_statistics_pp(statistics_file=statistics_file, tomo_name=tomo_name, model_descriptor=model_descriptor,
+                    statistic_variable="auPRC",
                     statistic_value=round(auPRC, 4), pr_radius=config.pr_tolerance_radius,
                     min_cluster_size=config.min_cluster_size, max_cluster_size=config.max_cluster_size,
                     threshold=config.threshold, prediction_class=config.pred_class,
                     clustering_connectivity=config.clustering_connectivity)
 
-write_statistics_pp(statistics_file, tomo_name, model_name, models_table_path, statistic_variable="max_F1",
+write_statistics_pp(statistics_file=statistics_file, tomo_name=tomo_name, model_descriptor=model_descriptor,
+                    statistic_variable="max_F1",
                     statistic_value=round(max_F1, 4), pr_radius=config.pr_tolerance_radius,
                     min_cluster_size=config.min_cluster_size, max_cluster_size=config.max_cluster_size,
                     threshold=config.threshold, prediction_class=config.pred_class,

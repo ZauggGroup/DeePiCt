@@ -4,9 +4,6 @@ from dataclasses import dataclass
 import numpy as np
 import pandas as pd
 
-from constants.dataset_tables import ModelsTableHeader
-
-
 @dataclass
 class ModelDescriptor:
     """Class for keeping track of model architecture"""
@@ -89,8 +86,8 @@ class PerformanceVector:
 class ModelPerformanceVector:
     """Class for keeping track of model performance"""
 
-    def __init__(self, model_df: pd.DataFrame, performance_dict: dict):
-        self.model_descriptor = ModelDescriptor.from_data_frame(df=model_df)
+    def __init__(self, model_descriptor: ModelDescriptor, performance_dict: dict):
+        self.model_descriptor = model_descriptor
         self.model_performance = PerformanceVector(**performance_dict)
 
 
@@ -112,7 +109,7 @@ def add_model_performance_statistics(model_performance_vector, file):
     return
 
 
-def write_statistics_pp(statistics_file, tomo_name, model_name, model_parameters: str or dict, statistic_variable,
+def write_statistics_pp(statistics_file, tomo_name, model_descriptor: ModelDescriptor, statistic_variable,
                         statistic_value, pr_radius, min_cluster_size, max_cluster_size, threshold,
                         prediction_class, clustering_connectivity):
     performance_dict = {"tomo_name": tomo_name, "pr_radius": pr_radius,
@@ -123,17 +120,8 @@ def write_statistics_pp(statistics_file, tomo_name, model_name, model_parameters
                         "statistic_variable": statistic_variable,
                         "statistic_value": statistic_value,
                         "prediction_class": prediction_class}
-    assert isinstance(model_parameters, dict) or isinstance(model_parameters, str)
-    if isinstance(model_parameters, str):
-        models_header = ModelsTableHeader()
-        models_df = pd.read_csv(model_parameters, dtype={models_header.model_name: str})
-        print(models_df[models_header.model_name].values)
-        model_df = models_df[models_df[models_header.model_name] == model_name]
-        assert model_df.shape[0] == 1, str(model_df.shape[0]) + " models in the table with same name"
-    else:
-        model_df = pd.DataFrame([model_parameters])
-    model_performance_vector = ModelPerformanceVector(performance_dict=performance_dict, model_df=model_df)
+
+    model_performance_vector = ModelPerformanceVector(performance_dict=performance_dict,
+                                                      model_descriptor=model_descriptor)
     add_model_performance_statistics(model_performance_vector=model_performance_vector, file=statistics_file)
     return
-
-

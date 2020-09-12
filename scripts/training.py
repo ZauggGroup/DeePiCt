@@ -67,8 +67,8 @@ optimizer = optim.Adam(net.parameters())
 metric = loss
 
 tomo_training_list, tomo_testing_list = get_training_testing_lists(config=config, fold=fold)
-record_model(config=config, training_tomos=tomo_training_list,
-             testing_tomos=tomo_testing_list, fold=fold)
+model_descriptor = record_model(config=config, training_tomos=tomo_training_list,
+                                testing_tomos=tomo_testing_list, fold=fold)
 
 lr_scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=0.1,
                                                     patience=10, verbose=True)
@@ -108,7 +108,8 @@ else:
             print("Best epoch! -->", best_epoch, "with validation loss:", current_validation_loss)
             validation_loss = current_validation_loss
             save_unet_model(path_to_model=model_path, epoch=current_epoch,
-                            net=net, optimizer=optimizer, loss=current_validation_loss)
+                            net=net, optimizer=optimizer, loss=current_validation_loss,
+                            model_descriptor=model_descriptor)
         else:
             print("Epoch =", current_epoch, " was not the best.")
             print("The current best is epoch =", best_epoch)

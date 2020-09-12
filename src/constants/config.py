@@ -1,8 +1,8 @@
-import os
-import yaml
 import datetime
+import os
 
 import numpy as np
+import yaml
 
 from constants.statistics import ModelDescriptor
 
@@ -99,9 +99,18 @@ def record_model(config: Config, training_tomos: list, testing_tomos: list, fold
     model_dir = os.path.join(config.output_dir, "models")
     models_table = os.path.join(model_dir, "models.csv")
     log_path = os.path.join(logging_dir, config.model_name)
-    model_path, model_name = get_model_name(config, fold)
+    model_descriptor = model_descriptor_from_config(config=config, training_date=training_date, fold=fold,
+                                                    testing_tomos=testing_tomos, training_tomos=training_tomos,
+                                                    log_path=log_path)
 
-    # TODO Add da params to Model descriptor
+    model_descriptor.add_descriptor_to_table(table_path=models_table, model_descriptor=model_descriptor,
+                                             force_retrain=config.force_retrain)
+    return model_descriptor
+
+
+def model_descriptor_from_config(config: Config, training_date=None, fold=None, testing_tomos=None,
+                                 training_tomos=None, log_path=None):
+    model_path, model_name = get_model_name(config, fold)
     model_descriptor = ModelDescriptor(batch_norm=config.batch_norm, box_size=config.box_size,
                                        training_date=training_date, decoder_dropout=config.decoder_dropout,
                                        encoder_dropout=config.encoder_dropout, depth=config.depth,
@@ -116,36 +125,4 @@ def record_model(config: Config, training_tomos: list, testing_tomos: list, fold
                                        da_rot_angle=config.da_rot_angle, da_elastic_alpha=config.da_elastic_alpha,
                                        da_sigma_gauss=config.da_sigma_gauss, da_salt_pepper_p=config.da_salt_pepper_p,
                                        da_salt_pepper_ampl=config.da_salt_pepper_ampl)
-
-    model_descriptor.add_descriptor_to_table(table_path=models_table, model_descriptor=model_descriptor,
-                                             force_retrain=config.force_retrain)
-
-
-def model_descriptor_from_config(config: Config):
-    model_parameters = config.model_hyperparameters
-    training_parameters = {
-        "box_size": config.box_size,
-        "training_date": None,
-        "log_path": None,
-        "model_name": config.model_name,
-        "model_path": config.model_path,
-        "old_model": config.old_model,
-        "output_classes": len(config.semantic_classes),
-        "overlap": config.overlap,
-        "partition_name": config.partition_name,
-        "processing_tomo": config.processing_tomo,
-        "retrain": config.retrain,
-        "semantic_classes": config.semantic_classes,
-        "training_set": None,
-        "testing_set": None,
-        "total_folds": None,
-        "fold": None,
-        "da_rounds": config.da_rounds,
-        "da_rot_angle": config.da_rot_angle,
-        "da_elastic_alpha": config.da_elastic_alpha,
-        "da_sigma_gauss": config.da_sigma_gauss,
-        "da_salt_pepper_p": config.da_salt_pepper_p,
-        "da_salt_pepper_ampl": config.da_salt_pepper_ampl,
-    }
-    model_parameters.update(training_parameters)
-    return model_parameters
+    return model_descriptor

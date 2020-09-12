@@ -208,7 +208,7 @@ rule segment:
     params:
           config=user_config_file,
           logdir=config["cluster"]["logdir"],
-          walltime="00:30:00",
+          walltime="00:20:00",
           nodes=1,
           cores=4,
           memory="50G",

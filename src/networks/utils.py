@@ -11,6 +11,7 @@ import torch.utils.data as du
 
 from constants import h5_internal_paths
 from constants.config import Config, CV_DATA_FILE
+from constants.statistics import ModelDescriptor
 from file_actions.readers.h5 import read_training_data
 from image.filters import preprocess_data
 from networks.io import get_device
@@ -47,8 +48,9 @@ def load_unet_model(path_to_model: str, confs: dict, net: nn.Module = UNet,
         print("The loading mode requested is not supported.")
 
 
-def save_unet_model(path_to_model: str, epoch, net, optimizer, loss):
+def save_unet_model(path_to_model: str, epoch, net, optimizer, loss, model_descriptor: ModelDescriptor or None = None):
     torch.save({
+        'model_descriptor': model_descriptor,
         'epoch': epoch,
         'model_state_dict': net.state_dict(),
         'optimizer_state_dict': optimizer.state_dict(),
@@ -278,5 +280,3 @@ if __name__ == "__main__":
     train_loader, val_loader = generate_data_loaders_data_augmentation(config=config,
                                                                        tomo_training_list=tomo_training_list,
                                                                        fold=None)
-
-

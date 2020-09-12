@@ -384,5 +384,5 @@ def generate_performance_plots(recall, prec, F1_score, predicted_values, tp_pred
     pr_legend_str = "auPRC = {}".format(auPRC)
     fig_name = os.path.join(figures_dir, "pr_" + title_str + ".png")
     generate_prc_plot(x=recall, y=prec, legend=pr_legend_str, xlabel="recall", ylabel="precision",
-                      title_str=title_str, fig_file=fig_name, plot_num=3)
+                      title_str=title_str, fig_file=fig_name, plot_num=4)
     return

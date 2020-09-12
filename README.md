@@ -46,9 +46,12 @@ export CONDA_PKGS_DIRS=/path/to/large/folder/envs/.conda
 The necessary virtual environment for the installation needs only snakemake and pandas
 
 ```bash
-conda create -c bioconda -n snakemake snakemake
+conda create -c bioconda -n snakemake snakemake==5.13.0
 conda activate snakemake
+conda install pandas
 ```
+Note: Avoid snakemake 5.3.0 or previous versions which will not activate the conda environment.
+
 
 Install pytorch locally:
 
