@@ -17,6 +17,7 @@ import ast
 
 import torch
 import torch.nn as nn
+import warnings
 
 from collections import OrderedDict
 from file_actions.writers.h5 import segment_and_write
@@ -61,7 +62,8 @@ model.to(device)
 checkpoint = torch.load(model_path, map_location=device)
 
 if 'model_descriptor' not in checkpoint.keys():
-    print("WARNING: model without model descriptor... it will be added")
+    warnings.warn("Model without model descriptor... it will be added")
+    # print("WARNING: model without model descriptor... it will be added")
     model_descriptor = model_descriptor_from_config(config)
     checkpoint["model_descriptor"] = model_descriptor
     torch.save({
@@ -89,7 +91,6 @@ else:
         new_k = k[len(substring):] if k.startswith(substring) else k
         checkpoint_tmp[new_k] = checkpoint['model_state_dict'][k]
     checkpoint['model_state_dict'] = checkpoint_tmp
-
 model.load_state_dict(checkpoint['model_state_dict'])
 model = model.eval()
 

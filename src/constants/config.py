@@ -85,7 +85,7 @@ class Config:
 def get_model_name(config: Config, fold: int):
     if fold is not None:
         model_name = config.model_name + "_" + str(fold)
-        model_path = config.output_dir + "/models/" + model_name + ".pkl"
+        model_path = config.output_dir + "/models/" + model_name + ".pth"
     else:
         model_path = config.model_path
         model_name = config.model_name

@@ -39,13 +39,13 @@ if config["cluster"]["logdir"] is not None:
 
 if config["cross_validation"]["active"]:
     model_name = os.path.basename(config["model_path"])[:-4] + "_{fold}"
-    model_path = output_dir + "/models/" + model_name + ".pkl"
+    model_path = output_dir + "/models/" + model_name + ".pth"
 else:
     model_path = config["model_path"]
     model_name = os.path.basename(config["model_path"])[:-4]
 
 training_part_pattern = work_dir + "/training_data/{tomo_name}/.train_partition.{fold}.done"
-done_training_pattern = ".done_patterns/" + model_path + "_{fold}.pkl.done"
+done_training_pattern = ".done_patterns/" + model_path + "_{fold}.pth.done"
 testing_part_pattern = work_dir + "/testing_data/{tomo_name}/partition.h5"
 done_testing_part_pattern = work_dir + "/testing_data/{tomo_name}/.test_partition.{fold}.done"
 segmented_part_pattern = ".done_patterns/" + model_name + ".{tomo_name}.{fold}.segmentation.done"
@@ -165,10 +165,10 @@ rule training_3dunet:
           walltime="14:30:00",
           nodes=1,
           cores=4,
-          memory="70G",
-          gres='#SBATCH -p gpu\n#SBATCH --gres=gpu:4'
+          memory="100G",
+          gres='#SBATCH -p gpu\n#SBATCH --gres=gpu:6'
     resources:
-             gpu=4
+             gpu=6
     shell:
          f"""
         python3 {scriptdir}/training.py \

@@ -41,7 +41,7 @@ fold = ast.literal_eval(args.fold)
 model_path, model_name = get_model_name(config, fold)
 
 if fold is None:
-    snakemake_pattern = ".done_patterns/" + model_path + "_None.pkl.done"
+    snakemake_pattern = ".done_patterns/" + model_path + "_None.pth.done"
 else:
     snakemake_pattern = ".done_patterns/" + model_path + ".done"
 

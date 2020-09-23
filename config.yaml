@@ -2,7 +2,7 @@
 dataset_table: "yeast_metadata.csv"   # Path to metadata csv file
 output_dir: "out"                     # Output directory
 work_dir: "work"                      # Destination directory of intermediate files
-model_path: "model.pkl"               # Output model using .pkl extension
+model_path: "model.pth"               # Output model using .pth extension
 
 # When running in the cluster:
 cluster:
