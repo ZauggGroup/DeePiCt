@@ -162,13 +162,13 @@ rule training_3dunet:
     params:
           config=user_config_file,
           logdir=config["cluster"]["logdir"],
-          walltime="14:30:00",
+          walltime="10:30:00",
           nodes=1,
           cores=4,
-          memory="100G",
-          gres='#SBATCH -p gpu\n#SBATCH --gres=gpu:6'
+          memory="70G",
+          gres='#SBATCH -p gpu\n#SBATCH --gres=gpu:4'
     resources:
-             gpu=6
+             gpu=4
     shell:
          f"""
         python3 {scriptdir}/training.py \

@@ -46,15 +46,16 @@ export CONDA_PKGS_DIRS=/path/to/large/folder/envs/.conda
 The necessary virtual environment for the installation needs only snakemake and pandas
 
 ```bash
-conda create -c bioconda -n snakemake snakemake==5.13.0
+conda create -c conda-forge -c bioconda -c conda-forge -n snakemake snakemake==5.13.0
 conda activate snakemake
 conda install pandas
 ```
-Note: Avoid snakemake 5.3.0 or previous versions which will not activate the conda environment.
+
 
 
 Install pytorch locally:
 
+Note: Install pytorch for GPUs! 
 ```bash
 conda install -c pytorch pytorch torchvision
 ```
@@ -73,7 +74,7 @@ the repository will be copied to ```/folder/where/the/repository/will/be/cloned/
 Go to the folder where you plan to run the experiments. Create a
 configuration file -with the structure given in the example-. Run the pipeline by:
 
-```bash /path/to/3d-unet /path/to/config.yaml```
+```bash /path/to/3d-unet/deploy_cluster.sh  /path/to/config.yaml```
 
 
 # Config file and Metadata table

@@ -1,8 +1,8 @@
 # General parameters for training and prediction:
 dataset_table: "yeast_metadata.csv"   # Path to metadata csv file
-output_dir: "out"                     # Output directory
-work_dir: "work"                      # Destination directory of intermediate files
-model_path: "model.pth"               # Output model using .pth extension
+output_dir: "memb/out"                     # Output directory
+work_dir: "memb/work"                      # Destination directory of intermediate files
+model_path: "memb_ED_and_WT_first3d_model.pth"               # Output model using .pth extension
 
 # When running in the cluster:
 cluster:
@@ -20,7 +20,7 @@ cross_validation:
 
 training:
   active: false
-  semantic_classes: ['ribo']         # List of k classes that the network will learn, separated by commas
+  semantic_classes: ['memb']         # List of k classes that the network will learn, separated by commas
   processing_tomo: "tomo"            # Column name in dataset_table corresponding to raw tomo used for training
   box_size: 64                       # Box side of the partition
   min_label_fraction: 0.001          # Minimum label required in each box considered for the training partition
@@ -31,7 +31,7 @@ training:
   # Unet architecture parameters
   unet_hyperparameters:
     depth: 2                         # unet depth (=number of maxpooling layers)
-    initial_features: 8              # number of initial convolutions
+    initial_features: 4              # number of initial convolutions
     epochs: 50                       # training epochs
     train_split: 0.8                 # proportion of training (vs. validation) set, always between 0 and 1
     batch_norm: False                # boolean value
@@ -47,15 +47,15 @@ training:
     salt_pepper_ampl: 0.1            # amplitude of salt and pepper noise (between 0 and 1)
 
 prediction:
-  active: false
-  semantic_class: 'ribo'          # Semantic class to be predicted
+  active: true
+  semantic_class: 'memb'          # Semantic class to be predicted
 
 # Thresholding clustering and motl generation
 postprocessing_clustering:
   active: false
-  threshold: 0.001                       # Threshold for the probability score to make the predicted segmentation
+  threshold: 0.5                         # Threshold for the probability score to make the predicted segmentation
   min_cluster_size: 100                  # Minimum number of voxels per cluster
-  max_cluster_size: 35000                # Maximum number of voxels per cluster
+  max_cluster_size: null                 # Maximum number of voxels per cluster
   clustering_connectivity: 3             # watershed algorithm clustering connectivity
   calculate_motl: False                  # Get the motl of centroids for each cluster
   ignore_border_thickness: 10            # ignore border for motl generation if calculate_motl is True
