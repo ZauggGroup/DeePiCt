@@ -50,7 +50,7 @@ else:
     box_size = config.box_size
     box_shape = (box_size, box_size, box_size)
 
-    DTHeader = DatasetTableHeader(processing_tomo=config.processing_tomo)
+    DTHeader = DatasetTableHeader(processing_tomo=config.processing_tomo, filtering_mask=config.region_mask)
     df = pd.read_csv(config.dataset_table)
     df[DTHeader.tomo_name] = df[DTHeader.tomo_name].astype(str)
 
