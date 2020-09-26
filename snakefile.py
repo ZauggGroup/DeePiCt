@@ -14,7 +14,7 @@ import os.path as op
 import pandas as pd
 from json import dumps
 from datetime import datetime
-from warnings import warn
+from snakemake.exceptions import WorkflowError
 
 
 # Load user config ffile
@@ -99,7 +99,7 @@ if config["cluster"]["logdir"]:
     os.makedirs(config["cluster"]["logdir"], exist_ok=True)
 
 if config["preprocessing"]["filtering"]["active"] and (config["preprocessing"]["filtering"]["target_spectrum"] is None):
-    warn(
+    raise WorkflowError(
         f"Filtering is enabled but no target spectrum file has been stated in the configuration! \
         \nUse {srcdir}/scripts/extract_spectrum.py to create a target spectrum."
     )
@@ -145,7 +145,7 @@ rule all:
 rule filter_tomogram:
     input:
         tomo   = lambda wildcards: filter_meta.loc[wildcards.prefix, "data"], # This approach allows to use both .mrc and .rec
-        target_spectrum = config["preprocessing"]["filtering"]["target_spectrum"]
+        target_spectrum = config["preprocessing"]["filtering"]["target_spectrum"] if config["preprocessing"]["filtering"]["active"] else [None]
     output:
         filtered_tomo = filtered_pattern
     conda:
