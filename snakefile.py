@@ -27,6 +27,8 @@ srcdir = workflow.basedir
 
 # Workaround so filter rule can be applied to both training and pred tomos
 filter_meta = pd.DataFrame({"prefix":[], "data":[]}) 
+training_meta = pd.DataFrame()
+prediction_meta = pd.DataFrame()
 
 # Training data management
 if (
