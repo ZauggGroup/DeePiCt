@@ -1,13 +1,13 @@
 import os
 from os.path import join
 
+import matplotlib.pyplot as plt
 import numpy as np
 import tensorboardX as tb
 import torch
 import torch.nn as nn
 import torch.optim as optim
 import torchvision.utils as vutils
-import matplotlib.pyplot as plt
 
 import tensors.actions as actions
 from networks.metrics import jaccard, accuracy_metrics
@@ -90,38 +90,28 @@ class UNetEncoder3D(nn.Module):
 
 
 class UNetDecoder3D(nn.Module):
+
     def conv_block(self, in_channels, out_channels):
         # I have personally had better experience using relu instead of elu,
         # but this is worth confirming experimentally
         return nn.Sequential(
             nn.Conv3d(in_channels, out_channels, kernel_size=3, padding=1),
-            nn.ReLU(),
+            self.non_linearity,
             nn.Conv3d(out_channels, out_channels, kernel_size=3, padding=1),
-            nn.ReLU())
+            self.non_linearity)
 
-    def conv_block_elu(self, in_channels, out_channels):
-        # I have personally had better experience using relu instead of elu,
-        # but this is worth confirming experimentally
-        return nn.Sequential(
-            nn.Conv3d(in_channels, out_channels, kernel_size=3, padding=1),
-            nn.ELU(),
-            nn.Conv3d(out_channels, out_channels, kernel_size=3, padding=1),
-            nn.ELU())
-
-    # upsampling via transposed 3d convolutions
     def _upsampler(self, in_channels, out_channels):
         return nn.ConvTranspose3d(in_channels, out_channels,
                                   kernel_size=2, stride=2)
 
     def __init__(self, in_channels: int = 1, out_channels: int = 1,
                  depth: int = 4, initial_features: int = 16,
-                 skip_connections: bool = True,
                  with_elu: bool = False,
                  final_activation: nn.Module or None = None) -> object:
         super().__init__()
 
         self.depth = depth
-        self.skip_connections = skip_connections
+        self.non_linearity = nn.ELU() if with_elu else nn.ReLU()
 
         # the final activation must either be None or a Module
         if final_activation is not None:
@@ -133,33 +123,11 @@ class UNetDecoder3D(nn.Module):
         n_features_encode = [in_channels] + n_features
         n_features_base = n_features_encode[-1] * 2
         n_features_decode = [n_features_base] + n_features[::-1]
-        # print("from decoder: n_features_encode", n_features_encode)
-        # print("from decoder: n_features_encode", n_features_decode)
 
-        if self.skip_connections:
-            # modules of the decoder path
-            if with_elu:
-                self.decoder = nn.ModuleList(
-                    [self.conv_block_elu(n_features_decode[level],
-                                         n_features_decode[level + 1]) for
-                     level in range(self.depth)])
-            else:
-                self.decoder = nn.ModuleList(
-                    [self.conv_block(n_features_decode[level],
-                                     n_features_decode[level + 1]) for level in
-                     range(self.depth)])
-        else:
-            if with_elu:
-                self.decoder = nn.ModuleList(
-                    [self.conv_block_elu(n_features_decode[level + 1],
-                                         n_features_decode[level + 1]) for
-                     level in
-                     range(self.depth)])
-            else:
-                self.decoder = nn.ModuleList(
-                    [self.conv_block(n_features_decode[level + 1],
-                                     n_features_decode[level + 1]) for level in
-                     range(self.depth)])
+        self.decoder = nn.ModuleList(
+            [self.conv_block(n_features_decode[level],
+                             n_features_decode[level + 1]) for level in
+             range(self.depth)])
 
         # the upsampling layers
         self.upsamplers = nn.ModuleList(
@@ -167,9 +135,7 @@ class UNetDecoder3D(nn.Module):
                              n_features_decode[level + 1])
              for level in range(self.depth)])
 
-        # output conv and activation
-        # the output conv is not followed by a non-linearity, because we apply
-        # activation afterwards
+        # output layer and activation
         self.out_conv = nn.Conv3d(initial_features, out_channels, 1)
         self.activation = final_activation
 
@@ -211,6 +177,7 @@ class UNet3D(nn.Module):
         self.initial_features = initial_features
         self.depth = depth
         self.final_activation = final_activation
+        self.non_linearity = nn.ELU() if elu else nn.ReLU()
 
         # contractive path
         self.encoder = UNetEncoder3D(in_channels=in_channels,

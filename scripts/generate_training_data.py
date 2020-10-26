@@ -25,17 +25,14 @@ from tomogram_utils.volume_actions.actions import \
 from paths.pipeline_dirs import training_partition_path
 
 config = Config(config_file)
-df = pd.read_csv(config.dataset_table)
-df['tomo_name'] = df['tomo_name'].astype(str)
+df = pd.read_csv(config.dataset_table, dtype={"tomo_name": str})
+df.set_index('tomo_name', inplace=True)
 fold = ast.literal_eval(args.fold)
-
-print(tomo_name)
-tomo_df = df[df['tomo_name'] == tomo_name]
-path_to_raw = tomo_df.iloc[0][config.processing_tomo]
+path_to_raw = df[config.processing_tomo][tomo_name]
 labels_dataset_list = list()
 for semantic_class in config.semantic_classes:
     mask_name = semantic_class + '_mask'
-    path_to_mask = tomo_df.iloc[0][mask_name]
+    path_to_mask = df[mask_name][tomo_name]
     labels_dataset_list.append(path_to_mask)
 
 box_shape = (config.box_size, config.box_size, config.box_size)

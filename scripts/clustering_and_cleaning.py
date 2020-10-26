@@ -15,13 +15,15 @@ import os
 import ast
 
 from os import listdir
+import shutil
 
 import pandas as pd
 import numpy as np
 from file_actions.readers.tomograms import load_tomogram
 from file_actions.writers.csv import build_tom_motive_list
 from file_actions.writers.tomogram import write_tomogram
-from tomogram_utils.coordinates_toolbox.clustering import get_cluster_centroids
+from tomogram_utils.coordinates_toolbox.clustering import get_cluster_centroids, \
+    get_cluster_centroids_in_contact, get_cluster_centroids_colocalization
 from paths.pipeline_dirs import get_probability_map_path, get_post_processed_prediction_path
 from constants.dataset_tables import DatasetTableHeader
 from constants.config import Config
@@ -31,13 +33,12 @@ config_file = args.config_file
 config = Config(user_config_file=config_file)
 tomo_name = args.tomo_name
 fold = ast.literal_eval(args.fold)
-calculate_motl = True
+calculate_motl = config.calculate_motl
 
 model_path, model_name = get_model_name(config, fold)
 
 snakemake_pattern = config.output_dir + "/predictions/" + model_name + "/" + tomo_name + "/" + config.pred_class + \
                     "/.{fold}.post_processed_prediction.mrc".format(fold=str(fold))
-
 
 print("Processing tomo", tomo_name)
 tomo_output_dir, output_path = get_probability_map_path(config.output_dir, model_name, tomo_name,
@@ -45,45 +46,87 @@ tomo_output_dir, output_path = get_probability_map_path(config.output_dir, model
 
 for file in listdir(tomo_output_dir):
     if "motl" in file:
-        print("Motive list already exists:", file)
-        calculate_motl = False
+        print("A motive list already exists:", file)
+        shutil.move(os.path.join(tomo_output_dir, file), os.path.join(tomo_output_dir, "prev_" + file))
 
 assert os.path.isfile(output_path)
 prediction_dataset = load_tomogram(path_to_dataset=output_path)
 output_shape = prediction_dataset.shape
 prediction_dataset_thr = 1 * (prediction_dataset > config.threshold)
 
+# set to zero the edges of tomogram
+if isinstance(config.ignore_border_thickness, int):
+    ix = config.ignore_border_thickness
+    iy, iz = ix, ix
+else:
+    ix, iy, iz = config.ignore_border_thickness
+
+prediction_dataset_thr[:iz, :, :] = np.zeros_like(prediction_dataset_thr[:iz, :, :])
+prediction_dataset_thr[-iz:, :, :] = np.zeros_like(prediction_dataset_thr[-iz:, :, :])
+prediction_dataset_thr[:, :iy, :] = np.zeros_like(prediction_dataset_thr[:, :iy, :])
+prediction_dataset_thr[:, -iy:, :] = np.zeros_like(prediction_dataset_thr[:, -iy:, :])
+prediction_dataset_thr[:, :, :ix] = np.zeros_like(prediction_dataset_thr[:, :, :ix])
+prediction_dataset_thr[:, :, -ix:] = np.zeros_like(prediction_dataset_thr[:, :, -ix:])
+
 DTHeader = DatasetTableHeader(filtering_mask=config.region_mask)
-print("Intersecting mask:", DTHeader.filtering_mask)
-df = pd.read_csv(config.dataset_table)
-df[DTHeader.tomo_name] = df[DTHeader.tomo_name].astype(str)
-tomo_df = df[df[DTHeader.tomo_name] == tomo_name]
-masking_file = tomo_df.iloc[0][DTHeader.filtering_mask]
-clusters_output_path = get_post_processed_prediction_path(output_dir=config.output_dir, model_name=model_name,
+print("Region mask:", DTHeader.filtering_mask)
+df = pd.read_csv(config.dataset_table, dtype={"tomo_name": str})
+df.set_index("tomo_name", inplace=True)
+masking_file = df[DTHeader.filtering_mask][tomo_name]
+clusters_output_path = get_post_processed_prediction_path(output_dir=config.output_dir,
+                                                          model_name=model_name,
                                                           tomo_name=tomo_name,
                                                           semantic_class=config.pred_class)
 os.makedirs(tomo_output_dir, exist_ok=True)
+contact_mode = config.contact_mode
 
-if str(masking_file) == "nan":
-    print("No intersecting mask available of the type {} for tomo {}.".format(config.region_mask, tomo_name))
-else:
-    mask_indicator = load_tomogram(path_to_dataset=masking_file)
-    shx, shy, shz = [np.min([shl, shp]) for shl, shp in
-                     zip(mask_indicator.shape, prediction_dataset_thr.shape)]
-    mask_indicator = mask_indicator[:shx, :shy, :shz]
-    prediction_dataset_thr = prediction_dataset_thr[:shx, :shy, :shz]
-    prediction_dataset_thr = np.array(mask_indicator, dtype=float) * np.array(prediction_dataset_thr,
-                                                                              dtype=float)
-if np.max(prediction_dataset_thr) > 0:
-    clusters_labeled_by_size, centroids_list, cluster_size_list = \
-        get_cluster_centroids(dataset=prediction_dataset_thr,
-                              min_cluster_size=config.min_cluster_size,
-                              max_cluster_size=config.max_cluster_size,
-                              connectivity=config.clustering_connectivity)
-else:
+if np.max(prediction_dataset_thr) == 0:
     clusters_labeled_by_size = prediction_dataset_thr
     centroids_list = []
     cluster_size_list = []
+else:
+    if str(masking_file) == "nan":
+        print("No intersecting mask available of the type {} for tomo {}.".format(config.region_mask, tomo_name))
+        prediction_dataset_thr = np.array(prediction_dataset_thr, dtype=float)
+        clusters_labeled_by_size, centroids_list, cluster_size_list = \
+            get_cluster_centroids(dataset=prediction_dataset_thr,
+                                  min_cluster_size=config.min_cluster_size,
+                                  max_cluster_size=config.max_cluster_size,
+                                  connectivity=config.clustering_connectivity)
+    else:
+        mask_indicator = load_tomogram(path_to_dataset=masking_file)
+        shx, shy, shz = [np.min([shl, shp]) for shl, shp in
+                         zip(mask_indicator.shape, prediction_dataset_thr.shape)]
+        mask_indicator = mask_indicator[:shx, :shy, :shz]
+        prediction_dataset_thr = prediction_dataset_thr[:shx, :shy, :shz]
+        if contact_mode == "intersection":
+            prediction_dataset_thr = np.array(mask_indicator, dtype=float) * np.array(prediction_dataset_thr,
+                                                                                      dtype=float)
+            if np.max(prediction_dataset_thr) > 0:
+                clusters_labeled_by_size, centroids_list, cluster_size_list = \
+                    get_cluster_centroids(dataset=prediction_dataset_thr,
+                                          min_cluster_size=config.min_cluster_size,
+                                          max_cluster_size=config.max_cluster_size,
+                                          connectivity=config.clustering_connectivity)
+        elif contact_mode == "contact":
+            if np.max(prediction_dataset_thr) > 0:
+                clusters_labeled_by_size, centroids_list, cluster_size_list = \
+                    get_cluster_centroids_in_contact(dataset=prediction_dataset_thr,
+                                                     min_cluster_size=config.min_cluster_size,
+                                                     max_cluster_size=config.max_cluster_size,
+                                                     contact_mask=mask_indicator,
+                                                     connectivity=config.clustering_connectivity)
+
+        else:
+            assert contact_mode == "colocalization"
+            if np.max(prediction_dataset_thr) > 0:
+                clusters_labeled_by_size, centroids_list, cluster_size_list = \
+                    get_cluster_centroids_colocalization(dataset=prediction_dataset_thr,
+                                                         min_cluster_size=config.min_cluster_size,
+                                                         max_cluster_size=config.max_cluster_size,
+                                                         contact_mask=mask_indicator,
+                                                         tol_contact=config.contact_distance,
+                                                         connectivity=config.clustering_connectivity)
 
 clusters_output_path = get_post_processed_prediction_path(output_dir=config.output_dir, model_name=model_name,
                                                           tomo_name=tomo_name, semantic_class=config.pred_class)
@@ -93,6 +136,7 @@ write_tomogram(output_path=clusters_output_path, tomo_data=clusters_labeled_by_s
 os.makedirs(tomo_output_dir, exist_ok=True)
 if calculate_motl:
     motl_name = "motl_" + str(len(centroids_list)) + ".csv"
+    print("motl_name:", motl_name)
     motl_file_name = os.path.join(tomo_output_dir, motl_name)
 
     if len(centroids_list) > 0:

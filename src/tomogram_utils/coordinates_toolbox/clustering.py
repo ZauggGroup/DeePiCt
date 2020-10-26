@@ -12,7 +12,9 @@ from tomogram_utils.coordinates_toolbox.utils import shift_coordinates_by_vector
 
 
 def get_clusters_within_size_range(dataset: np.array, min_cluster_size: int,
-                                   max_cluster_size: int, connectivity=1):
+                                   max_cluster_size: int or None, connectivity=1):
+    if max_cluster_size is None:
+        max_cluster_size = np.inf
     assert min_cluster_size <= max_cluster_size
 
     labeled_clusters, num = morph.label(input=dataset,
@@ -22,6 +24,7 @@ def get_clusters_within_size_range(dataset: np.array, min_cluster_size: int,
     labels_list, cluster_size = np.unique(labeled_clusters, return_counts=True)
     # excluding the background cluster:
     labels_list, cluster_size = labels_list[1:], cluster_size[1:]
+    print("cluster_sizes:", cluster_size)
     maximum = np.max(cluster_size)
     print("number of clusters before size filtering = ", len(labels_list))
     print("size range before size filtering: ", np.min(cluster_size), "to",
@@ -51,6 +54,60 @@ def get_cluster_centroids(dataset: np.array, min_cluster_size: int,
         centroid = np.rint(np.mean(cluster, axis=1))
         centroids_list.append(centroid)
     return clusters_map_in_range, centroids_list, cluster_size_within_range
+
+
+def get_cluster_centroids_in_contact(dataset: np.array, min_cluster_size: int,
+                                     max_cluster_size: int, contact_mask: np.array,
+                                     connectivity=1) -> tuple:
+    labeled_clusters, labels_list_within_range, cluster_size_within_range = \
+        get_clusters_within_size_range(dataset=dataset,
+                                       min_cluster_size=min_cluster_size,
+                                       max_cluster_size=max_cluster_size,
+                                       connectivity=connectivity)
+    centroids_list = list()
+    centroids_size_list = list()
+    total_clusters = len(labels_list_within_range)
+    clusters_map_in_range = np.zeros(labeled_clusters.shape)
+    for index, label, size in zip(tqdm(range(total_clusters)),
+                                  labels_list_within_range, cluster_size_within_range):
+        cluster_map = 1 * (labeled_clusters == label)
+        cluster = np.where(labeled_clusters == label)
+        centroid = np.rint(np.mean(cluster, axis=1))
+        contact = len(np.where(cluster_map * contact_mask > 0)[0]) > 0
+        if contact:
+            clusters_map_in_range[cluster] = 1
+            centroids_list.append(centroid)
+            centroids_size_list.append(size)
+    return clusters_map_in_range, centroids_list, centroids_size_list
+
+
+def get_cluster_centroids_colocalization(dataset: np.array, min_cluster_size: int,
+                                         max_cluster_size: int, contact_mask: np.array,
+                                         tol_contact: float = 0,
+                                         connectivity=1) -> tuple:
+    labeled_clusters, labels_list_within_range, cluster_size_within_range = \
+        get_clusters_within_size_range(dataset=dataset,
+                                       min_cluster_size=min_cluster_size,
+                                       max_cluster_size=max_cluster_size,
+                                       connectivity=connectivity)
+    centroids_list = list()
+    centroids_size_list = list()
+    total_clusters = len(labels_list_within_range)
+    clusters_map_in_range = np.zeros(labeled_clusters.shape)
+    for index, label, size in zip(tqdm(range(total_clusters)),
+                                  labels_list_within_range, cluster_size_within_range):
+        cluster = np.where(labeled_clusters == label)
+        centroid = np.rint(np.mean(cluster, axis=1))
+        cz, cy, cx = [int(c) for c in centroid]
+        slicez = slice(cz - tol_contact, cz + tol_contact)
+        slicey = slice(cy - tol_contact, cy + tol_contact)
+        slicex = slice(cx - tol_contact, cx + tol_contact)
+        contact = (contact_mask[slicez, slicey, slicex] > 0).any()
+        if contact:
+            clusters_map_in_range[cluster] = 1
+            centroids_list.append(centroid)
+            centroids_size_list.append(size)
+    return clusters_map_in_range, centroids_list, centroids_size_list
 
 
 def get_cluster_centroids_from_partition(partition: str, label_name: str,

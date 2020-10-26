@@ -1,10 +1,10 @@
+import argparse
+import warnings
+
+import mrcfile
 import numpy as np
 import numpy.fft as fft
 import pandas as pd
-import mrcfile
-import warnings
-
-import argparse
 
 from FilterUtil import rad_avg, rot_kernel
 
@@ -18,7 +18,7 @@ def match_spectrum(tomo, target_spectrum, cutoff=None, smooth=0):
         cutoff: apply a cutoff at this frequency (default: no cutoff)
         smooth: smoothen the cutoff into a sigmoid. Value roughly resembles width of sigmoid.
     """
-    
+
     # Normalize tomogram
     target_spectrum = target_spectrum.copy()
     tomo -= tomo.min()
@@ -39,7 +39,7 @@ def match_spectrum(tomo, target_spectrum, cutoff=None, smooth=0):
         if smooth:
             slope = len(equal_v)/smooth
             offset = 2 * slope * ((cutoff - len(equal_v) / 2) / len(equal_v))
-        
+
             cutoff_v = 1/(1 + np.exp(np.linspace(-slope, slope, len(equal_v)) - offset))
 
         else:
@@ -48,15 +48,15 @@ def match_spectrum(tomo, target_spectrum, cutoff=None, smooth=0):
                 equal_v[cutoff:] = 0
             except IndexError:
                 warnings.warn("Flat cutoff is higher than maximum frequency")
-            
+
         equal_v *= cutoff_v
 
     # Create and apply equalization kernel
     equal_kernel = rot_kernel(equal_v, t.shape)
-    
+
     t *= equal_kernel
     del equal_kernel
-    
+
     # Inverse FFT
     t = fft.ifftn(t)
     t = np.abs(t).astype("f4")
@@ -65,10 +65,10 @@ def match_spectrum(tomo, target_spectrum, cutoff=None, smooth=0):
 
 
 def main():
-    
+
     parser = get_cli()
     args = parser.parse_args()
-    
+
     with mrcfile.open(args.input, permissive = True) as m:
         tomo = m.data.astype("f4")
         tomo_h = m.header
@@ -88,28 +88,28 @@ def get_cli():
         description="Match tomogram to another tomogram's amplitude spectrum."
     )
 
-    parser.add_argument( 
+    parser.add_argument(
         "-i",
         "--input",
         required=True,
         help="Tomogram to match (.mrc/.rec)."
     )
 
-    parser.add_argument( 
+    parser.add_argument(
         "-t",
         "--target",
         required=True,
         help="Target spectrum to match the input tomogram to (.tsv)."
     )
 
-    parser.add_argument( 
+    parser.add_argument(
         "-o",
         "--output",
         required=True,
         help="Output location for matched tomogram."
     )
 
-    parser.add_argument( 
+    parser.add_argument(
         "-c",
         "--cutoff",
         required=False,
@@ -118,7 +118,7 @@ def get_cli():
         help="Lowpass cutoff to apply."
     )
 
-    parser.add_argument( 
+    parser.add_argument(
         "-s",
         "--smoothen",
         required=False,
@@ -126,7 +126,7 @@ def get_cli():
         type=float,
         help="Smoothening to apply to lowpass filter by turning it into a sigmoid curve. Value roughly resembles sigmoid width in pixels."
     )
-    
+
     return parser
 
 

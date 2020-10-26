@@ -63,7 +63,7 @@ checkpoint = torch.load(model_path, map_location=device)
 
 if 'model_descriptor' not in checkpoint.keys():
     warnings.warn("Model without model descriptor... it will be added")
-    # print("WARNING: model without model descriptor... it will be added")
+    print("WARNING: model without model descriptor... it will be added")
     model_descriptor = model_descriptor_from_config(config)
     checkpoint["model_descriptor"] = model_descriptor
     torch.save({

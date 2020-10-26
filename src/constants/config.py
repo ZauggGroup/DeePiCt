@@ -33,11 +33,18 @@ class Config:
         self.force_retrain = config["training"]["force_retrain"]
 
         self.da_rounds = config["training"]["data_augmentation"]["rounds"]
-        self.da_rot_angle = config["training"]["data_augmentation"]["rot_angle"]
-        self.da_elastic_alpha = config["training"]["data_augmentation"]["elastic_alpha"]
-        self.da_sigma_gauss = config["training"]["data_augmentation"]["sigma_gauss"]
-        self.da_salt_pepper_p = config["training"]["data_augmentation"]["salt_pepper_p"]
-        self.da_salt_pepper_ampl = config["training"]["data_augmentation"]["salt_pepper_ampl"]
+        if self.da_rounds > 0 :
+            self.da_rot_angle = config["training"]["data_augmentation"]["rot_angle"]
+            self.da_elastic_alpha = config["training"]["data_augmentation"]["elastic_alpha"]
+            self.da_sigma_gauss = config["training"]["data_augmentation"]["sigma_gauss"]
+            self.da_salt_pepper_p = config["training"]["data_augmentation"]["salt_pepper_p"]
+            self.da_salt_pepper_ampl = config["training"]["data_augmentation"]["salt_pepper_ampl"]
+        else:
+            self.da_rot_angle = 0
+            self.da_elastic_alpha = 0
+            self.da_sigma_gauss = 0
+            self.da_salt_pepper_p = 0
+            self.da_salt_pepper_ampl = 0
 
         # unet_hyperparameters:
         self.depth = config["training"]["unet_hyperparameters"]["depth"]
@@ -66,6 +73,8 @@ class Config:
         self.calculate_motl = config["postprocessing_clustering"]["calculate_motl"]
         self.ignore_border_thickness = config["postprocessing_clustering"]["ignore_border_thickness"]
         self.region_mask = config["postprocessing_clustering"]["region_mask"]
+        self.contact_mode = config["postprocessing_clustering"]["contact_mode"]
+        self.contact_distance = config["postprocessing_clustering"]["contact_distance"]
 
         # evaluation:
         # a. For precision recall in particle picking

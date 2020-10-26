@@ -26,6 +26,7 @@ from constants.config import Config
 from constants.statistics import write_statistics_pp
 from constants.config import model_descriptor_from_config
 from constants.config import get_model_name
+from networks.io import get_device
 
 config_file = args.config_file
 config = Config(user_config_file=config_file)
@@ -49,20 +50,23 @@ df[DTHeader.tomo_name] = df[DTHeader.tomo_name].astype(str)
 clean_mask_name = DTHeader.masks_names[config.pred_class_number]
 
 tomo_df = df[df[DTHeader.tomo_name] == tomo_name]
-lamella_file = tomo_df.iloc[0][DTHeader.filtering_mask]
 target_path = tomo_df.iloc[0][clean_mask_name]
+prediction = load_tomogram(path_to_dataset=prediction_path)
 
-if str(lamella_file) == "nan":
-    prediction = load_tomogram(prediction_path)
-else:
-    lamella_indicator = load_tomogram(path_to_dataset=lamella_file)
-    prediction = load_tomogram(path_to_dataset=prediction_path)
-    shx, shy, shz = [np.min([shl, shp]) for shl, shp in
-                     zip(lamella_indicator.shape, prediction.shape)]
-    lamella_indicator = lamella_indicator[:shx, :shy, :shz]
-    prediction = prediction[:shx, :shy, :shz]
-    prediction = np.array(lamella_indicator, dtype=float) * np.array(prediction,
-                                                                     dtype=float)
+contact_mode = config.contact_mode
+if contact_mode == "intersection":
+    lamella_file = tomo_df.iloc[0][DTHeader.filtering_mask]
+
+    if str(lamella_file) == "nan":
+        prediction = load_tomogram(prediction_path)
+    else:
+        lamella_indicator = load_tomogram(path_to_dataset=lamella_file)
+        shx, shy, shz = [np.min([shl, shp]) for shl, shp in
+                         zip(lamella_indicator.shape, prediction.shape)]
+        lamella_indicator = lamella_indicator[:shx, :shy, :shz]
+        prediction = prediction[:shx, :shy, :shz]
+        prediction = np.array(lamella_indicator, dtype=float) * np.array(prediction,
+                                                                         dtype=float)
 
 target = load_tomogram(path_to_dataset=target_path)
 
@@ -79,21 +83,18 @@ measure = DiceCoefficient()
 dice_statistic = measure.forward(prediction=prediction, target=target)
 dice_statistic = float(dice_statistic)
 
-models_table = os.path.join(config.output_dir, "models")
-models_table = os.path.join(models_table, "models.csv")
-if args.fold is None:
-    models_table_path = model_descriptor_from_config(config)
-else:
-    models_table_path = os.path.join(config.output_dir, "models/models.csv")
-
 statistics_file = os.path.join(config.output_dir, "pp_statistics.csv")
 
-write_statistics_pp(statistics_file=statistics_file, tomo_name=tomo_name, model_name=model_name,
-                    model_parameters=models_table_path, statistic_variable="dice",
-                    statistic_value=round(dice_statistic, 4), pr_radius=None,
+device = get_device()
+checkpoint = torch.load(model_path, map_location=device)
+model_descriptor = checkpoint["model_descriptor"]
+
+write_statistics_pp(statistics_file=statistics_file, tomo_name=tomo_name, model_descriptor=model_descriptor,
+                    statistic_variable="dice",
+                    statistic_value=round(dice_statistic, 4), pr_radius=config.pr_tolerance_radius,
                     min_cluster_size=config.min_cluster_size, max_cluster_size=config.max_cluster_size,
                     threshold=config.threshold, prediction_class=config.pred_class,
-                    clustering_connectivity=config.clustering_connectivity)
+                    clustering_connectivity=config.clustering_connectivity, processing_tomo=config.processing_tomo)
 
 print("Dice coefficient =", dice_statistic)
 

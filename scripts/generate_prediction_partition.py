@@ -51,10 +51,11 @@ else:
     box_shape = (box_size, box_size, box_size)
 
     DTHeader = DatasetTableHeader(processing_tomo=config.processing_tomo, filtering_mask=config.region_mask)
-    df = pd.read_csv(config.dataset_table)
+    df = pd.read_csv(config.dataset_table, dtype={"tomo_name": str})
     df[DTHeader.tomo_name] = df[DTHeader.tomo_name].astype(str)
 
     tomo_df = df[df[DTHeader.tomo_name] == tomo_name]
+    print(tomo_name, config.processing_tomo, tomo_df)
     path_to_raw = tomo_df.iloc[0][DTHeader.processing_tomo]
     intersecting_mask_path = tomo_df.iloc[0][DTHeader.filtering_mask]
     raw_dataset = load_tomogram(path_to_dataset=path_to_raw, dtype=float)

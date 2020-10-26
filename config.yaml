@@ -58,8 +58,10 @@ postprocessing_clustering:
   max_cluster_size: null                 # Maximum number of voxels per cluster
   clustering_connectivity: 3             # watershed algorithm clustering connectivity
   calculate_motl: False                  # Get the motl of centroids for each cluster
-  ignore_border_thickness: 10            # ignore border for motl generation if calculate_motl is True
+  ignore_border_thickness: [10, 20, 10]  # ignore border for motl generation if calculate_motl is True
   region_mask: 'lamella_file'            # column name in metadata table for masking segmentation, e.g. lamella_file
+  contact_mode: "intersection"           # "contact", "colocalization" or "intersection"
+  contact_distance: 10
 
 # For precision recall in particle picking
 evaluation:

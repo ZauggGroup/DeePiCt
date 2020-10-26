@@ -130,14 +130,14 @@ write_statistics_pp(statistics_file=statistics_file, tomo_name=tomo_name, model_
                     statistic_value=round(auPRC, 4), pr_radius=config.pr_tolerance_radius,
                     min_cluster_size=config.min_cluster_size, max_cluster_size=config.max_cluster_size,
                     threshold=config.threshold, prediction_class=config.pred_class,
-                    clustering_connectivity=config.clustering_connectivity)
+                    clustering_connectivity=config.clustering_connectivity, processing_tomo=config.processing_tomo)
 
 write_statistics_pp(statistics_file=statistics_file, tomo_name=tomo_name, model_descriptor=model_descriptor,
                     statistic_variable="max_F1",
                     statistic_value=round(max_F1, 4), pr_radius=config.pr_tolerance_radius,
                     min_cluster_size=config.min_cluster_size, max_cluster_size=config.max_cluster_size,
                     threshold=config.threshold, prediction_class=config.pred_class,
-                    clustering_connectivity=config.clustering_connectivity)
+                    clustering_connectivity=config.clustering_connectivity, processing_tomo=config.processing_tomo)
 
 # For snakemake:
 snakemake_pattern_dir = os.path.dirname(snakemake_pattern)

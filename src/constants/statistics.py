@@ -81,6 +81,7 @@ class PerformanceVector:
     statistic_variable: str
     statistic_value: float
     prediction_class: str
+    processing_tomo: str
 
 
 class ModelPerformanceVector:
@@ -111,15 +112,16 @@ def add_model_performance_statistics(model_performance_vector, file):
 
 def write_statistics_pp(statistics_file, tomo_name, model_descriptor: ModelDescriptor, statistic_variable,
                         statistic_value, pr_radius, min_cluster_size, max_cluster_size, threshold,
-                        prediction_class, clustering_connectivity):
-    performance_dict = {"tomo_name": tomo_name, "pr_radius": pr_radius,
+                        prediction_class, clustering_connectivity, processing_tomo):
+    performance_dict = {"tomo_name": tomo_name,"pr_radius": pr_radius,
                         "min_cluster_size": min_cluster_size,
                         "max_cluster_size": max_cluster_size,
                         "clustering_connectivity": clustering_connectivity,
                         "threshold": threshold,
                         "statistic_variable": statistic_variable,
                         "statistic_value": statistic_value,
-                        "prediction_class": prediction_class}
+                        "prediction_class": prediction_class,
+                        "processing_tomo": processing_tomo}
 
     model_performance_vector = ModelPerformanceVector(performance_dict=performance_dict,
                                                       model_descriptor=model_descriptor)

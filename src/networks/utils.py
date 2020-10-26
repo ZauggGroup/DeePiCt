@@ -15,7 +15,7 @@ from constants.statistics import ModelDescriptor
 from file_actions.readers.h5 import read_training_data
 from image.filters import preprocess_data
 from networks.io import get_device
-from networks.unet import UNet
+from networks.unet import UNet3D
 from paths.pipeline_dirs import training_partition_path
 from tensors.transformations import apply_transformation_iteration
 from tomogram_utils.volume_actions.actions import \
@@ -23,7 +23,7 @@ from tomogram_utils.volume_actions.actions import \
 from tomogram_utils.volume_actions.actions import split_and_preprocess_dataset
 
 
-def load_unet_model(path_to_model: str, confs: dict, net: nn.Module = UNet,
+def load_unet_model(path_to_model: str, confs: dict, net: nn.Module = UNet3D,
                     mode="eval"):
     net = net(**confs)
     checkpoint = torch.load(path_to_model)
