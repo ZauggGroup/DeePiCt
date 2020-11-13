@@ -653,17 +653,21 @@ def get_transforms(rot_range: float, elastic_alpha: int,
 
 def apply_transforms_to_batch(tensor, volume_transforms):
     print("tensor.shape", tensor.shape)
-    assert len(volume_transforms) == tensor.shape[0]
+    n_imgs, channels, shz, shy, shx = tensor.shape
+    assert len(volume_transforms) == n_imgs
     transformed_tensor = []
     for batch_id, transforms in enumerate(volume_transforms):
-        volume = tensor[batch_id, 0, :, :, :]
-        for transform in transforms:
-            volume = transform._apply_volume_function(tensor=volume)
-        transformed_tensor += [volume]
-    # print("transformed_tensor.shape", np.array(transformed_tensor).shape)
+        transf_channels = []
+        for channel in range(channels):
+            volume = tensor[batch_id, channel, :, :, :]
+            for transform in transforms:
+                volume = transform._apply_volume_function(tensor=volume)
+            # print(type(volume), volume.shape)
+            transf_channels.append(volume)
+        transf_channels = np.array(transf_channels)
+        # print(transf_channels.shape)
+        transformed_tensor += [transf_channels]
     transformed_tensor = np.array(transformed_tensor)
-    transformed_tensor = transformed_tensor[:, None]
-    # print("transformed_tensor.shape", transformed_tensor.shape)
     return transformed_tensor
 
 
@@ -763,6 +767,7 @@ def apply_transformation_iteration(src_raw, src_label_data, rot_range,
                            salt_pepper_p=salt_pepper_p,
                            salt_pepper_ampl=salt_pepper_ampl)
     # print("raw_volume_transforms length", len(raw_volume_transforms))
+    # print("label_volume_transforms length", len(label_volume_transforms))
     transf_raw_tensor = \
         apply_transforms_to_batch(tensor=src_raw,
                                   volume_transforms=raw_volume_transforms)

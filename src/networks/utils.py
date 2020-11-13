@@ -253,6 +253,9 @@ def generate_data_loaders_data_augmentation(config: Config, tomo_training_list: 
                     sigma_noise=sigma_gauss,
                     salt_pepper_p=salt_pepper_p,
                     salt_pepper_ampl=salt_pepper_ampl)
+            print("train_data_aug.shape, train_labels_aug.shape:", train_data_aug.shape, train_labels_aug.shape)
+            print("np.array(transf_raw_tensor).shape, np.array(transf_label_tensors).shape:")
+            print(np.array(transf_raw_tensor).shape, np.array(transf_label_tensors).shape)
             train_data_aug = np.append(train_data_aug, np.array(transf_raw_tensor), axis=0)
             train_labels_aug = np.append(train_labels_aug, np.array(transf_label_tensors), axis=1)
         print("train_labels_aug.shape", train_labels_aug.shape)

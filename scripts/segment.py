@@ -48,17 +48,9 @@ output_dir_tomo, partition_path = testing_partition_path(output_dir=config.work_
                                                          tomo_name=tomo_name,
                                                          fold=fold)
 box_shape = [config.box_size, config.box_size, config.box_size]
-
 output_classes = len(config.semantic_classes)
 
-net_conf = {'final_activation': None, 'depth': config.depth,
-            'initial_features': config.initial_features, "out_channels": output_classes,
-            "BN": config.batch_norm, "encoder_dropout": config.encoder_dropout,
-            "decoder_dropout": config.decoder_dropout}
-
 device = get_device()
-model = UNet3D(**net_conf)
-model.to(device)
 checkpoint = torch.load(model_path, map_location=device)
 
 if 'model_descriptor' not in checkpoint.keys():
@@ -73,6 +65,22 @@ if 'model_descriptor' not in checkpoint.keys():
         'optimizer_state_dict': checkpoint['optimizer_state_dict'],
         'loss': checkpoint['loss'],
     }, model_path)
+else:
+    print("Model trained under the following original settings:",
+          checkpoint['model_descriptor'])
+
+model_descriptor = checkpoint['model_descriptor']
+
+net_conf = {'final_activation': None,
+            'depth': model_descriptor.depth,
+            'initial_features': model_descriptor.initial_features,
+            "out_channels": model_descriptor.output_classes,
+            "BN": model_descriptor.batch_norm,
+            "encoder_dropout": model_descriptor.encoder_dropout,
+            "decoder_dropout": model_descriptor.decoder_dropout}
+
+model = UNet3D(**net_conf)
+model.to(device)
 
 if torch.cuda.device_count() > 1:
     print("Let's use", torch.cuda.device_count(), "GPUs!")

@@ -25,7 +25,6 @@ from file_actions.writers.tomogram import write_tomogram
 from tomogram_utils.coordinates_toolbox.clustering import get_cluster_centroids, \
     get_cluster_centroids_in_contact, get_cluster_centroids_colocalization
 from paths.pipeline_dirs import get_probability_map_path, get_post_processed_prediction_path
-from constants.dataset_tables import DatasetTableHeader
 from constants.config import Config
 from constants.config import get_model_name
 
@@ -53,7 +52,6 @@ assert os.path.isfile(output_path)
 prediction_dataset = load_tomogram(path_to_dataset=output_path)
 output_shape = prediction_dataset.shape
 prediction_dataset_thr = 1 * (prediction_dataset > config.threshold)
-
 # set to zero the edges of tomogram
 if isinstance(config.ignore_border_thickness, int):
     ix = config.ignore_border_thickness
@@ -61,18 +59,20 @@ if isinstance(config.ignore_border_thickness, int):
 else:
     ix, iy, iz = config.ignore_border_thickness
 
-prediction_dataset_thr[:iz, :, :] = np.zeros_like(prediction_dataset_thr[:iz, :, :])
-prediction_dataset_thr[-iz:, :, :] = np.zeros_like(prediction_dataset_thr[-iz:, :, :])
-prediction_dataset_thr[:, :iy, :] = np.zeros_like(prediction_dataset_thr[:, :iy, :])
-prediction_dataset_thr[:, -iy:, :] = np.zeros_like(prediction_dataset_thr[:, -iy:, :])
-prediction_dataset_thr[:, :, :ix] = np.zeros_like(prediction_dataset_thr[:, :, :ix])
-prediction_dataset_thr[:, :, -ix:] = np.zeros_like(prediction_dataset_thr[:, :, -ix:])
+if iz > 0:
+    prediction_dataset_thr[:iz, :, :] = np.zeros_like(prediction_dataset_thr[:iz, :, :])
+    prediction_dataset_thr[-iz:, :, :] = np.zeros_like(prediction_dataset_thr[-iz:, :, :])
+if iy > 0:
+    prediction_dataset_thr[:, :iy, :] = np.zeros_like(prediction_dataset_thr[:, :iy, :])
+    prediction_dataset_thr[:, -iy:, :] = np.zeros_like(prediction_dataset_thr[:, -iy:, :])
+if ix > 0:
+    prediction_dataset_thr[:, :, :ix] = np.zeros_like(prediction_dataset_thr[:, :, :ix])
+    prediction_dataset_thr[:, :, -ix:] = np.zeros_like(prediction_dataset_thr[:, :, -ix:])
 
-DTHeader = DatasetTableHeader(filtering_mask=config.region_mask)
-print("Region mask:", DTHeader.filtering_mask)
+print("Region mask:", config.region_mask)
 df = pd.read_csv(config.dataset_table, dtype={"tomo_name": str})
 df.set_index("tomo_name", inplace=True)
-masking_file = df[DTHeader.filtering_mask][tomo_name]
+masking_file = df[config.region_mask][tomo_name]
 clusters_output_path = get_post_processed_prediction_path(output_dir=config.output_dir,
                                                           model_name=model_name,
                                                           tomo_name=tomo_name,
@@ -85,7 +85,8 @@ if np.max(prediction_dataset_thr) == 0:
     centroids_list = []
     cluster_size_list = []
 else:
-    if str(masking_file) == "nan":
+    print("masking_file:", masking_file)
+    if isinstance(masking_file, float):
         print("No intersecting mask available of the type {} for tomo {}.".format(config.region_mask, tomo_name))
         prediction_dataset_thr = np.array(prediction_dataset_thr, dtype=float)
         clusters_labeled_by_size, centroids_list, cluster_size_list = \

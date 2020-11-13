@@ -11,7 +11,6 @@ args = parser.parse_args()
 pythonpath = args.pythonpath
 sys.path.append(pythonpath)
 
-
 import os
 import ast
 
@@ -23,7 +22,6 @@ from file_actions.readers.tomograms import load_tomogram
 from paths.pipeline_dirs import testing_partition_path
 from tomogram_utils.volume_actions.actions import \
     partition_raw_intersecting_mask
-from tomogram_utils.volume_actions.actions import partition_tomogram
 from constants.config import Config
 
 config_file = args.config_file
@@ -33,7 +31,6 @@ config = Config(args.config_file)
 
 snakemake_pattern = config.work_dir + "/testing_data/" + tomo_name + \
                     "/.test_partition.{fold}.done".format(fold=str(fold))
-
 
 print("tomo_name", tomo_name)
 partition_output_dir, partition_path = testing_partition_path(output_dir=config.work_dir,
@@ -56,17 +53,14 @@ else:
 
     tomo_df = df[df[DTHeader.tomo_name] == tomo_name]
     print(tomo_name, config.processing_tomo, tomo_df)
-    path_to_raw = tomo_df.iloc[0][DTHeader.processing_tomo]
-    intersecting_mask_path = tomo_df.iloc[0][DTHeader.filtering_mask]
+    path_to_raw = tomo_df.iloc[0][config.processing_tomo]
+    intersecting_mask_path = tomo_df.iloc[0][config.region_mask]
     raw_dataset = load_tomogram(path_to_dataset=path_to_raw, dtype=float)
     if isinstance(intersecting_mask_path, float):
         print("No region mask file available.")
-        partition_tomogram(dataset=raw_dataset,
-                           output_h5_file_path=partition_path,
-                           subtomo_shape=box_shape,
-                           overlap=overlap)
+        intersecting_mask = np.ones_like(raw_dataset)
     else:
-        intersecting_mask_path = tomo_df.iloc[0][DTHeader.filtering_mask]
+        intersecting_mask_path = tomo_df.iloc[0][config.region_mask]
         intersecting_mask = load_tomogram(path_to_dataset=intersecting_mask_path)
 
         mask_shape = intersecting_mask.shape
@@ -79,11 +73,11 @@ else:
         intersecting_mask = intersecting_mask[:minz, :miny, :minx]
         raw_dataset = raw_dataset[:minz, :miny, :minx]
 
-        partition_raw_intersecting_mask(dataset=raw_dataset,
-                                        mask_dataset=intersecting_mask,
-                                        output_h5_file_path=partition_path,
-                                        subtomo_shape=box_shape,
-                                        overlap=overlap)
+    partition_raw_intersecting_mask(dataset=raw_dataset,
+                                    mask_dataset=intersecting_mask,
+                                    output_h5_file_path=partition_path,
+                                    subtomo_shape=box_shape,
+                                    overlap=overlap)
 
 # For snakemake
 with open(snakemake_pattern, "w") as f:
