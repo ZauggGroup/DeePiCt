@@ -1,3 +1,6 @@
+run_python_script.sh
+script4mauricio.py
+test.py
 stats
 stats/*
 *.pdf
