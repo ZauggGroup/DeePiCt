@@ -1,12 +1,14 @@
 import argparse
+import os
+import sys
 import warnings
 
 import mrcfile
 import numpy as np
 import numpy.fft as fft
 import pandas as pd
-
 from FilterUtil import rad_avg, rot_kernel
+from constants.config import Config
 
 
 def match_spectrum(tomo, target_spectrum, cutoff=None, smooth=0):
@@ -37,10 +39,10 @@ def match_spectrum(tomo, target_spectrum, cutoff=None, smooth=0):
 
     if cutoff:
         if smooth:
-            slope = len(equal_v)/smooth
+            slope = len(equal_v) / smooth
             offset = 2 * slope * ((cutoff - len(equal_v) / 2) / len(equal_v))
 
-            cutoff_v = 1/(1 + np.exp(np.linspace(-slope, slope, len(equal_v)) - offset))
+            cutoff_v = 1 / (1 + np.exp(np.linspace(-slope, slope, len(equal_v)) - offset))
 
         else:
             cutoff_v = np.ones_like(equal_v)
@@ -65,17 +67,33 @@ def match_spectrum(tomo, target_spectrum, cutoff=None, smooth=0):
 
 
 def main():
-
     parser = get_cli()
     args = parser.parse_args()
+    pythonpath = args.pythonpath
+    sys.path.append(pythonpath)
+    # gpu = args.gpu
+    # if gpu is None:
+    #     print("No CUDA_VISIBLE_DEVICES passed...")
+    #     if torch.cuda.is_available():
+    #         os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+    # else:
+    #     os.environ["CUDA_VISIBLE_DEVICES"] = gpu
 
-    with mrcfile.open(args.input, permissive = True) as m:
+    config_file = args.config_file
+    config = Config(user_config_file=config_file)
+    df = pd.read_csv(config.dataset_table, dtype={"tomo_name": str})
+    df.set_index('tomo_name', inplace=True)
+    tomo_name = args.tomo_name
+    input_tomo = df[config.processing_tomo][tomo_name]
+    target_tomo = os.path.join(config.work_dir, tomo_name)
+    target_tomo = os.path.join(target_tomo, "match_spectrum_filtered.mrc")
+    with mrcfile.open(input_tomo, permissive=True) as m:
         tomo = m.data.astype("f4")
         tomo_h = m.header
 
-    target_spectrum = pd.read_csv(args.target, sep="\t")["intensity"].values
+    target_spectrum = pd.read_csv(target_tomo, sep="\t")["intensity"].values
 
-    filtered_tomo = match_spectrum(tomo, target_spectrum, args.cutoff, args.smoothen)
+    filtered_tomo = match_spectrum(tomo, target_spectrum, config.cutoff, config.smoothen)
 
     m = mrcfile.new(args.output, overwrite=True)
     m.set_data(filtered_tomo)
@@ -84,49 +102,11 @@ def main():
 
 
 def get_cli():
-    parser = argparse.ArgumentParser(
-        description="Match tomogram to another tomogram's amplitude spectrum."
-    )
-
-    parser.add_argument(
-        "-i",
-        "--input",
-        required=True,
-        help="Tomogram to match (.mrc/.rec)."
-    )
-
-    parser.add_argument(
-        "-t",
-        "--target",
-        required=True,
-        help="Target spectrum to match the input tomogram to (.tsv)."
-    )
-
-    parser.add_argument(
-        "-o",
-        "--output",
-        required=True,
-        help="Output location for matched tomogram."
-    )
-
-    parser.add_argument(
-        "-c",
-        "--cutoff",
-        required=False,
-        default=False,
-        type=int,
-        help="Lowpass cutoff to apply."
-    )
-
-    parser.add_argument(
-        "-s",
-        "--smoothen",
-        required=False,
-        default=0,
-        type=float,
-        help="Smoothening to apply to lowpass filter by turning it into a sigmoid curve. Value roughly resembles sigmoid width in pixels."
-    )
-
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-pythonpath", "--pythonpath", type=str)
+    parser.add_argument("-tomo_name", "--tomo_name", type=str)
+    parser.add_argument("-fold", "--fold", type=str, default="None")
+    parser.add_argument("-config_file", "--config_file", help="yaml_file", type=str)
     return parser
 
 

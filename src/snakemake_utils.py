@@ -1,3 +1,4 @@
+import os
 from random import shuffle
 import numpy as np
 import pandas as pd
@@ -31,6 +32,7 @@ def generate_cv_data(cv_data_path: str, tomo_training_list: list, cv_folds: int)
         cv_data["cv_training_list"][fold] = list2str(my_list=cv_training_tomos)
         cv_data["cv_validation_list"][fold] = list2str(my_list=cv_evaluation_tomos)
 
+    os.makedirs(os.path.dirname(cv_data_path), exist_ok=True)
     cv_data.to_csv(cv_data_path)
     return
 

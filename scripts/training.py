@@ -43,7 +43,7 @@ model_path, model_name = get_model_name(config, fold)
 if fold is None:
     snakemake_pattern = ".done_patterns/" + model_path + "_None.pth.done"
 else:
-    snakemake_pattern = ".done_patterns/" + model_path + ".done"
+    snakemake_pattern = ".done_patterns/" + model_path + "_" + str(fold) + ".pth.done"
 
 logging_dir = os.path.join(config.output_dir, "logging")
 model_dir = os.path.join(config.output_dir, "models")
@@ -88,7 +88,7 @@ else:
 
     train_loader, val_loader = generate_data_loaders_data_augmentation(config=config,
                                                                        tomo_training_list=tomo_training_list,
-                                                                       fold=None)
+                                                                       fold=fold)
     for epoch in range(config.epochs):
         current_epoch = epoch + old_epoch
 

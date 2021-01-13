@@ -28,7 +28,7 @@ class DatasetTableHeader(object):
             ]
         if clean_motl is None:
             if semantic_classes is not None:
-                self.clean_motls = ["path_to_motl_clean_" + semantic_class for
+                self.clean_motls = [semantic_class + "_motl" for
                                     semantic_class in semantic_classes]
         else:
             self.clean_motls = clean_motl

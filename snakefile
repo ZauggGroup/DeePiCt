@@ -65,7 +65,7 @@ dice_evaluation_done = output_dir + "/predictions/" + model_name + "/{tomo_name}
 if config["cross_validation"]["active"]:
     print("cross validation is active!")
     cv_folds = config["cross_validation"]["folds"]
-    cv_data_path = "cv_data.csv"
+    cv_data_path = output_dir + "/cv_data.csv"
     folds = list(range(cv_folds))
 
     assert len(training_tomos) >= cv_folds
@@ -80,18 +80,23 @@ if config["cross_validation"]["active"]:
     cv_data = pd.read_csv(cv_data_path)
     cv_data.set_index("fold", inplace=True)
 
-    training_part_pattern = work_dir + "/training_data/{tomo_name}/fold_{fold}/partition.h5"
-    done_training_pattern = ".done_patterns/" + model_path + ".done"
-    testing_part_pattern = work_dir + "/testing_data/{tomo_name}/fold_{fold}/partition.h5"
+    #training_part_pattern = work_dir + "/training_data/{tomo_name}/fold_{fold}/partition.h5"
+    #done_training_pattern = ".done_patterns/" + model_path + ".done"
 
     targets = []
     targets += expand([done_training_pattern], fold=folds)
     targets += expand([training_part_pattern], tomo_name=training_tomos, fold=folds)
-    for fold in folds:
-        testing_tomos_fold = cv_data["cv_validation_list"][fold].split(" ")
-        testing_tomos_fold = [item for item in testing_tomos_fold if item in training_tomos]
-        targets += expand([particle_picking_pr_done], tomo_name=testing_tomos_fold, fold=[fold])
-        targets += expand([dice_evaluation_done], tomo_name=testing_tomos_fold, fold=[fold])
+    targets += expand([done_testing_part_pattern], tomo_name=training_tomos, fold=folds)
+    targets += expand([postprocess_prediction_done], tomo_name=training_tomos, fold=folds)
+    targets += expand([particle_picking_pr_done], tomo_name=training_tomos, fold=folds)
+    if config["evaluation"]["particle_picking"]["active"]:
+        targets += expand([particle_picking_pr_done], tomo_name=training_tomos, fold=folds)
+    else:
+        os.makedirs(".done_patterns", exist_ok=True)
+        with open(".done_patterns/"+ model_path + ".skip_pr", mode="w") as f:
+            print("skipping prediction")
+    if config["evaluation"]["segmentation_evaluation"]["active"]:
+        targets += expand([dice_evaluation_done], tomo_name=training_tomos, fold=folds)
 
 else:
     folds = [None]
@@ -310,3 +315,23 @@ rule segmentation_evaluation:
         --pythonpath {srcdir} \
         --config_file {user_config_file} \
         """ + "--fold {wildcards.fold} --tomo_name {wildcards.tomo_name}"
+
+#rule filter:
+#    conda:
+#         "environment.yaml"
+#    output:
+#          file=filtered_file_done
+#    params:
+#          config=user_config_file,
+#          logdir=config["cluster"]["logdir"],
+#          walltime="00:20:00",
+#          nodes=1,
+#          cores=2,
+#          memory="15G",
+#          gres=''
+#    shell:
+#         f"""
+#        python3 {scriptdir}/match_spectrum.py \
+#        --pythonpath {srcdir} \
+#        --config_file {user_config_file} \
+#        """ + "--fold {wildcards.fold} --tomo_name {wildcards.tomo_name}"

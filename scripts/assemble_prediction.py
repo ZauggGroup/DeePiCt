@@ -33,37 +33,48 @@ model_path, model_name = get_model_name(config, fold)
 
 snakemake_pattern = config.output_dir + "/predictions/" + model_name + "/" + tomo_name + "/" + config.pred_class + \
                     "/.{fold}.probability_map.done".format(fold=str(fold))
+from networks.utils import get_training_testing_lists
 
-output_dir_tomo, data_partition = testing_partition_path(output_dir=config.work_dir,
-                                                         tomo_name=tomo_name,
-                                                         fold=fold)
+if isinstance(fold, int):
+    tomo_training_list, tomo_testing_list = get_training_testing_lists(config=config, fold=fold)
+    if tomo_name in tomo_testing_list:
+        run_job = True
+    else:
+        run_job = False
+else:
+    run_job = True
 
-segmentation_label = model_name
-box_shape = [config.box_size, config.box_size, config.box_size]
+if run_job:
+    output_dir_tomo, data_partition = testing_partition_path(output_dir=config.work_dir,
+                                                             tomo_name=tomo_name,
+                                                             fold=fold)
 
-tomo_output_dir, output_path = get_probability_map_path(config.output_dir, model_name, tomo_name,
-                                                        config.pred_class)
-os.makedirs(tomo_output_dir, exist_ok=True)
+    segmentation_label = model_name
+    box_shape = [config.box_size, config.box_size, config.box_size]
 
-DTHeader = DatasetTableHeader(processing_tomo=config.processing_tomo)
-df = pd.read_csv(config.dataset_table)
-df[DTHeader.tomo_name] = df[DTHeader.tomo_name].astype(str)
-tomo_df = df[df[DTHeader.tomo_name] == tomo_name]
-tomo_path = tomo_df.iloc[0][DTHeader.processing_tomo]
-tomo = load_tomogram(path_to_dataset=tomo_path)
-output_shape = tomo.shape
-del tomo
+    tomo_output_dir, output_path = get_probability_map_path(config.output_dir, model_name, tomo_name,
+                                                            config.pred_class)
+    os.makedirs(tomo_output_dir, exist_ok=True)
 
-subtomos_internal_path = os.path.join(
-    h5_internal_paths.PREDICTED_SEGMENTATION_SUBTOMOGRAMS,
-    segmentation_label)
+    DTHeader = DatasetTableHeader(processing_tomo=config.processing_tomo)
+    df = pd.read_csv(config.dataset_table)
+    df[DTHeader.tomo_name] = df[DTHeader.tomo_name].astype(str)
+    tomo_df = df[df[DTHeader.tomo_name] == tomo_name]
+    tomo_path = tomo_df.iloc[0][DTHeader.processing_tomo]
+    tomo = load_tomogram(path_to_dataset=tomo_path)
+    output_shape = tomo.shape
+    del tomo
 
-assemble_tomo_from_subtomos(output_path=output_path, partition_file_path=data_partition, output_shape=output_shape,
-                            subtomo_shape=box_shape, subtomos_internal_path=subtomos_internal_path,
-                            class_number=config.pred_class_number, overlap=config.overlap,
-                            reconstruction_type="prediction", final_activation='sigmoid')
+    subtomos_internal_path = os.path.join(
+        h5_internal_paths.PREDICTED_SEGMENTATION_SUBTOMOGRAMS,
+        segmentation_label)
 
-print("Assembling prediction has finalized.")
+    assemble_tomo_from_subtomos(output_path=output_path, partition_file_path=data_partition, output_shape=output_shape,
+                                subtomo_shape=box_shape, subtomos_internal_path=subtomos_internal_path,
+                                class_number=config.pred_class_number, overlap=config.overlap,
+                                reconstruction_type="prediction", final_activation='sigmoid')
+
+    print("Assembling prediction has finalized.")
 
 # For snakemake:
 snakemake_pattern_dir = os.path.dirname(snakemake_pattern)

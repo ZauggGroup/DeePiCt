@@ -46,6 +46,11 @@ class Config:
             self.da_salt_pepper_p = 0
             self.da_salt_pepper_ampl = 0
 
+        # self.apply_filter = config["Filter"]["active"]
+        # if self.apply_filter:
+        #     self.cutoff = config["Filter"]["cutoff"]
+        #     self.smoothen = config["Filter"]["smoothen"]
+
         # unet_hyperparameters:
         self.depth = config["training"]["unet_hyperparameters"]["depth"]
         self.initial_features = config["training"]["unet_hyperparameters"]["initial_features"]

@@ -158,7 +158,7 @@ def build_prediction_output_dir(base_output_dir: str, label_name: str,
 
 def get_training_testing_lists(config: Config, fold: int):
     if fold is not None:
-        cv_data = pd.read_csv(CV_DATA_FILE)
+        cv_data = pd.read_csv(config.output_dir + "/" + CV_DATA_FILE)
         print(cv_data)
         cv_data["fold"] = cv_data["fold"].apply(lambda x: str(x))
         cv_data.set_index("fold", inplace=True)
