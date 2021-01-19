@@ -167,7 +167,7 @@ rule training_3dunet:
     params:
           config=user_config_file,
           logdir=config["cluster"]["logdir"],
-          walltime="10:00:00",
+          walltime="2-05:00:00",
           nodes=1,
           cores=4,
           memory="50G",
