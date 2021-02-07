@@ -43,7 +43,7 @@ if (
         if training_meta.get("id") is None:
             training_meta["prefix"] = config["data"]["train_workdir"] + '/' + training_meta["data"].apply(lambda x: os.path.basename(os.path.splitext(x)[0]))
         else:
-            training_meta["prefix"] = config["data"]["train_workdir"] + '/' + training_meta["id"]
+            training_meta["prefix"] = config["data"]["train_workdir"] + '/' + training_meta["id"].astype(str)
     else:
         training_meta["prefix"] = training_meta["data"].apply(lambda x: os.path.splitext(x)[0])
     
@@ -70,7 +70,7 @@ if config["prediction"]["active"] | config["postprocessing"]["active"]:
         if prediction_meta.get("id") is None:
             prediction_meta["prefix"] = config["data"]["output_dir"] + '/' + prediction_meta["data"].apply(lambda x: os.path.basename(os.path.splitext(x)[0]))
         else:
-            prediction_meta["prefix"] = config["data"]["output_dir"] + '/' + prediction_meta["id"]
+            prediction_meta["prefix"] = config["data"]["output_dir"] + '/' + prediction_meta["id"].astype(str)
 
     else:
         prediction_meta["prefix"] = prediction_meta["data"].apply(lambda x: os.path.splitext(x)[0])
