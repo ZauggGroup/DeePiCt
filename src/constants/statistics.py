@@ -53,6 +53,7 @@ class ModelDescriptor:
         model_descriptor_row = model_descriptor.to_data_frame(model_descriptor)
         models_notebook_dir = os.path.dirname(table_path)
         os.makedirs(models_notebook_dir, exist_ok=True)
+        print("models table path:", table_path)
         if os.path.isfile(table_path):
             models_table = pd.read_csv(table_path)
             print("model names in table:", models_table["model_name"].values)

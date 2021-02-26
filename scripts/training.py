@@ -39,49 +39,52 @@ fold = ast.literal_eval(args.fold)
 
 # Generate relevant dirs
 model_path, model_name = get_model_name(config, fold)
-
+print("model_path: ", model_path)
 if fold is None:
     snakemake_pattern = ".done_patterns/" + model_path + "_None.pth.done"
 else:
     snakemake_pattern = ".done_patterns/" + model_path + "_" + str(fold) + ".pth.done"
 
-logging_dir = os.path.join(config.output_dir, "logging")
-model_dir = os.path.join(config.output_dir, "models")
-models_table = os.path.join(model_dir, "models.csv")
-log_path = os.path.join(logging_dir, model_name)
-os.makedirs(log_path, exist_ok=True)
-os.makedirs(model_dir, exist_ok=True)
-
-net_conf = {'final_activation': nn.Sigmoid(), 'depth': config.depth,
-            'initial_features': config.initial_features,
-            "out_channels": len(config.semantic_classes), "BN": config.batch_norm,
-            "encoder_dropout": config.encoder_dropout,
-            "decoder_dropout": config.decoder_dropout}
-
-net = UNet3D(**net_conf)
-net = to_device(net=net, gpu=gpu)
-
-loss = DiceCoefficientLoss()
-loss = loss.to(device)
-optimizer = optim.Adam(net.parameters())
-metric = loss
-
-tomo_training_list, tomo_testing_list = get_training_testing_lists(config=config, fold=fold)
-model_descriptor = record_model(config=config, training_tomos=tomo_training_list,
-                                testing_tomos=tomo_testing_list, fold=fold)
-
-lr_scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=0.1,
-                                                    patience=10, verbose=True)
-
-validation_loss = np.inf
-best_epoch = -1
-old_epoch = 0
-
-logger = TensorBoard_multiclass(log_dir=log_path, log_image_interval=1)
-
 if os.path.exists(model_path) and not config.force_retrain:
     print("model exists already!")
 else:
+    print("training data loading process starting")
+    logging_dir = os.path.join(config.output_dir, "logging")
+    model_dir = os.path.join(config.output_dir, "models")
+    models_table = os.path.join(model_dir, "models.csv")
+    print(models_table)
+    log_path = os.path.join(logging_dir, model_name)
+    os.makedirs(log_path, exist_ok=True)
+    os.makedirs(model_dir, exist_ok=True)
+
+    net_conf = {'final_activation': nn.Sigmoid(), 'depth': config.depth,
+                'initial_features': config.initial_features,
+                "out_channels": len(config.semantic_classes), "BN": config.batch_norm,
+                "encoder_dropout": config.encoder_dropout,
+                "decoder_dropout": config.decoder_dropout}
+
+    net = UNet3D(**net_conf)
+    net = to_device(net=net, gpu=gpu)
+
+    loss = DiceCoefficientLoss()
+    loss = loss.to(device)
+    optimizer = optim.Adam(net.parameters())
+    metric = loss
+
+    tomo_training_list, tomo_testing_list = get_training_testing_lists(config=config, fold=fold)
+    model_descriptor = record_model(config=config, training_tomos=tomo_training_list,
+                                    testing_tomos=tomo_testing_list, fold=fold)
+
+    lr_scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=0.1,
+                                                        patience=10, verbose=True)
+
+    validation_loss = np.inf
+    best_epoch = -1
+    old_epoch = 0
+
+    logger = TensorBoard_multiclass(log_dir=log_path, log_image_interval=1)
+
+
     # train_loader, val_loader = generate_data_loaders(config=config,
     #                                                  tomo_training_list=tomo_training_list,
     #                                                  fold=fold)

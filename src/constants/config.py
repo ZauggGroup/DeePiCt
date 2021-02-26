@@ -113,8 +113,11 @@ def record_model(config: Config, training_tomos: list, testing_tomos: list, fold
     model_dir = os.path.join(config.output_dir, "models")
     models_table = os.path.join(model_dir, "models.csv")
     log_path = os.path.join(logging_dir, config.model_name)
-    model_descriptor = model_descriptor_from_config(config=config, training_date=training_date, fold=fold,
-                                                    testing_tomos=testing_tomos, training_tomos=training_tomos,
+    model_descriptor = model_descriptor_from_config(config=config,
+                                                    training_date=training_date,
+                                                    fold=fold,
+                                                    testing_tomos=testing_tomos,
+                                                    training_tomos=training_tomos,
                                                     log_path=log_path)
 
     model_descriptor.add_descriptor_to_table(table_path=models_table, model_descriptor=model_descriptor,

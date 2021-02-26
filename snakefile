@@ -216,7 +216,7 @@ rule segment:
           walltime="00:20:00",
           nodes=1,
           cores=4,
-          memory="50G",
+          memory="80G",
           gres='#SBATCH -p gpu\n#SBATCH --gres=gpu:2'
     resources:
              gpu=2
@@ -260,7 +260,7 @@ rule postprocess_prediction:
     params:
           config=user_config_file,
           logdir=config["cluster"]["logdir"],
-          walltime="02:30:00",
+          walltime="08:30:00",
           nodes=1,
           cores=4,
           memory="30G",

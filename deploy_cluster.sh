@@ -6,7 +6,7 @@ export PYTHONPATH=${srcdir}/src
 echo PYTHONPATH=$PYTHONPATH
 
 source ~/.bashrc
-conda activate snakemake3d
+conda activate snakemake
 
 srun -t 20:00:00 -c 1 --mem 4G \
     snakemake \

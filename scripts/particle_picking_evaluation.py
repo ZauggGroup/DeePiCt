@@ -94,18 +94,25 @@ if run_job:
     auPRC = pr_auc_score(precision=prec, recall=recall)
     max_F1, optimal_peak_number = get_max_F1(F1_score)
 
-    print("auPRC = ", auPRC, "and max_F1 = ", max_F1)
+    print("auPRC = ", auPRC, "; max_F1 = ", max_F1, "; final F1 = ", F1_score[-1])
 
     tomo_output_dir = os.path.join(tomo_output_dir, "pr_radius_" + str(config.pr_tolerance_radius))
-    path_to_detected_predicted = join(tomo_output_dir, "detected")
+    path_to_detected = join(tomo_output_dir, "detected")
+    path_to_detected_true = join(path_to_detected, "in_true_motl")
+    path_to_detected_predicted = join(path_to_detected, "in_pred_motl")
     path_to_undetected_predicted = join(tomo_output_dir, "undetected")
 
     os.makedirs(path_to_detected_predicted, exist_ok=True)
+    os.makedirs(path_to_detected_true, exist_ok=True)
     os.makedirs(path_to_undetected_predicted, exist_ok=True)
 
     motl_writer(path_to_output_folder=path_to_detected_predicted,
                 list_of_peak_coords=tp_pred,
                 list_of_peak_scores=tp_pred_scores,
+                in_tom_format=True)
+    motl_writer(path_to_output_folder=path_to_detected_true,
+                list_of_peak_coords=tp_true,
+                list_of_peak_scores=[1 for n in tp_true],
                 in_tom_format=True)
     motl_writer(path_to_output_folder=path_to_undetected_predicted,
                 list_of_peak_coords=fp_pred,
@@ -116,7 +123,6 @@ if run_job:
     generate_performance_plots(recall=recall, prec=prec, F1_score=F1_score, predicted_values=predicted_values,
                                tp_pred_scores=tp_pred_scores, fp_pred_scores=fp_pred_scores, figures_dir=figures_dir)
 
-    #stats_dir = os.path.dirname(config.pr_statistics_file)
     statistics_file = os.path.join(config.output_dir, "pp_statistics.csv")
 
     device = get_device()
@@ -146,6 +152,13 @@ if run_job:
     write_statistics_pp(statistics_file=statistics_file, tomo_name=tomo_name, model_descriptor=model_descriptor,
                         statistic_variable="max_F1",
                         statistic_value=round(max_F1, 4), pr_radius=config.pr_tolerance_radius,
+                        min_cluster_size=config.min_cluster_size, max_cluster_size=config.max_cluster_size,
+                        threshold=config.threshold, prediction_class=config.pred_class,
+                        clustering_connectivity=config.clustering_connectivity, processing_tomo=config.processing_tomo)
+
+    write_statistics_pp(statistics_file=statistics_file, tomo_name=tomo_name, model_descriptor=model_descriptor,
+                        statistic_variable="F1",
+                        statistic_value=round(F1_score[-1], 4), pr_radius=config.pr_tolerance_radius,
                         min_cluster_size=config.min_cluster_size, max_cluster_size=config.max_cluster_size,
                         threshold=config.threshold, prediction_class=config.pred_class,
                         clustering_connectivity=config.clustering_connectivity, processing_tomo=config.processing_tomo)
