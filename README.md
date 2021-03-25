@@ -8,7 +8,7 @@ European Molecular Biology Laboratory, Heidelberg, Germany.
 ## Table of Contents
 1. [Introduction](#Introduction)
 2. [Installation](#Installation)
-3. [How to run](#How to run)
+3. [How to run](#How_to_run)
 ## 1. Introduction <a name="Introduction"></a>
 With improved instrumentation and sample preparation protocols, a large number of high-quality Cryo-ET images are rapidly being generated in laboratories, opening the possibility to conduct high-throughput studies in Cryo-ET. However, due to the crowded nature of the cellular environment together with image acquisition limitations, data mining and image analysis of Cryo-ET tomograms remains one of the most important bottlenecks in the field.
 This implementation of a 3D-Unet and subsequent postprocessing steps, has been developed for the task of particle localisation, that enables automating the difficult task of accurately localising macromolecular complexes in Cryo-ET images. 
@@ -90,7 +90,7 @@ configuration file -with the structure given in the example-. Run the pipeline b
 ```bash /path/to/3d-unet/deploy_cluster.sh  /path/to/config.yaml```
 
 
-## How to run<a name="How to run"></a>
+## How to run<a name="How_to_run"></a>
 
 ### 1. Configuration file structure
 In the configuration file, the user will specify all the parameters for the network training, prediction, 
