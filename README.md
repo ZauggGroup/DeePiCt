@@ -3,6 +3,7 @@
 ## 1. Description.
 
 3D UNet adapted for cryo-ET segmentation and particle detection.
+![alt text](https://github.com/irenedet/3d-unet/images/repo-image.001.png?raw=true)
 
 ## 2. Installation
 
