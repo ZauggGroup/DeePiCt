@@ -6,8 +6,10 @@ Authors: Irene de Teresa, Sara K. Goetz, Alexander Mattausch, Christian Zimmerli
 European Molecular Biology Laboratory, Heidelberg, Germany.
 
 ## Table of Contents
-1. [Instroduction](#introduction)
-## 1. Introduction <a name="introduction"></a>
+1. [Introduction](#Introduction)
+2. [Installation](#Installation)
+3. [How to run](#How to run)
+## 1. Introduction <a name="Introduction"></a>
 With improved instrumentation and sample preparation protocols, a large number of high-quality Cryo-ET images are rapidly being generated in laboratories, opening the possibility to conduct high-throughput studies in Cryo-ET. However, due to the crowded nature of the cellular environment together with image acquisition limitations, data mining and image analysis of Cryo-ET tomograms remains one of the most important bottlenecks in the field.
 This implementation of a 3D-Unet and subsequent postprocessing steps, has been developed for the task of particle localisation, that enables automating the difficult task of accurately localising macromolecular complexes in Cryo-ET images. 
 
@@ -15,7 +17,7 @@ Figure 1. Segmentation of fatty-acid synthases (FAS), ribosomes and membranes in
 
 ![Segmentation of fatty-acid synthases (FAS), ribosomes and membranes in a cryo-tomogram from S.pombe](https://github.com/irenedet/3d-unet/blob/master/images/repo-image.001.png?raw=true)
 
-## 2. Installation
+## 2. Installation<a name="Installation"></a>
 
 ### Requirements and conda environment
 
@@ -72,8 +74,8 @@ conda install -c pytorch pytorch torchvision
 ```
 
 
-#### Running the pipeline
-##### Clone the 3d-unet repository
+
+### Clone the 3d-unet repository
 
 ```bash
 cd /folder/where/the/repository/will/be/cloned
@@ -88,14 +90,14 @@ configuration file -with the structure given in the example-. Run the pipeline b
 ```bash /path/to/3d-unet/deploy_cluster.sh  /path/to/config.yaml```
 
 
-# Config file and Metadata table
+## How to run<a name="How to run"></a>
 
-## 1. Configuration file structure
+### 1. Configuration file structure
 In the configuration file, the user will specify all the parameters for the network training, prediction, 
 postprocessing or evaluation.
 Each part of the pipeline has it's own activate parameter that set to `activate: true` or to `activate: false`
 will turn on and off the desired running parts of the pipeline.
-### a. General parameters
+#### a. General parameters
 ```bash
 dataset_table: "/path/to/table/metadata.csv"  # Description below     
 output_dir: "/path/to/output/dir"             # Output directory (will be created while running)
@@ -118,7 +120,7 @@ tomo_name3, ...
 etc.
 ``` 
  where the fields marked between `< >` are names that should be specified by the user in the config file.
-### b. Specifying training and prediction sets
+#### b. Specifying training and prediction sets
 - The tomograms that will be used for training/prediction are specified through the 
 configuration file parameters:
 ```bash 
@@ -127,7 +129,7 @@ tomos_sets:
   prediction_list: ["tomo_name3", "tomo_name_4", etc]   # Tomograms in dataset_table for prediction ["tomo1", "tomo2", ...]
 ```
  
-### c. Training
+#### c. Training
 ```bash
 training:
   active: false                               # set to true/false to turn on/off training
@@ -148,7 +150,7 @@ training:
     decoder_dropout: 0                   # dropout for decoder path
     batch_size: 4                        # batch size for training
 ```
-### d. Prediction
+#### d. Prediction
 
 ```bash
 prediction:
@@ -156,7 +158,7 @@ prediction:
   processing_tomo: "tomo"                # Column name in dataset table corresp. to tomogram that will be segmented
   semantic_class: 'class2'               # The semantic class to be predicted
 ```
-### e. Postprocessing
+#### e. Postprocessing
 
 For the moment this is only active when prediction is active
 ```bash 
@@ -182,13 +184,13 @@ postprocessing_clustering:
      filtering_mask: 'lamella_file'
 ```
 
-### f. Evaluation
+#### f. Evaluation
 There are two possibilities for evaluation, either to compare discrete 
 motive list (motl) points for particle picking, or to compare the segmentation
 at the voxel level using the Sorenssen Dice-Coefficient.
 
 
-#### f.1. Particle picking (discrete precision-recall analysis)
+##### f.1. Particle picking (discrete precision-recall analysis)
 To run the particle picking precision-recall analysis, all tomograms in
 the prediction_list should have an associated "clean motl" to which compare
 the results. It has to be specified under the column path_to_clean_motl_<class>
@@ -210,7 +212,7 @@ evaluation:
     pr_tolerance_radius: 10              # radius in voxels for considering two coordinate corresp. to same particle
     statistics_file: "pr_statistics.csv" # statistics file where area under pr curve will be stored
 ```
-#### f.2. Segmentation evaluation (dice coefficient)
+##### f.2. Segmentation evaluation (dice coefficient)
 For evaluation of the segmentation at a voxel level, we calculate the Dice-Coefficient. For that, is needed
 that all the tomograms in `prediction_list` have an associated clean mask,
 whose path should be specified in the column <class>_mask of the metadata 
