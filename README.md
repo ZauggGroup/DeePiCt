@@ -1,8 +1,13 @@
 # 3d-UNet
+Irene de Teresa, Sara K. Goetz, Alexander Mattausch, Christian Zimmerli, Julia Mahamid and Judith Zaugg.
+European Molecular Biology Laboratory, Heidelberg, Germany.
 
-## 1. Description.
+## 1. 3D UNet adapted for cryo-ET segmentation and particle detection.
+With improved instrumentation and sample preparation protocols, a large number of high-quality Cryo-ET images are rapidly being generated in laboratories, opening the possibility to conduct high-throughput studies in Cryo-ET. However, due to the crowded nature of the cellular environment together with image acquisition limitations, data mining and image analysis of Cryo-ET tomograms remains one of the most important bottlenecks in the field.
+This implementation of a 3D-Unet and subsequent postprocessing steps, has been developed for the task of particle localisation, that enables automating the difficult task of accurately localising macromolecular complexes in Cryo-ET images. 
 
-3D UNet adapted for cryo-ET segmentation and particle detection.
+Figure 1. Segmentation of fatty-acid synthases (FAS), ribosomes and membranes in a S.pombe cryo-tomogram.
+
 ![Segmentation of fatty-acid synthases (FAS), ribosomes and membranes in a cryo-tomogram from S.pombe](https://github.com/irenedet/3d-unet/blob/master/images/repo-image.001.png?raw=true)
 
 ## 2. Installation
