@@ -1,5 +1,8 @@
 # 3d-UNet
-Irene de Teresa, Sara K. Goetz, Alexander Mattausch, Christian Zimmerli, Julia Mahamid and Judith Zaugg.
+Manuscript in preparation.
+
+Authors: Irene de Teresa, Sara K. Goetz, Alexander Mattausch, Christian Zimmerli, Julia Mahamid and Judith Zaugg.
+
 European Molecular Biology Laboratory, Heidelberg, Germany.
 
 ## 1. 3D UNet adapted for cryo-ET segmentation and particle detection.
