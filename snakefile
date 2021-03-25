@@ -88,11 +88,11 @@ if config["cross_validation"]["active"]:
     targets += expand([training_part_pattern], tomo_name=training_tomos, fold=folds)
     targets += expand([done_testing_part_pattern], tomo_name=training_tomos, fold=folds)
     targets += expand([postprocess_prediction_done], tomo_name=training_tomos, fold=folds)
-    targets += expand([particle_picking_pr_done], tomo_name=training_tomos, fold=folds)
+
     if config["evaluation"]["particle_picking"]["active"]:
         targets += expand([particle_picking_pr_done], tomo_name=training_tomos, fold=folds)
     else:
-        os.makedirs(".done_patterns", exist_ok=True)
+        os.makedirs(".done_patterns/"+ os.path.dirname(model_path), exist_ok=True)
         with open(".done_patterns/"+ model_path + ".skip_pr", mode="w") as f:
             print("skipping prediction")
     if config["evaluation"]["segmentation_evaluation"]["active"]:
@@ -213,7 +213,7 @@ rule segment:
     params:
           config=user_config_file,
           logdir=config["cluster"]["logdir"],
-          walltime="00:20:00",
+          walltime="01:20:00",
           nodes=1,
           cores=4,
           memory="80G",
@@ -276,7 +276,7 @@ rule particle_picking_evaluation:
     conda:
          "environment.yaml"
     input:
-         postprocess_prediction_done if config["prediction"]["active"] else ".done_patterns/.skip_prediction"
+         postprocess_prediction_done
     output:
           file=particle_picking_pr_done
     params:

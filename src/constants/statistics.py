@@ -126,5 +126,6 @@ def write_statistics_pp(statistics_file, tomo_name, model_descriptor: ModelDescr
 
     model_performance_vector = ModelPerformanceVector(performance_dict=performance_dict,
                                                       model_descriptor=model_descriptor)
-    add_model_performance_statistics(model_performance_vector=model_performance_vector, file=statistics_file)
+    add_model_performance_statistics(model_performance_vector=model_performance_vector,
+                                     file=statistics_file)
     return
