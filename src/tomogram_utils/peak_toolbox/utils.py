@@ -127,9 +127,8 @@ def write_csv_motl(list_of_maxima: list, list_of_maxima_coords: list,
 
 
 def extract_motl_coordinates_and_score_values(motl: list) -> tuple:
-    coordinates = [np.array([row[7], row[8], row[9]]) for row in
-                   motl]
-    score_values = [row[0] for row in motl]
+    coordinates = list(motl[["x", "y", "z"]].values)
+    score_values = list(motl["score"].values)
     return score_values, coordinates
 
 

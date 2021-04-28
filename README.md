@@ -67,11 +67,12 @@ conda install pandas
 
 
 
-Install pytorch locally:
+Install pytorch for GPUs:
 
 Note: Install pytorch for GPUs! 
 ```bash
-conda install -c pytorch pytorch torchvision
+conda install -c pytorch pytorch-gpu torchvision
+# conda install -c pytorch pytorch torchvision
 ```
 
 

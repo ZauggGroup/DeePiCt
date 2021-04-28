@@ -4,6 +4,7 @@ from dataclasses import dataclass
 import numpy as np
 import pandas as pd
 
+
 @dataclass
 class ModelDescriptor:
     """Class for keeping track of model architecture"""
@@ -88,14 +89,18 @@ class PerformanceVector:
 class ModelPerformanceVector:
     """Class for keeping track of model performance"""
 
-    def __init__(self, model_descriptor: ModelDescriptor, performance_dict: dict):
+    def __init__(self, model_descriptor: ModelDescriptor or None, performance_dict: dict):
         self.model_descriptor = model_descriptor
         self.model_performance = PerformanceVector(**performance_dict)
 
 
 def add_model_performance_statistics(model_performance_vector, file):
-    data = model_performance_vector.model_descriptor.__dict__
-    data.update(model_performance_vector.model_performance.__dict__)
+    if model_performance_vector.model_descriptor is None:
+        data = model_performance_vector.model_performance.__dict__
+    else:
+        data = model_performance_vector.model_descriptor.__dict__
+        data.update(model_performance_vector.model_performance.__dict__)
+
     # noinspection PyTypeChecker
     model_performance_row = pd.DataFrame.from_dict([data])
     if os.path.exists(file):
@@ -128,4 +133,5 @@ def write_statistics_pp(statistics_file, tomo_name, model_descriptor: ModelDescr
                                                       model_descriptor=model_descriptor)
     add_model_performance_statistics(model_performance_vector=model_performance_vector,
                                      file=statistics_file)
-    return
+
+    pass

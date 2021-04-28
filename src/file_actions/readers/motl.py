@@ -37,8 +37,13 @@ def read_motl_from_csv(path_to_csv_motl: str):
     motl = read_motl_from_csv(path_to_csv_motl)
     list_of_max=[row[0] for row in motl]
     """
-    motl_df = pd.read_csv(path_to_csv_motl,
-                          names=['score', 'x_', 'y_', 'peak', 'tilt_x', 'tilt_y', 'tilt_z',
-                                 'x', 'y', 'z', 'empty_1', 'empty_2', 'empty_3', 'x-shift',
-                                 'y-shift', 'z-shift', 'phi', 'psi', 'theta', 'class'])
-    return motl_df.values
+    motl_df = pd.read_csv(path_to_csv_motl)
+    if motl_df.shape[1] == 20:
+        motl_df = pd.read_csv(path_to_csv_motl,
+                              names=['score', 'x_', 'y_', 'peak', 'tilt_x', 'tilt_y', 'tilt_z',
+                                     'x', 'y', 'z', 'empty_1', 'empty_2', 'empty_3', 'x-shift',
+                                     'y-shift', 'z-shift', 'phi', 'psi', 'theta', 'class'])
+    elif motl_df.shape[1] == 3:
+        motl_df = pd.read_csv(path_to_csv_motl, names=["x","y","z"])
+        motl_df["score"] = np.nan
+    return motl_df
