@@ -57,7 +57,7 @@ if run_job:
     os.makedirs(tomo_output_dir, exist_ok=True)
 
     DTHeader = DatasetTableHeader(processing_tomo=config.processing_tomo)
-    df = pd.read_csv(config.dataset_table)
+    df = pd.read_csv(config.dataset_table, dtype={DTHeader.tomo_name: str})
     df[DTHeader.tomo_name] = df[DTHeader.tomo_name].astype(str)
     tomo_df = df[df[DTHeader.tomo_name] == tomo_name]
     print("config.processing_tomo", config.processing_tomo)
