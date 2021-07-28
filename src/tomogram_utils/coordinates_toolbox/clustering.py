@@ -50,7 +50,7 @@ def get_cluster_centroids(dataset: np.array, min_cluster_size: int,
     for index, label, size in zip(tqdm(range(total_clusters)),
                                   labels_list_within_range, cluster_size_within_range):
         cluster = np.where(labeled_clusters == label)
-        clusters_map_in_range[cluster] = 1
+        clusters_map_in_range[cluster] = size
         centroid = np.rint(np.mean(cluster, axis=1))
         centroids_list.append(centroid)
     return clusters_map_in_range, centroids_list, cluster_size_within_range

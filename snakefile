@@ -94,7 +94,7 @@ if config["cross_validation"]["active"]:
     else:
         os.makedirs(".done_patterns/"+ os.path.dirname(model_path), exist_ok=True)
         with open(".done_patterns/"+ model_path + ".skip_pr", mode="w") as f:
-            print("skipping prediction")
+            print("skipping particle picking")
     if config["evaluation"]["segmentation_evaluation"]["active"]:
         targets += expand([dice_evaluation_done], tomo_name=training_tomos, fold=folds)
 
@@ -123,9 +123,9 @@ else:
     if config["evaluation"]["particle_picking"]["active"]:
         targets += expand([particle_picking_pr_done], tomo_name=prediction_tomos, fold=folds)
     else:
-        os.makedirs(".done_patterns", exist_ok=True)
-        with open(".done_patterns/.skip_pr", mode="w") as f:
-            print("skipping prediction")
+        os.makedirs(".done_patterns/" + model_path, exist_ok=True)
+        with open(".done_patterns/"+ model_path + "/.skip_pr", mode="w") as f:
+            print("skipping particle picking")
     if config["evaluation"]["segmentation_evaluation"]["active"]:
         targets += expand([dice_evaluation_done], tomo_name=prediction_tomos, fold=folds)
 

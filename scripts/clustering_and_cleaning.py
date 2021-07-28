@@ -144,7 +144,8 @@ if run_job:
     clusters_output_path = get_post_processed_prediction_path(output_dir=config.output_dir, model_name=model_name,
                                                               tomo_name=tomo_name, semantic_class=config.pred_class)
     print("clusters_output_path", clusters_output_path)
-    write_tomogram(output_path=clusters_output_path, tomo_data=clusters_labeled_by_size)
+    clusters_output = 1*(clusters_labeled_by_size > 0)
+    write_tomogram(output_path=clusters_output_path, tomo_data=clusters_output)
 
     os.makedirs(tomo_output_dir, exist_ok=True)
     if calculate_motl:

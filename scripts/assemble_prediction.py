@@ -59,6 +59,7 @@ if run_job:
     DTHeader = DatasetTableHeader(processing_tomo=config.processing_tomo)
     df = pd.read_csv(config.dataset_table)
     df[DTHeader.tomo_name] = df[DTHeader.tomo_name].astype(str)
+    df[DTHeader.tomo_name] = df[DTHeader.tomo_name].astype(str)
     tomo_df = df[df[DTHeader.tomo_name] == tomo_name]
     tomo_path = tomo_df.iloc[0][DTHeader.processing_tomo]
     tomo = load_tomogram(path_to_dataset=tomo_path)
