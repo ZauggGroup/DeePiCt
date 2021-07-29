@@ -71,7 +71,6 @@ Install pytorch for GPUs:
 
 Note: Install pytorch for GPUs! 
 ```bash
-# conda install -c pytorch pytorch-gpu torchvision
 conda install -c pytorch pytorch torchvision
 ```
 
@@ -81,10 +80,11 @@ conda install -c pytorch pytorch torchvision
 
 ```bash
 cd /folder/where/the/repository/will/be/cloned
-git clone https://gitlab.embl.de/trueba/3d-unet 
+git clone https://github.com/irenedet/3d-unet
 ```
 the repository will be copied to ```/folder/where/the/repository/will/be/cloned/3d-unet```.
 
+## How to run<a name="How_to_run"></a>
 
 Go to the folder where you plan to run the experiments. Create a
 configuration file -with the structure given in the example-. Run the pipeline by:
@@ -92,13 +92,12 @@ configuration file -with the structure given in the example-. Run the pipeline b
 ```bash /path/to/3d-unet/deploy_cluster.sh  /path/to/config.yaml```
 
 
-## How to run<a name="How_to_run"></a>
-
 ### 1. Configuration file structure
 In the configuration file, the user will specify all the parameters for the network training, prediction, 
 postprocessing or evaluation.
 Each part of the pipeline has it's own activate parameter that set to `activate: true` or to `activate: false`
 will turn on and off the desired running parts of the pipeline.
+
 #### a. General parameters
 ```bash
 dataset_table: "/path/to/table/metadata.csv"  # Description below     
