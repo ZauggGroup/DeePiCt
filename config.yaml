@@ -38,8 +38,11 @@ training:
     epochs: 100               # Number of epochs / max. number of epochs if using early stopping
     stopping_patience: 20     # Early stopping if val_loss does not improve after n epochs, set to 0 to disable
     tensorboard: true         # Log metrics to tensorboard
-    run_name: null            # Run name used in tensorboard, set to 'null' to use a timestamp instead
-    tf_logdir: logs           # Tensorboard log / output metrics save location
+    run_name: null            # Run name used in tensorboard, set to null to use a timestamp instead
+    tf_logdir: ./logs         # Tensorboard log / output metrics save location
+    random_seed: 12345        # Random seed to make splitting of cv folds reproducible, set to null to disable
+    save_models: true         # Save each CV fold's best model
+    model_dir: ./eval_models  # Directory to put evaluation per-fold models into
   production:
     active: false
     epochs: 25                # Number of epochs
@@ -58,4 +61,3 @@ postprocessing:               # 3D postprocessing of predictions
   sigma: 5                    # Sigma for 1D gaussian filter along z-axis
   threshold: 0.75             # Threshold to apply. Set to 0 to disable.
 debug: false                  # Print some debugging output
-
