@@ -33,6 +33,9 @@ training:
     tensorboard: true
     run_name: null
     tf_logdir: logs/
+    random_seed: null
+    save_models: false
+    model_dir: ./eval_models
   production:
     active: false
     epochs: 50
