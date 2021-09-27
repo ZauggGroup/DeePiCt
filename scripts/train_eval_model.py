@@ -7,9 +7,8 @@ import pandas as pd
 import h5py
 
 from tensorflow import test as tft
-from keras.callbacks import TensorBoard
+from keras.callbacks import TensorBoard, EarlyStopping, ModelCheckpoint
 from keras.layers import Input
-from keras.callbacks import EarlyStopping
 from keras.optimizers import Adam
 
 import datetime
@@ -38,6 +37,9 @@ def main():
         RUN_NAME = config["run_name"].format(timestamp = timestamp)
     print("RUN NAME:", RUN_NAME)
 
+    if config["random_seed"] is not None:
+        np.random.seed(config["random_seed"])
+
     dataset_paths = args.datasets
     np.random.shuffle(dataset_paths)
 
@@ -55,6 +57,9 @@ def main():
 
     print(f"{f' DATA PREPARATION ':#^50}")
     datasets = []
+
+    if config["save_models"]:
+        os.makedirs(config["model_dir"], exist_ok=True)
 
     for p in dataset_paths: 
         print(f"Reading {p}...")
@@ -136,6 +141,15 @@ def main():
 
         if config["stopping_patience"]:
             callbacks.append(EarlyStopping(patience=config["stopping_patience"]))
+
+        if config["save_models"]:
+            callbacks.append(
+                ModelCheckpoint(
+                    config["model_dir"] + f"/model_cv-{cv_idx}.h5", 
+                    save_best_only=True
+                )
+            )
+
 
         generator = IDGWithLabels(
             flip=config["flip"], 

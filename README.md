@@ -61,7 +61,7 @@ The algorithm is described [here](https://github.com/mrmattuschka/tomo-spectrum-
   - **crop:** Crop input data before processing into patches.
 
 ### **Training**
-This is where the magic happens. This section configures training of models for either performance evaluation or prediction.
+This section configures training of models for either performance evaluation or prediction.
 - **general:** Hyperparameters applicable for both evaluation and production models.
   - **normalize:** Scale the data to be centered on 0 with a standard deviation of 1.
   - **lr:** Learning rate for training.
@@ -74,14 +74,17 @@ This is where the magic happens. This section configures training of models for 
   - **active:** Whether to train evaluation models.
   - **cv_folds:** Cross validation folds (number of tomograms >= cv folds >= 2).
   - **epochs:** Number of training epochs / max. number of epochs if using early stopping.
-  - **stopping_patience:** Sop training early if the validation loss does not improve after n epochs, set to 0 to disable.
+  - **stopping_patience:** Stop training early if the validation loss does not improve after n epochs, set to 0 to disable.
   - **tensorboard:** Log training metrics to Tensorboard.
-  - **run_name:** Run name used in tensorboard, set to 'null' to use a timestamp instead.
+  - **run_name:** Run name used in tensorboard, set to `null` to use a timestamp instead.
   - **tf_logdir:** Tensorboard log / output metrics save location.
+  - **random_seed:** Set a random seed to make splitting of CV folds reproducible. Set to `null` to disable.
+  - **save_models:** Whether to save each CV fold's best model.
+  - **model_dir:** Directory to put evaluation per-fold models into.
 - **production:** Parameters for training production models (used for creating new predictions).
   - **active:** Whether to train a production model.
-    - **epochs:** Number of training epochs. Use the evaluation mode mentioned above to determine a good value for this.
-    - **model_output:** Where to save the final production model as a hdf5 file.
+  - **epochs:** Number of training epochs. Use the evaluation mode mentioned above to determine a good value for this.
+  - **model_output:** Where to save the final production model as a hdf5 file.
 
 ### **Prediction** 
 Parameters to create predictions from new tomograms using a trained model. The tomogram will be disassembled into 2D patches just like the training data and predictions will be reassembled into 3D stacks.
