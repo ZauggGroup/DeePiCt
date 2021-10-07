@@ -37,7 +37,7 @@ tomo_name = args.tomo_name
 fold = ast.literal_eval(args.fold)
 
 model_path, model_name = get_model_name(config, fold)
-
+print("model_name", model_name)
 snakemake_pattern = config.output_dir + "/predictions/" + model_name + "/" + tomo_name + "/" + config.pred_class + \
                     "/pr_radius_" + str(config.pr_tolerance_radius) + \
                     "/detected/.{fold}.done_pp_snakemake".format(fold=str(fold))
@@ -65,7 +65,7 @@ if run_job:
     print(tomo_output_dir)
     os.makedirs(tomo_output_dir, exist_ok=True)
     motl_in_dir = [file for file in os.listdir(tomo_output_dir) if 'motl_' in file]
-    assert len(motl_in_dir) == 1, "only one motive list can be filtered."
+    assert len(motl_in_dir) == 1, "only one motive list can be filtered; we got {}.".format(len(motl_in_dir))
     path_to_motl_predicted = os.path.join(tomo_output_dir, motl_in_dir[0])
 
     tomo_df = df[df[DTHeader.tomo_name] == tomo_name]
@@ -123,10 +123,11 @@ if run_job:
     generate_performance_plots(recall=recall, prec=prec, F1_score=F1_score, predicted_values=predicted_values,
                                tp_pred_scores=tp_pred_scores, fp_pred_scores=fp_pred_scores, figures_dir=figures_dir)
 
-    statistics_file = os.path.join(config.output_dir, "pp_statistics.csv")
+    statistics_file = os.path.join(config.output_dir, "particle_picking_statistics.csv")
 
     device = get_device()
     checkpoint = torch.load(model_path, map_location=device)
+
     if 'model_descriptor' in checkpoint.keys():
         model_descriptor = checkpoint["model_descriptor"]
     else:
@@ -147,21 +148,24 @@ if run_job:
                         statistic_value=round(auPRC, 4), pr_radius=config.pr_tolerance_radius,
                         min_cluster_size=config.min_cluster_size, max_cluster_size=config.max_cluster_size,
                         threshold=config.threshold, prediction_class=config.pred_class,
-                        clustering_connectivity=config.clustering_connectivity, processing_tomo=config.processing_tomo)
+                        clustering_connectivity=config.clustering_connectivity, processing_tomo=config.processing_tomo,
+                        region_mask=config.region_mask)
 
     write_statistics_pp(statistics_file=statistics_file, tomo_name=tomo_name, model_descriptor=model_descriptor,
                         statistic_variable="max_F1",
                         statistic_value=round(max_F1, 4), pr_radius=config.pr_tolerance_radius,
                         min_cluster_size=config.min_cluster_size, max_cluster_size=config.max_cluster_size,
                         threshold=config.threshold, prediction_class=config.pred_class,
-                        clustering_connectivity=config.clustering_connectivity, processing_tomo=config.processing_tomo)
+                        clustering_connectivity=config.clustering_connectivity, processing_tomo=config.processing_tomo,
+                        region_mask=config.region_mask)
 
     write_statistics_pp(statistics_file=statistics_file, tomo_name=tomo_name, model_descriptor=model_descriptor,
                         statistic_variable="F1",
                         statistic_value=round(F1_score[-1], 4), pr_radius=config.pr_tolerance_radius,
                         min_cluster_size=config.min_cluster_size, max_cluster_size=config.max_cluster_size,
                         threshold=config.threshold, prediction_class=config.pred_class,
-                        clustering_connectivity=config.clustering_connectivity, processing_tomo=config.processing_tomo)
+                        clustering_connectivity=config.clustering_connectivity, processing_tomo=config.processing_tomo,
+                        region_mask=config.region_mask)
 
 # For snakemake:
 snakemake_pattern_dir = os.path.dirname(snakemake_pattern)

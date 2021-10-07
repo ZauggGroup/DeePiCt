@@ -170,7 +170,7 @@ rule training_3dunet:
           walltime="2-05:00:00",
           nodes=1,
           cores=4,
-          memory="50G",
+          memory="80G",
           gres='#SBATCH -p gpu\n#SBATCH --gres=gpu:4'
     resources:
              gpu=4
@@ -282,7 +282,7 @@ rule particle_picking_evaluation:
     params:
           config=user_config_file,
           logdir=config["cluster"]["logdir"],
-          walltime="00:10:00",
+          walltime="00:30:00",
           nodes=1,
           cores=2,
           memory="10G",

@@ -202,6 +202,7 @@ def read_motl_coordinates_and_values(path_to_motl: str) -> tuple:
             motl)
     else:
         print("motl in .csv format")
+
         motl = read_motl_from_csv(path_to_motl)
         motl_values, motl_coords = extract_motl_coordinates_and_score_values(
             motl)

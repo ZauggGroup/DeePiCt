@@ -83,9 +83,8 @@ def precision_recall_calculator(predicted_coordinates: np.array or list,
             total_current_predicted_points = true_positives_total + \
                                              false_positives_total
             precision.append(true_positives_total / total_current_predicted_points)
-            recall.append(true_positives_total + false_positives_total)
-        total_predicted_points = true_positives_total + false_positives_total
-        N_inv = 1 / total_predicted_points
+            recall.append(true_positives_total)
+        N_inv = 1 / total_true_points
         recall = np.array(recall) * N_inv
         recall = list(recall)
     return precision, recall, detected_true, predicted_true_positives, \
@@ -98,6 +97,7 @@ def f1_score_calculator(precision: list, recall: list):
     f1_score = []
     if len(precision) == 0:
         print("No precision and recall")
+        f1_score = [0]
     else:
         for p, r in zip(precision, recall):
             if p + r != 0:

@@ -106,7 +106,8 @@ if run_job:
                         statistic_value=round(dice_statistic, 4), pr_radius=config.pr_tolerance_radius,
                         min_cluster_size=config.min_cluster_size, max_cluster_size=config.max_cluster_size,
                         threshold=config.threshold, prediction_class=config.pred_class,
-                        clustering_connectivity=config.clustering_connectivity, processing_tomo=config.processing_tomo)
+                        clustering_connectivity=config.clustering_connectivity, processing_tomo=config.processing_tomo,
+                        region_mask=config.region_mask)
 
     print("Dice coefficient =", dice_statistic)
 

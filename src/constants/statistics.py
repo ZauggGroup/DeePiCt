@@ -84,6 +84,7 @@ class PerformanceVector:
     statistic_value: float
     prediction_class: str
     processing_tomo: str
+    region_mask: str
 
 
 class ModelPerformanceVector:
@@ -118,8 +119,9 @@ def add_model_performance_statistics(model_performance_vector, file):
 
 def write_statistics_pp(statistics_file, tomo_name, model_descriptor: ModelDescriptor, statistic_variable,
                         statistic_value, pr_radius, min_cluster_size, max_cluster_size, threshold,
-                        prediction_class, clustering_connectivity, processing_tomo):
+                        prediction_class, clustering_connectivity, processing_tomo, region_mask):
     performance_dict = {"tomo_name": tomo_name,"pr_radius": pr_radius,
+                        "region_mask": region_mask,
                         "min_cluster_size": min_cluster_size,
                         "max_cluster_size": max_cluster_size,
                         "clustering_connectivity": clustering_connectivity,
