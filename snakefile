@@ -217,7 +217,7 @@ rule segment:
           nodes=1,
           cores=4,
           memory="80G",
-          gres='#SBATCH -p gpu\n#SBATCH --gres=gpu:2'
+          gres='#SBATCH -p gpu\n#SBATCH --gres=gpu:1'
     resources:
              gpu=2
     shell:

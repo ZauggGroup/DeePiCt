@@ -60,7 +60,9 @@ export CONDA_PKGS_DIRS=/path/to/large/folder/envs/.conda
 The necessary virtual environment for the installation needs only snakemake and pandas
 
 ```bash
-conda create -c conda-forge -c bioconda -c conda-forge -n snakemake snakemake==5.13.0
+conda install -n base -c conda-forge mamba
+conda activate base
+mamba create -c conda-forge -c bioconda -n snakemake snakemake==5.13.0
 conda activate snakemake
 conda install pandas
 ```

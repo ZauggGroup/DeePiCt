@@ -64,7 +64,7 @@ if run_job:
                                                   tomo_name=tomo_name, semantic_class=config.pred_class)
     print(tomo_output_dir)
     os.makedirs(tomo_output_dir, exist_ok=True)
-    motl_in_dir = [file for file in os.listdir(tomo_output_dir) if 'motl_' in file]
+    motl_in_dir = [file for file in os.listdir(tomo_output_dir) if 'motl_' == file[:5]]
     assert len(motl_in_dir) == 1, "only one motive list can be filtered; we got {}.".format(len(motl_in_dir))
     path_to_motl_predicted = os.path.join(tomo_output_dir, motl_in_dir[0])
 
@@ -142,7 +142,7 @@ if run_job:
             'loss': checkpoint['loss'],
         }, model_path)
 
-
+    print(statistics_file)
     write_statistics_pp(statistics_file=statistics_file, tomo_name=tomo_name, model_descriptor=model_descriptor,
                         statistic_variable="auPRC",
                         statistic_value=round(auPRC, 4), pr_radius=config.pr_tolerance_radius,
