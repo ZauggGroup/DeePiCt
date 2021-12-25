@@ -301,7 +301,7 @@ rule segmentation_evaluation:
     conda:
          "environment.yaml"
     input:
-         file=postprocess_prediction_done
+         file=postprocess_prediction_done if config["cross_validation"]["active"] else postprocess_prediction_done_nocv
     output:
           file=dice_evaluation_done
     params:
