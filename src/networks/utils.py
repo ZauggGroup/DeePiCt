@@ -8,7 +8,6 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import torch.utils.data as du
-
 from constants import h5_internal_paths
 from constants.config import Config, CV_DATA_FILE
 from constants.statistics import ModelDescriptor
@@ -89,6 +88,12 @@ def generate_train_val_loaders(raw_array, label_array, split, batch_size=5,
     train_loader = du.DataLoader(train_set, batch_size, shuffle)
     val_loader = du.DataLoader(val_set, batch_size)
     return train_loader, val_loader
+
+
+def generate_prediction_loaders(raw_array, batch_size=5):
+    prediction_set = du.TensorDataset(torch.from_numpy(raw_array))
+    prediction_loader = du.DataLoader(prediction_set, batch_size)
+    return prediction_loader
 
 
 def data_loader(data_path: str, semantic_class: str,

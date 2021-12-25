@@ -55,6 +55,9 @@ assemble_probability_map_done = output_dir + "/predictions/" + model_name + "/{t
 # noinspection PyTypeChecker
 postprocess_prediction_done = output_dir + "/predictions/" + model_name + "/{tomo_name}/" + pred_class + \
                               "/.{fold}.post_processed_prediction.mrc"
+
+postprocess_prediction_done_nocv = output_dir + "/predictions/" + model_name + "/{tomo_name}/" + pred_class + \
+                              "/post_processed_prediction.mrc"
 # noinspection PyTypeChecker
 particle_picking_pr_done = output_dir + "/predictions/" + model_name + "/{tomo_name}/" + pred_class + \
                            "/pr_radius_" + str(pr_tolerance_radius) + "/detected/.{fold}.done_pp_snakemake"
@@ -276,7 +279,7 @@ rule particle_picking_evaluation:
     conda:
          "environment.yaml"
     input:
-         postprocess_prediction_done
+         postprocess_prediction_done if config["cross_validation"]["active"] else postprocess_prediction_done_nocv
     output:
           file=particle_picking_pr_done
     params:
@@ -315,6 +318,35 @@ rule segmentation_evaluation:
         --pythonpath {srcdir} \
         --config_file {user_config_file} \
         """ + "--fold {wildcards.fold} --tomo_name {wildcards.tomo_name}"
+
+
+# stats_done = config.output_dir + "/predictions/." + model_name + "/" + \
+#                     config.pred_class + "/.{fold}.global_eval_snakemake".format(fold=str(fold))
+#
+# rule aggregate_stats:
+#     conda:
+#           "environment.yaml"
+#     input:
+#           segm_evaluate_set_done_file=expand([dice_evaluation_done], tomo_name=prediction_tomos, fold=folds)
+#     output:
+#           done=[stats_done,model_name] if config["cross_validation"]["active"] else done_training_pattern
+#     params:
+#           config=user_config_file,
+#           logdir=config["cluster"]["logdir"],
+#           walltime="30:00",
+#           nodes=1,
+#           cores=2,
+#           memory="2G",
+#           gres=''
+#     resources:
+#              gpu=4
+#     shell:
+#          f"""
+#         python3 {scriptdir}/training.py \
+#         --pythonpath {srcdir} \
+#         --config_file {user_config_file} \
+#         """ + "--fold {wildcards.fold} --gpu $CUDA_VISIBLE_DEVICES"
+
 
 #rule filter:
 #    conda:

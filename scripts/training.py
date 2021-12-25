@@ -21,7 +21,8 @@ import torch.nn as nn
 import torch.optim as optim
 
 from networks.io import get_device, to_device
-from networks.utils import get_training_testing_lists, generate_data_loaders_data_augmentation
+from networks.utils import get_training_testing_lists, \
+    generate_data_loaders_data_augmentation
 from networks.loss import DiceCoefficientLoss
 from networks.routines import train, validate
 

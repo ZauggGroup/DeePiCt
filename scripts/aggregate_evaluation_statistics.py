@@ -25,8 +25,8 @@ tomo_name = args.tomo_name
 fold = ast.literal_eval(args.fold)
 
 model_path, model_name = get_model_name(config, fold)
-# snakemake_pattern = config.output_dir + "/predictions/." + model_name + "/" + \
-#                     config.pred_class + "/.{fold}.global_eval_snakemake".format(fold=str(fold))
+snakemake_pattern = config.output_dir + "/predictions/." + model_name + "/" + \
+                    config.pred_class + "/.{fold}.global_eval_snakemake".format(fold=str(fold))
 from networks.utils import get_training_testing_lists
 
 if isinstance(fold, int):
@@ -51,7 +51,8 @@ if isinstance(fold, int):
         tmp_statistics = pd.concat(stats_frames, axis=0)
 
 # For snakemake:
-# snakemake_pattern_dir = os.path.dirname(snakemake_pattern)
-# os.makedirs(snakemake_pattern_dir, exist_ok=True)
-# with open(file=snakemake_pattern, mode="w") as f:
-#     print("Creating snakemake pattern", snakemake_pattern)
+snakemake_pattern_dir = os.path.dirname(snakemake_pattern)
+os.makedirs(snakemake_pattern_dir, exist_ok=True)
+with open(file=snakemake_pattern, mode="w") as f:
+    print("Creating snakemake pattern", snakemake_pattern)
+
