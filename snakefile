@@ -259,7 +259,7 @@ rule postprocess_prediction:
     input:
          assemble_probability_map_done
     output:
-          postprocess_prediction_done
+          postprocess_prediction_done if config["cross_validation"]["active"] else postprocess_prediction_done_nocv
     params:
           config=user_config_file,
           logdir=config["cluster"]["logdir"],
@@ -310,7 +310,7 @@ rule segmentation_evaluation:
           walltime="00:10:00",
           nodes=1,
           cores=2,
-          memory="15G",
+          memory="60G",
           gres=''
     shell:
          f"""
