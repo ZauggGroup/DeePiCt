@@ -87,10 +87,10 @@ if config["cross_validation"]["active"]:
     #done_training_pattern = ".done_patterns/" + model_path + ".done"
 
     targets = []
-    targets += expand([done_training_pattern], fold=folds)
-    targets += expand([training_part_pattern], tomo_name=training_tomos, fold=folds)
-    targets += expand([done_testing_part_pattern], tomo_name=training_tomos, fold=folds)
-    targets += expand([postprocess_prediction_done], tomo_name=training_tomos, fold=folds)
+    # targets += expand([done_training_pattern], fold=folds)
+    # targets += expand([training_part_pattern], tomo_name=training_tomos, fold=folds)
+    # targets += expand([done_testing_part_pattern], tomo_name=training_tomos, fold=folds)
+    # targets += expand([postprocess_prediction_done], tomo_name=training_tomos, fold=folds)
 
     if config["evaluation"]["particle_picking"]["active"]:
         targets += expand([particle_picking_pr_done], tomo_name=training_tomos, fold=folds)
