@@ -1,0 +1,57 @@
+cluster:
+  logdir: logs/
+preprocessing:
+  filtering:
+    active: false
+    target_spectrum: null
+    lowpass_cutoff: 350
+    smoothen_cutoff: 20
+  remapping:
+    active: false
+    mapping: null
+  slicing:
+    patch_size: [288, 288]
+    patch_dim: [5, 5]
+    z_cutoff: 200
+    z_stride: 5
+    crop: 0
+    flip_y: false
+training:
+  general:
+    normalize: true
+    lr: 0.0001
+    drop_empty: 0
+    batch_size: 8
+    n_filters: 4
+    flip: true
+    rotate: true
+  evaluation:
+    active: true
+    cv_folds: 5
+    epochs: 50
+    stopping_patience: 0
+    tensorboard: true
+    run_name: null
+    tf_logdir: logs/
+    random_seed: null
+    save_models: false
+    model_dir: ./eval_models
+  production:
+    active: false
+    epochs: 50
+    model_output: ./model.h5
+prediction:
+  active: false
+  model: null
+  normalize: true
+  crop: 0
+  compensate_crop: true
+  patch_size: [288, 288]
+  patch_dim: [5, 5]
+  z_cutoff: 0
+postprocessing:
+  active: true
+  sigma: 5
+  threshold: 0.75
+debug: false
+

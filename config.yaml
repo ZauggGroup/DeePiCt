@@ -1,0 +1,63 @@
+data:
+  training_data: meta/metadata.csv
+  prediction_data: meta/metadata.csv
+  train_workdir: work         # 'null' to save at input file location
+  output_dir: out             # 'null' to save at input file location
+cluster:
+  logdir: logs
+preprocessing:
+  filtering:                  # Tomogram spectrum matching parameters
+    active: false
+    target_spectrum: null     # Target spectrum to match tomograms to. Create using extract_spectrum.py
+    lowpass_cutoff: 350       # Lowpass cutoff in fourier space. Set to 0 to disable
+    smoothen_cutoff: 20       # Smoothen cutoff into a sigmoid cuve. Set to 0 to disable
+  remapping:                  # Remap labels for multiclass annotations
+    active: true
+    mapping:
+      1:  0                   # Excludes cytoplasm
+      12: 0                   # Excludes FAS
+      .:  1                   # Labels all other annotations (apart from 0 label) as 1
+  slicing:
+    patch_size: [288, 288]    # Size of 2D patches used for training
+    patch_dim: [5, 5]         # Number of rows and columns patches spaced out across slices
+    z_cutoff: null            # Use n/2 slices above and below z center. If null, select all labeled slices
+    z_stride: 5               # Pick every n-th z slice
+    crop: 0                   # Crop input data before processing into patches
+training:
+  general:
+    normalize: true           # Normalize the data to have zero mean and unit variance
+    lr: 0.0001                # Learning rate
+    drop_empty: 1             # Fraction of all-empty slices to drop
+    batch_size: 8             # Batch size
+    n_filters: 4              # Number of filters on first UNet layer
+    flip: true                # Randomly flip tomograms along X/Y axis
+    rotate: true              # Randomly rotate tomograms in 90-degree increments
+  evaluation:
+    active: true
+    cv_folds: 5               # Cross validation folds (>=2)
+    epochs: 100               # Number of epochs / max. number of epochs if using early stopping
+    stopping_patience: 20     # Early stopping if val_loss does not improve after n epochs, set to 0 to disable
+    tensorboard: true         # Log metrics to tensorboard
+    run_name: null            # Run name used in tensorboard, set to null to use a timestamp instead
+    tf_logdir: ./logs         # Tensorboard log / output metrics save location
+    random_seed: 12345        # Random seed to make splitting of cv folds reproducible, set to null to disable
+    save_models: true         # Save each CV fold's best model
+    model_dir: ./eval_models  # Directory to put evaluation per-fold models into
+  production:
+    active: false
+    epochs: 25                # Number of epochs
+    model_output: ./model.h5  # Location for production model hdf5 file
+prediction:
+  active: false
+  model: null                 # Model hdf5 file to use, set to null to use model from train_prod_model
+  normalize: true             # Normalize the data to have zero mean and unit variance
+  crop: 48                    # Crop patches before reassembly to avoid artifacts
+  compensate_crop: true       # Compensate patch cropping and z cutoff to result in same size as input tomogram
+  patch_size: [288, 288]      # Must be the same used for training
+  patch_dim: [5, 5]           # Number of rows and columns of patches spaced out across slices
+  z_cutoff: 200               # Only predict n/2 slices above and below z center
+postprocessing:               # 3D postprocessing of predictions
+  active: false
+  sigma: 5                    # Sigma for 1D gaussian filter along z-axis
+  threshold: 0.75             # Threshold to apply. Set to 0 to disable.
+debug: false                  # Print some debugging output

@@ -1,0 +1,14 @@
+id,label
+0,exterior
+1,cytoplasm
+2,mitochondria
+3,vesicle
+4,tube
+5,er
+6,nuclearenv
+7,nucleus
+8,vacuole
+9,lipiddroplet
+10,golgi
+11,vesicularbody
+12,fas
