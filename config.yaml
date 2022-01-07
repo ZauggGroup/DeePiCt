@@ -1,0 +1,76 @@
+# General parameters for training and prediction:
+dataset_table: "yeast_metadata.csv"   # Path to metadata csv file
+output_dir: "memb/out"                     # Output directory
+work_dir: "memb/work"                      # Destination directory of intermediate files
+model_path: "memb_ED_and_WT_first3d_model.pth"               # Output model using .pth extension
+
+# When running in the cluster:
+cluster:
+  logdir: "logs"
+
+# Tomogram sets used for training or prediction
+tomos_sets:
+  training_list: ["190301/001", "190301/002"] # Tomograms in dataset_table for training ["tomo1", "tomo2", ...]
+  prediction_list: ["190301/006"]             # Tomograms in dataset_table for prediction ["tomo1", "tomo2", ...]
+
+cross_validation:
+  active: false
+  folds: 2
+  statistics_file: "cv_statistics.csv"
+
+training:
+  active: false
+  semantic_classes: ['memb']         # List of k classes that the network will learn, separated by commas
+  processing_tomo: "tomo"            # Column name in dataset_table corresponding to raw tomo used for training
+  box_size: 64                       # Box side of the partition
+  min_label_fraction: 0.001          # Minimum label required in each box considered for the training partition
+  overlap: 12                        # Thickness of overlap for training partition
+  batch_size: 5                      # batch size for training
+  force_retrain: false               # whether to rewrite model (set to false to not rewrite)
+
+  # Unet architecture parameters
+  unet_hyperparameters:
+    depth: 2                         # unet depth (=number of maxpooling layers)
+    initial_features: 4              # number of initial convolutions
+    epochs: 50                       # training epochs
+    train_split: 0.8                 # proportion of training (vs. validation) set, always between 0 and 1
+    batch_norm: True                 # boolean value
+    encoder_dropout: 0               # dropout for encoder path
+    decoder_dropout: 0.2             # dropout for decoder path
+
+  data_augmentation:
+    rounds: 0                        # set to 0 to deactivate
+    rot_angle: 180                   # rotation in degrees
+    elastic_alpha: 0                 # elastic tranformation displacement parameter
+    sigma_gauss: 1                   # variance associated to additive gaussian noise from 0 to sigma_gauss (usually < 5)
+    salt_pepper_p: 0.01              # frequency of salt and pepper noise (uniformly distributed single pixel noise - between 0 and 1)
+    salt_pepper_ampl: 0.1            # amplitude of salt and pepper noise (between 0 and 1)
+
+prediction:
+  active: true
+  semantic_class: 'memb'          # Semantic class to be predicted
+
+# Thresholding clustering and motl generation
+postprocessing_clustering:
+  active: false
+  threshold: 0.5                         # Threshold for the probability score to make the predicted segmentation
+  min_cluster_size: 100                  # Minimum number of voxels per cluster
+  max_cluster_size: null                 # Maximum number of voxels per cluster
+  clustering_connectivity: 3             # watershed algorithm clustering connectivity
+  calculate_motl: False                  # Get the motl of centroids for each cluster
+  ignore_border_thickness: [10, 20, 10]  # ignore border for motl generation if calculate_motl is True
+  region_mask: 'lamella_file'            # column name in metadata table for masking segmentation, e.g. lamella_file
+  contact_mode: "intersection"           # "contact", "colocalization" or "intersection"
+  contact_distance: 10
+
+# For precision recall in particle picking
+evaluation:
+  particle_picking:
+    active: false
+    pr_tolerance_radius: 10              # radius in voxels for considering two coordinate corresp. to same particle
+    statistics_file: "pr_statistics.csv" # statistics file where area under pr curve will be stored
+  segmentation_evaluation:
+    active: false
+    statistics_file: "dice_eval.csv"     # statistics file where the dice coefficient will be stored
+
+debug: True
