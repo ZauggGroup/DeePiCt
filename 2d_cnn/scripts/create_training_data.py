@@ -24,6 +24,8 @@ def main():
     features = args.features
     labels = args.labels
     out_file = args.output
+    dataset_id = args.sample_id if args.sample_id else os.path.splitext(os.path.basename(features))[0]
+    print("Dataset ID:", dataset_id)
 
     z_stride = config["z_stride"]
     crop = config["crop"]
@@ -31,7 +33,7 @@ def main():
     patch_dim = config["patch_dim"]
     flip_y = config["flip_y"]
 
-    dataset_id = os.path.splitext(os.path.basename(features))[0]
+    
 
     if len(patch_dim) == 1:
         patch_dim*=2
@@ -168,6 +170,14 @@ def get_cli():
         dest="flip_y",
         default=None,
         help="Don't flip labels along y axis (default behavior, used to override config file)."
+    )
+
+    parser.add_argument(
+        "-i",
+        "--sample_id",
+        required=False,
+        default=None,
+        help="Sample ID to store in sliced data, if no ID is passed the input filename will be used."
     )
 
     return parser

@@ -204,6 +204,7 @@ rule slice_tomogram:
     params:
         config = user_config_file,
         flip_y = lambda wildcards: training_meta.loc[wildcards.prefix, "flip_y"] * "--flip_y",
+        sample_id = lambda wildcards: wildcards.prefix if training_meta.get("id") is None else training_meta.loc[wildcards.prefix, "id"],
         logdir      = config["cluster"]["logdir"],
         walltime    = "0:10:00",
         nodes       = 1,
@@ -217,6 +218,7 @@ rule slice_tomogram:
         --labels {{input.labels}} \
         --output {{output.sliced_tomo}} \
         --config {{params.config}} \
+        --sample_id {{params.sample_id}} \
         {{params.flip_y}} \
         """
 
