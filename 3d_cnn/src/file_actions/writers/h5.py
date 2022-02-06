@@ -513,28 +513,25 @@ def _get_subtomos_names_to_segment(file: h5py.File, label_name: str, flag: str):
     return predicted_subtomos_names, subtomo_names, total_subtomos
 
 
-def segment_and_write(data_path: str, model: UNet3D, label_name: str) -> None:
+def segment_and_write(data_path: str, model: UNet3D, label_name: str, mean_value: float, std_value: float) -> None:
     model = model.to(torch.float)
     device = get_device()
-    subtomos_data = []
+    print("data_mean = {}, data_std = {}".format(mean_value, std_value))
     with h5py.File(data_path, 'r') as data_file:
         flag = _check_segmentation_existence(data_file, label_name)
         predicted_subtomos_names, subtomo_names, total_subtomos = \
             _get_subtomos_names_to_segment(data_file, label_name, flag)
 
     with h5py.File(data_path, 'a') as data_file:
-        for subtomo_name in subtomo_names:
-            subtomo_h5_internal_path = join(h5_internal_paths.RAW_SUBTOMOGRAMS,
-                                            subtomo_name)
-            subtomos_data.append(data_file[subtomo_h5_internal_path][:])
-        subtomos_data = np.array(subtomos_data)
-        subtomos_data -= np.mean(subtomos_data)
-        subtomos_data = subtomos_data / np.std(subtomos_data)
-        print("data_mean = {}, data_std = {}".format(np.mean(subtomos_data), np.std(subtomos_data)))
-        subtomos_data = list(subtomos_data)
-        for index, subtomo_name, subtomo_data in zip(tqdm(range(total_subtomos)), subtomo_names, subtomos_data):
+        for index, subtomo_name in zip(tqdm(range(total_subtomos)), subtomo_names):
             if subtomo_name not in predicted_subtomos_names:
+                # read the subtomogram
+                subtomo_h5_internal_path = join(h5_internal_paths.RAW_SUBTOMOGRAMS,
+                                                subtomo_name)
+                subtomo_data = data_file[subtomo_h5_internal_path][:]
                 subtomo_data = np.array([subtomo_data])
+                # normalize the subtomogram with the data mean and std
+                subtomo_data = (subtomo_data - mean_value) / std_value
                 subtomo_data = subtomo_data[:, None]
                 segmented_data = model(torch.from_numpy(subtomo_data).to(device).to(torch.float))
                 segmented_data = segmented_data.cpu().detach().numpy()
