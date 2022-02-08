@@ -1,7 +1,7 @@
 # 3D UNet adapted for cryo-ET segmentation and particle detection.
 Manuscript in preparation.
 
-Authors: Irene de Teresa1*, Sara K. Goetz*, Alexander Mattausch, Frosina Stojanovska, Christian Zimmerli, Mauricio Toro-Nahuelpan, Dorothy W.C. Cheng, Fergus Tollervey, Constantin Pape, Martin Beck, Anna Kreshuk, Julia Mahamid and Judith Zaugg.
+Authors: Irene de Teresa*, Sara K. Goetz*, Alexander Mattausch, Frosina Stojanovska, Christian Zimmerli, Mauricio Toro-Nahuelpan, Dorothy W.C. Cheng, Fergus Tollervey, Constantin Pape, Martin Beck, Anna Kreshuk, Julia Mahamid and Judith Zaugg.
 
 European Molecular Biology Laboratory, Heidelberg, Germany.
 
