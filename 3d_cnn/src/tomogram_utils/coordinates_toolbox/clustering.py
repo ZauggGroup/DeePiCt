@@ -1,13 +1,13 @@
-from os.path import join
-
 import h5py
 import numpy as np
+from os.path import join
+from scipy import ndimage
 from skimage import morphology as morph
+from skimage.measure import regionprops_table
 from tqdm import tqdm
 
 from constants import h5_internal_paths
-from tomogram_utils.coordinates_toolbox.subtomos import \
-    get_subtomo_corner_side_lengths_and_padding
+from tomogram_utils.coordinates_toolbox.subtomos import get_subtomo_corner_side_lengths_and_padding
 from tomogram_utils.coordinates_toolbox.utils import shift_coordinates_by_vector
 
 
@@ -44,15 +44,16 @@ def get_cluster_centroids(dataset: np.array, min_cluster_size: int,
                                        min_cluster_size=min_cluster_size,
                                        max_cluster_size=max_cluster_size,
                                        connectivity=connectivity)
-    centroids_list = list()
-    total_clusters = len(labels_list_within_range)
+    # Create binary mask of the labels within range
     clusters_map_in_range = np.zeros(labeled_clusters.shape)
-    for index, label, size in zip(tqdm(range(total_clusters)),
-                                  labels_list_within_range, cluster_size_within_range):
-        cluster = np.where(labeled_clusters == label)
-        clusters_map_in_range[cluster] = size
-        centroid = np.rint(np.mean(cluster, axis=1))
-        centroids_list.append(centroid)
+    clusters_map_in_range[np.isin(labeled_clusters, labels_list_within_range)] = 1
+    # Find out the centroids of the labels within range
+    filtered_labeled_clusters = (labeled_clusters * clusters_map_in_range).astype(np.int)
+    props = regionprops_table(filtered_labeled_clusters, properties=('label', 'centroid'))
+    centroids_list = [np.rint([x, y, z]) for _, x, y, z in sorted(zip(props['label'].tolist(),
+                                                                      props['centroid-0'].tolist(),
+                                                                      props['centroid-1'].tolist(),
+                                                                      props['centroid-2'].tolist()))]
     return clusters_map_in_range, centroids_list, cluster_size_within_range
 
 
@@ -64,20 +65,22 @@ def get_cluster_centroids_in_contact(dataset: np.array, min_cluster_size: int,
                                        min_cluster_size=min_cluster_size,
                                        max_cluster_size=max_cluster_size,
                                        connectivity=connectivity)
-    centroids_list = list()
-    centroids_size_list = list()
-    total_clusters = len(labels_list_within_range)
+    # Apply mask for labels within range and labels with contact mask
+    labeled_clusters_in_contact = (labeled_clusters * contact_mask).astype(np.int)
+    labels_list_in_contact = np.unique(labeled_clusters_in_contact)[1:]
+    final_labels = np.intersect1d(labels_list_within_range, labels_list_in_contact)
+    # Create binary mask of the labels within range and contact
     clusters_map_in_range = np.zeros(labeled_clusters.shape)
-    for index, label, size in zip(tqdm(range(total_clusters)),
-                                  labels_list_within_range, cluster_size_within_range):
-        cluster_map = 1 * (labeled_clusters == label)
-        cluster = np.where(labeled_clusters == label)
-        centroid = np.rint(np.mean(cluster, axis=1))
-        contact = len(np.where(cluster_map * contact_mask > 0)[0]) > 0
-        if contact:
-            clusters_map_in_range[cluster] = 1
-            centroids_list.append(centroid)
-            centroids_size_list.append(size)
+    clusters_map_in_range[np.isin(labeled_clusters, final_labels)] = 1
+    # Find out the centroids of the labels within range
+    filtered_labeled_clusters = (labeled_clusters * clusters_map_in_range).astype(int)
+    props = regionprops_table(filtered_labeled_clusters, properties=('label', 'centroid'))
+    centroids_list = [np.rint([x, y, z]) for _, x, y, z in sorted(zip(props['label'].tolist(),
+                                                                      props['centroid-0'].tolist(),
+                                                                      props['centroid-1'].tolist(),
+                                                                      props['centroid-2'].tolist()))]
+    _, cluster_size = np.unique(filtered_labeled_clusters, return_counts=True)
+    centroids_size_list = cluster_size[1:].tolist()
     return clusters_map_in_range, centroids_list, centroids_size_list
 
 
@@ -90,23 +93,30 @@ def get_cluster_centroids_colocalization(dataset: np.array, min_cluster_size: in
                                        min_cluster_size=min_cluster_size,
                                        max_cluster_size=max_cluster_size,
                                        connectivity=connectivity)
-    centroids_list = list()
-    centroids_size_list = list()
-    total_clusters = len(labels_list_within_range)
+    # Create binary mask of the labels within range
     clusters_map_in_range = np.zeros(labeled_clusters.shape)
-    for index, label, size in zip(tqdm(range(total_clusters)),
-                                  labels_list_within_range, cluster_size_within_range):
-        cluster = np.where(labeled_clusters == label)
-        centroid = np.rint(np.mean(cluster, axis=1))
-        cz, cy, cx = [int(c) for c in centroid]
-        slicez = slice(cz - tol_contact, cz + tol_contact)
-        slicey = slice(cy - tol_contact, cy + tol_contact)
-        slicex = slice(cx - tol_contact, cx + tol_contact)
-        contact = (contact_mask[slicez, slicey, slicex] > 0).any()
-        if contact:
-            clusters_map_in_range[cluster] = 1
-            centroids_list.append(centroid)
-            centroids_size_list.append(size)
+    clusters_map_in_range[np.isin(labeled_clusters, labels_list_within_range)] = 1
+    # Find out the centroids of the labels within range
+    filtered_labeled_clusters = (labeled_clusters * clusters_map_in_range).astype(np.int)
+    props = regionprops_table(filtered_labeled_clusters, properties=('label', 'centroid'))
+    centroids_list = [np.rint([x, y, z]) for _, x, y, z in sorted(zip(props['label'].tolist(),
+                                                                      props['centroid-0'].tolist(),
+                                                                      props['centroid-1'].tolist(),
+                                                                      props['centroid-2'].tolist()))]
+    # Find centroids that in given radius have voxels of the contact mask
+    inverted_mask = (contact_mask == 0).astype(int)
+    distance_from_mask = ndimage.distance_transform_cdt(inverted_mask)
+    thresh_distance_mask = (distance_from_mask <= tol_contact).astype(int)
+    labels_list_filtered, cluster_size = np.unique(filtered_labeled_clusters, return_counts=True)
+    labels_list_filtered, cluster_size = labels_list_filtered[1:], cluster_size[1:]
+    mask = np.array([True if thresh_distance_mask[int(centroid[0]), int(centroid[1]), int(centroid[2])] == 1 else False
+                     for centroid in centroids_list])
+    labels_list_filtered = labels_list_filtered[mask]
+    centroids_list = np.array(centroids_list)[mask].tolist()
+    centroids_size_list = cluster_size[mask]
+    clusters_map_in_range = np.zeros(labeled_clusters.shape)
+    clusters_map_in_range[np.isin(labeled_clusters, labels_list_filtered)] = 1
+
     return clusters_map_in_range, centroids_list, centroids_size_list
 
 

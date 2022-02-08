@@ -1,11 +1,10 @@
-import re
+import math
 import matplotlib
-import os
-
-import numpy as np
-import pandas as pd
-
 import matplotlib.pyplot as plt
+import numpy as np
+import os
+import pandas as pd
+import re
 
 from performance.statistics_utils import get_max_F1
 from performance.statistics_utils import pr_auc_score
@@ -320,7 +319,10 @@ def load_plot_df_from_full_tomo(statistics_df, dataset_df, test_tomos, tomo_name
 def generate_histogram(fig_file: str, x: list, label: str, bins: int, plot_title: str, plot_num: int = 1) -> None:
     matplotlib.use('Agg')
     plt.figure(plot_num)
-    plt.hist(x, bins=bins, label=label)
+    if math.isnan(np.max(x)) or math.isnan(np.min(x)):
+        print("nan values")
+    else:
+        plt.hist(x, bins=bins, label=label)
     plt.xlabel("score value")
     plt.ylabel("frequency")
     plt.title(plot_title)
@@ -333,8 +335,11 @@ def generate_histogram(fig_file: str, x: list, label: str, bins: int, plot_title
 def generate_bi_histogram(fig_file: str, tp: list, fp: list, bins: int, plot_title: str, plot_num: int = 1) -> None:
     matplotlib.use('Agg')
     plt.figure(plot_num)
-    plt.hist(tp, bins=bins, label="true positives", fc=(0, 0, 1, 0.5))
-    plt.hist(fp, bins=bins, label="false positives", fc=(1, 0, 0, 0.5))
+    for color, namex, x in zip([(0, 0, 1, 0.5), (1, 0, 0, 0.5)], ["true positives", "false positives"], [tp, fp]):
+        if math.isnan(np.max(x)) or math.isnan(np.min(x)):
+            print("nan values")
+        else:
+            plt.hist(x, bins=bins, label=namex, fc=color)
     plt.xlabel("score value")
     plt.ylabel("frequency")
     plt.title(plot_title)

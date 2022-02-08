@@ -12,12 +12,15 @@ def get_max_F1(F1_score: list):
 
 
 def get_clean_points_close2point(point, clean, radius):
-    close_to_point = list()
+    close_to_point = []
+    distances = []
     for clean_p in clean:
         dist = np.linalg.norm(clean_p - point)
         if dist <= radius:
             close_to_point.append(clean_p)
-    return close_to_point
+            distances.append(dist)
+    close_to_point = [tuple(p) for p in close_to_point]
+    return close_to_point, distances
 
 
 def precision_recall_calculator(predicted_coordinates: np.array or list,
@@ -46,17 +49,20 @@ def precision_recall_calculator(predicted_coordinates: np.array or list,
         value_predicted_false_positives = []
         predicted_redundant = []
         value_predicted_redundant = []
+        false_negatives = total_true_points
     else:
         predicted_false_positives = list()
         value_predicted_false_positives = list()
         for value, point in zip(value_predicted, predicted_coordinates):
-            close_to_point = get_clean_points_close2point(point,
-                                                          true_coordinates,
-                                                          radius)
+            close_to_point, distances = get_clean_points_close2point(
+                point,
+                true_coordinates,
+                radius
+            )
             if len(close_to_point) > 0:
                 flag = "true_positive_candidate"
                 flag_tmp = "not_redundant_yet"
-                for clean_p in close_to_point:
+                for dist, clean_p in sorted(zip(distances, close_to_point)):
                     if flag == "true_positive_candidate":
                         if tuple(clean_p) not in detected_true:
                             detected_true.append(tuple(clean_p))
@@ -75,7 +81,6 @@ def precision_recall_calculator(predicted_coordinates: np.array or list,
                 else:
                     print("This should never happen!")
             else:
-                # print("len(close_to_point) = ", len(close_to_point))
                 predicted_false_positives.append(tuple(point))
                 value_predicted_false_positives.append(value)
             true_positives_total = len(predicted_true_positives)
@@ -84,12 +89,13 @@ def precision_recall_calculator(predicted_coordinates: np.array or list,
                                              false_positives_total
             precision.append(true_positives_total / total_current_predicted_points)
             recall.append(true_positives_total)
+        false_negatives = [point for point in true_coordinates if tuple(point) not in detected_true]
         N_inv = 1 / total_true_points
         recall = np.array(recall) * N_inv
         recall = list(recall)
     return precision, recall, detected_true, predicted_true_positives, \
            predicted_false_positives, value_predicted_true_positives, \
-           value_predicted_false_positives, predicted_redundant, \
+           value_predicted_false_positives, false_negatives, predicted_redundant, \
            value_predicted_redundant
 
 

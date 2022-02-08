@@ -33,7 +33,7 @@ def motl_writer(path_to_output_folder: str, list_of_peak_scores: list,
     Already modified to match em_motl format
     Format of MOTL:
        The following parameters are stored in the matrix MOTIVELIST of dimension
-       (20, NPARTICLES)<= ToDo This! (currently storing (NPARTICLES, 20)):
+       (NPARTICLES, 20)):
        column
           1         : Score Coefficient from localisation algorithm
           2         : x-coordinate in full tomogram

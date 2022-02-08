@@ -82,8 +82,7 @@ if run_job:
     unique_peaks_number = len(predicted_values)
 
     predicted_coordinates = np.array(predicted_coordinates)
-
-    prec, recall, tp_true, tp_pred, fp_pred, tp_pred_scores, fp_pred_scores, *_ = \
+    prec, recall, tp_true, tp_pred, fp_pred, tp_pred_scores, fp_pred_scores, fn, *_ = \
         precision_recall_calculator(
             predicted_coordinates=predicted_coordinates,
             value_predicted=predicted_values,
@@ -123,7 +122,7 @@ if run_job:
     generate_performance_plots(recall=recall, prec=prec, F1_score=F1_score, predicted_values=predicted_values,
                                tp_pred_scores=tp_pred_scores, fp_pred_scores=fp_pred_scores, figures_dir=figures_dir)
 
-    statistics_file = os.path.join(config.output_dir, "particle_picking_statistics.csv")
+    statistics_file = os.path.join(config.output_dir, "pp_statistics.csv")
 
     device = get_device()
     checkpoint = torch.load(model_path, map_location=device)

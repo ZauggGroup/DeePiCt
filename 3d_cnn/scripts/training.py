@@ -58,9 +58,11 @@ else:
     os.makedirs(log_path, exist_ok=True)
     os.makedirs(model_dir, exist_ok=True)
 
-    net_conf = {'final_activation': nn.Sigmoid(), 'depth': config.depth,
+    net_conf = {'final_activation': nn.Sigmoid(),
+                'depth': config.depth,
                 'initial_features': config.initial_features,
-                "out_channels": len(config.semantic_classes), "BN": config.batch_norm,
+                "out_channels": len(config.semantic_classes),
+                "BN": config.batch_norm,
                 "encoder_dropout": config.encoder_dropout,
                 "decoder_dropout": config.decoder_dropout}
 
@@ -84,11 +86,6 @@ else:
     old_epoch = 0
 
     logger = TensorBoard_multiclass(log_dir=log_path, log_image_interval=1)
-
-
-    # train_loader, val_loader = generate_data_loaders(config=config,
-    #                                                  tomo_training_list=tomo_training_list,
-    #                                                  fold=fold)
 
     train_loader, val_loader = generate_data_loaders_data_augmentation(config=config,
                                                                        tomo_training_list=tomo_training_list,

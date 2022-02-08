@@ -16,7 +16,7 @@ from file_actions.readers.em import read_em
 from file_actions.readers.motl import read_motl_from_csv
 from file_actions.readers.tomograms import load_tomogram
 from file_actions.writers.mrc import write_mrc_dataset
-from networks.unet_new import UNet3D
+from networks.unet import UNet3D
 from pytorch_cnn.classes.io import get_device
 from tensors.actions import crop_window_around_point
 from tomogram_utils.coordinates_toolbox import subtomos
@@ -528,7 +528,7 @@ def segment_and_write(data_path: str, model: UNet3D, label_name: str) -> None:
                                             subtomo_name)
             subtomos_data.append(data_file[subtomo_h5_internal_path][:])
         subtomos_data = np.array(subtomos_data)
-        subtomos_data -= np.mean(subtomos_data)
+        subtomos_data = subtomos_data - np.mean(subtomos_data)
         subtomos_data = subtomos_data / np.std(subtomos_data)
         print("data_mean = {}, data_std = {}".format(np.mean(subtomos_data), np.std(subtomos_data)))
         subtomos_data = list(subtomos_data)
