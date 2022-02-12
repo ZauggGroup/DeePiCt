@@ -19,9 +19,10 @@ segmentation and particle localization in cryo-electron tomography. DeePiCt comb
 convolutional networks: a 2D CNN for segmentation of cellular compartments (e.g. organelles or cytosol),
 and a 3D CNN for particle localization and structure segmentation. 
 
-Figure 1. Segmentation of fatty-acid synthases (FAS), ribosomes and membranes in a S.pombe cryo-tomogram.
+Figure 1. Segmentation of fatty-acid synthases (FAS), 
+ribosomes and membranes in a *S. pombe* cryo-tomogram.
 
-![Segmentation of fatty-acid synthases (FAS), ribosomes and membranes in a cryo-tomogram from S.pombe](https://github.com/mrmattuschka/DeePiCt/blob/master/images/repo-image.001.png?raw=true)
+![Segmentation of fatty-acid synthases (FAS), ribosomes and membranes in a cryo-tomogram from S.pombe](./images/repo-image.001.png?raw=true)
 
 ## 2. Installation<a name="Installation"></a>
 
