@@ -100,6 +100,8 @@ if run_job:
     device = get_device()
     checkpoint = torch.load(model_path, map_location=device)
     model_descriptor = checkpoint["model_descriptor"]
+    # model_descriptor = model_descriptor_from_config(config)
+    # model_descriptor.fold = fold
     print(statistics_file)
     write_statistics_pp(statistics_file=statistics_file, tomo_name=tomo_name, model_descriptor=model_descriptor,
                         statistic_variable="dice",

@@ -8,7 +8,7 @@ echo PYTHONPATH=$PYTHONPATH
 source ~/.bashrc
 conda activate snakemake
 
-srun -t 20:00:00 -c 1 --mem 4G \
+srun -t 3-00:00:00 -c 1 --mem 4G \
     snakemake \
     --snakefile "${srcdir}/snakefile" \
     --cluster "sbatch" \
@@ -17,4 +17,6 @@ srun -t 20:00:00 -c 1 --mem 4G \
     --jobs 20 \
     --use-conda \
     --printshellcmds \
-    --latency-wait 30
+    --latency-wait 30 \
+    --max-jobs-per-second 1 \
+    --max-status-checks-per-second 0.1 

@@ -1,7 +1,7 @@
-from os.path import join
-
 import h5py
 import numpy as np
+from os.path import join
+from scipy import ndimage
 from skimage import morphology as morph
 from skimage.measure import regionprops_table
 from tqdm import tqdm

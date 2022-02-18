@@ -16,7 +16,7 @@ from file_actions.readers.em import read_em
 from file_actions.readers.motl import read_motl_from_csv
 from file_actions.readers.tomograms import load_tomogram
 from file_actions.writers.mrc import write_mrc_dataset
-from networks.unet_new import UNet3D
+from networks.unet import UNet3D
 from pytorch_cnn.classes.io import get_device
 from tensors.actions import crop_window_around_point
 from tomogram_utils.coordinates_toolbox import subtomos

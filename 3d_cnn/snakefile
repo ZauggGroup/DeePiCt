@@ -37,100 +37,52 @@ str_segmentation_names = list2str(my_list=semantic_classes)
 if config["cluster"]["logdir"] is not None:
     os.makedirs(config["cluster"]["logdir"], exist_ok=True)
 
-if config["cross_validation"]["active"]:
-    model_name = os.path.basename(config["model_path"])[:-4] + "_{fold}"
-    model_path = output_dir + "/models/" + model_name + ".pth"
-else:
-    model_path = config["model_path"]
-    model_name = os.path.basename(config["model_path"])[:-4]
+model_path = config["model_path"]
+model_name = os.path.basename(config["model_path"])[:-4]
 
-training_part_pattern = work_dir + "/training_data/{tomo_name}/.train_partition.{fold}.done"
-done_training_pattern = ".done_patterns/" + model_path + "_{fold}.pth.done"
+training_part_pattern = work_dir + "/training_data/{tomo_name}/partition.h5"
+done_training_pattern = model_path
 testing_part_pattern = work_dir + "/testing_data/{tomo_name}/partition.h5"
-done_testing_part_pattern = work_dir + "/testing_data/{tomo_name}/.test_partition.{fold}.done"
-segmented_part_pattern = ".done_patterns/" + model_name + ".{tomo_name}.{fold}.segmentation.done"
+done_testing_part_pattern = work_dir + "/testing_data/{tomo_name}/partition.h5"
+segmented_part_pattern = ".done_patterns/" + model_name + ".{tomo_name}.None.segmentation.done"
 # noinspection PyTypeChecker
 assemble_probability_map_done = output_dir + "/predictions/" + model_name + "/{tomo_name}/" + pred_class + \
-                                "/.{fold}.probability_map.done"
+                                "/probability_map.mrc"
 # noinspection PyTypeChecker
 postprocess_prediction_done = output_dir + "/predictions/" + model_name + "/{tomo_name}/" + pred_class + \
-                              "/.{fold}.post_processed_prediction.mrc"
-
-postprocess_prediction_done_nocv = output_dir + "/predictions/" + model_name + "/{tomo_name}/" + pred_class + \
                               "/post_processed_prediction.mrc"
+
 # noinspection PyTypeChecker
 particle_picking_pr_done = output_dir + "/predictions/" + model_name + "/{tomo_name}/" + pred_class + \
-                           "/pr_radius_" + str(pr_tolerance_radius) + "/detected/.{fold}.done_pp_snakemake"
+                           "/pr_radius_" + str(pr_tolerance_radius) + "/detected/.None.done_pp_snakemake"
 # noinspection PyTypeChecker
 dice_evaluation_done = output_dir + "/predictions/" + model_name + "/{tomo_name}/" + pred_class + \
-                       "/.{fold}.done_dice_eval_snakemake"
+                       "/.None.done_dice_eval_snakemake"
 
-if config["cross_validation"]["active"]:
-    print("cross validation is active!")
-    cv_folds = config["cross_validation"]["folds"]
-    cv_data_path = output_dir + "/cv_data.csv"
-    folds = list(range(cv_folds))
+print("training tomograms:", training_tomos)
+targets = []
+if config["training"]["active"]:
+    print("training is active")
+    targets += [done_training_pattern]
 
-    assert len(training_tomos) >= cv_folds
-    assert cv_folds >= 2
+if config["prediction"]["active"]:
+    targets += expand([assemble_probability_map_done], tomo_name=prediction_tomos)
 
-    if os.path.isfile(cv_data_path):
-        print("cv partition exists")
-    else:
-        print("generating cv_data.csv file")
-        generate_cv_data(cv_data_path=cv_data_path, tomo_training_list=training_tomos, cv_folds=cv_folds)
-
-    cv_data = pd.read_csv(cv_data_path)
-    cv_data.set_index("fold", inplace=True)
-
-    #training_part_pattern = work_dir + "/training_data/{tomo_name}/fold_{fold}/partition.h5"
-    #done_training_pattern = ".done_patterns/" + model_path + ".done"
-
-    targets = []
-    # targets += expand([done_training_pattern], fold=folds)
-    # targets += expand([training_part_pattern], tomo_name=training_tomos, fold=folds)
-    # targets += expand([done_testing_part_pattern], tomo_name=training_tomos, fold=folds)
-    # targets += expand([postprocess_prediction_done], tomo_name=training_tomos, fold=folds)
-
-    if config["evaluation"]["particle_picking"]["active"]:
-        targets += expand([particle_picking_pr_done], tomo_name=training_tomos, fold=folds)
-    else:
-        os.makedirs(".done_patterns/"+ os.path.dirname(model_path), exist_ok=True)
-        with open(".done_patterns/"+ model_path + ".skip_pr", mode="w") as f:
-            print("skipping particle picking")
-    if config["evaluation"]["segmentation_evaluation"]["active"]:
-        targets += expand([dice_evaluation_done], tomo_name=training_tomos, fold=folds)
-
+if config["postprocessing_clustering"]["active"]:
+    targets += expand([postprocess_prediction_done], tomo_name=prediction_tomos)
 else:
-    folds = [None]
+    os.makedirs(".done_patterns", exist_ok=True)
+    with open(".done_patterns/.skip_prediction", mode="w") as f:
+        print("skipping prediction")
 
-    print("training tomograms:", training_tomos)
-    targets = []
-    if config["training"]["active"]:
-        print("training is active")
-        targets += expand([done_training_pattern], fold=folds)
-
-    if config["prediction"]["active"]:
-        targets += expand([assemble_probability_map_done], tomo_name=prediction_tomos, fold=folds)
-
-    if config["postprocessing_clustering"]["active"]:
-        targets += expand([postprocess_prediction_done], tomo_name=prediction_tomos, fold=folds)
-    else:
-        os.makedirs(".done_patterns", exist_ok=True)
-        with open(".done_patterns/.skip_prediction", mode="w") as f:
-            print("skipping prediction")
-        if config["postprocessing_clustering"]["active"]:
-            print("postprocessing active")
-            targets += expand([postprocess_prediction_done], tomo_name=prediction_tomos, fold=folds)
-
-    if config["evaluation"]["particle_picking"]["active"]:
-        targets += expand([particle_picking_pr_done], tomo_name=prediction_tomos, fold=folds)
-    else:
-        os.makedirs(".done_patterns/" + model_path, exist_ok=True)
-        with open(".done_patterns/"+ model_path + "/.skip_pr", mode="w") as f:
-            print("skipping particle picking")
-    if config["evaluation"]["segmentation_evaluation"]["active"]:
-        targets += expand([dice_evaluation_done], tomo_name=prediction_tomos, fold=folds)
+if config["evaluation"]["particle_picking"]["active"]:
+    targets += expand([particle_picking_pr_done], tomo_name=prediction_tomos)
+else:
+    os.makedirs(".done_patterns/" + model_path, exist_ok=True)
+    with open(".done_patterns/"+ model_path + "/.skip_pr", mode="w") as f:
+        print("skipping particle picking")
+if config["evaluation"]["segmentation_evaluation"]["active"]:
+    targets += expand([dice_evaluation_done], tomo_name=prediction_tomos)
 
 if config["debug"]:
     print("TARGETS:\n")
@@ -158,15 +110,15 @@ rule partition_training:
          python3 {scriptdir}/generate_training_data.py \
          --pythonpath {srcdir} \
          --config_file {user_config_file} \
-         """ + "--fold {wildcards.fold} --tomo_name {wildcards.tomo_name}"
+         """ + "--fold None --tomo_name {wildcards.tomo_name}"
 
 rule training_3dunet:
     conda:
           "environment.yaml"
     input:
-          training_set_done_file=expand([training_part_pattern], tomo_name=training_tomos, fold=folds)
+          training_set_done_file=expand([training_part_pattern], tomo_name=training_tomos)
     output:
-          done=[done_training_pattern,model_path] if config["cross_validation"]["active"] else done_training_pattern
+          done=done_training_pattern
     params:
           config=user_config_file,
           logdir=config["cluster"]["logdir"],
@@ -182,7 +134,7 @@ rule training_3dunet:
         python3 {scriptdir}/training.py \
         --pythonpath {srcdir} \
         --config_file {user_config_file} \
-        """ + "--fold {wildcards.fold} --gpu $CUDA_VISIBLE_DEVICES"
+        """ + "--fold None --gpu $CUDA_VISIBLE_DEVICES"
 
 rule predict_partition:
     conda:
@@ -202,15 +154,13 @@ rule predict_partition:
         python3 {scriptdir}/generate_prediction_partition.py \
         --pythonpath {srcdir} \
         --config_file {user_config_file} \
-        """ + "--fold {wildcards.fold} --tomo_name {wildcards.tomo_name}"
+        """ + "--fold None --tomo_name {wildcards.tomo_name}"
 
 rule segment:
     conda:
          "environment.yaml"
     input:
-         done=[done_training_pattern, done_testing_part_pattern] if
-         config["training"]["active"] or config["cross_validation"]["active"] else
-         done_testing_part_pattern
+         [done_training_pattern, done_testing_part_pattern] if config["training"]["active"] else done_testing_part_pattern
     output:
           file=segmented_part_pattern
     params:
@@ -228,7 +178,7 @@ rule segment:
         python3 {scriptdir}/segment.py \
         --pythonpath {srcdir} \
         --config_file {user_config_file} \
-        """ + "--fold {wildcards.fold} --tomo_name {wildcards.tomo_name} \
+        """ + "--fold None --tomo_name {wildcards.tomo_name} \
          --gpu $CUDA_VISIBLE_DEVICES"
 
 rule assemble_prediction:
@@ -251,7 +201,7 @@ rule assemble_prediction:
         python3 {scriptdir}/assemble_prediction.py \
         --pythonpath {srcdir} \
         --config_file {user_config_file} \
-        """ + "--fold {wildcards.fold} --tomo_name {wildcards.tomo_name}"
+        """ + "--fold None --tomo_name {wildcards.tomo_name}"
 
 rule postprocess_prediction:
     conda:
@@ -259,7 +209,7 @@ rule postprocess_prediction:
     input:
          assemble_probability_map_done
     output:
-          postprocess_prediction_done if config["cross_validation"]["active"] else postprocess_prediction_done_nocv
+          postprocess_prediction_done
     params:
           config=user_config_file,
           logdir=config["cluster"]["logdir"],
@@ -273,13 +223,13 @@ rule postprocess_prediction:
         python3 {scriptdir}/clustering_and_cleaning.py \
         --pythonpath {srcdir} \
         --config_file {user_config_file} \
-        """ + "--fold {wildcards.fold} --tomo_name {wildcards.tomo_name}"
+        """ + "--fold None --tomo_name {wildcards.tomo_name}"
 
 rule particle_picking_evaluation:
     conda:
          "environment.yaml"
     input:
-         postprocess_prediction_done if config["cross_validation"]["active"] else postprocess_prediction_done_nocv
+         postprocess_prediction_done
     output:
           file=particle_picking_pr_done
     params:
@@ -295,13 +245,13 @@ rule particle_picking_evaluation:
         python3 {scriptdir}/particle_picking_evaluation.py \
         --pythonpath {srcdir} \
         --config_file {user_config_file} \
-        """ + "--fold {wildcards.fold} --tomo_name {wildcards.tomo_name}"
+        """ + "--fold None --tomo_name {wildcards.tomo_name}"
 
 rule segmentation_evaluation:
     conda:
          "environment.yaml"
     input:
-         file=postprocess_prediction_done if config["cross_validation"]["active"] else postprocess_prediction_done_nocv
+         file=postprocess_prediction_done
     output:
           file=dice_evaluation_done
     params:
@@ -317,19 +267,19 @@ rule segmentation_evaluation:
         python3 {scriptdir}/segmentation_evaluation.py \
         --pythonpath {srcdir} \
         --config_file {user_config_file} \
-        """ + "--fold {wildcards.fold} --tomo_name {wildcards.tomo_name}"
+        """ + "--fold None --tomo_name {wildcards.tomo_name}"
 
 
 # stats_done = config.output_dir + "/predictions/." + model_name + "/" + \
-#                     config.pred_class + "/.{fold}.global_eval_snakemake".format(fold=str(fold))
+#                     config.pred_class + "/.None.global_eval_snakemake"
 #
 # rule aggregate_stats:
 #     conda:
 #           "environment.yaml"
 #     input:
-#           segm_evaluate_set_done_file=expand([dice_evaluation_done], tomo_name=prediction_tomos, fold=folds)
+#           segm_evaluate_set_done_file=expand([dice_evaluation_done], tomo_name=prediction_tomos)
 #     output:
-#           done=[stats_done,model_name] if config["cross_validation"]["active"] else done_training_pattern
+#           done=done_training_pattern
 #     params:
 #           config=user_config_file,
 #           logdir=config["cluster"]["logdir"],
@@ -345,7 +295,7 @@ rule segmentation_evaluation:
 #         python3 {scriptdir}/training.py \
 #         --pythonpath {srcdir} \
 #         --config_file {user_config_file} \
-#         """ + "--fold {wildcards.fold} --gpu $CUDA_VISIBLE_DEVICES"
+#         """ + "--fold None --gpu $CUDA_VISIBLE_DEVICES"
 
 
 #rule filter:
@@ -366,4 +316,4 @@ rule segmentation_evaluation:
 #        python3 {scriptdir}/match_spectrum.py \
 #        --pythonpath {srcdir} \
 #        --config_file {user_config_file} \
-#        """ + "--fold {wildcards.fold} --tomo_name {wildcards.tomo_name}"
+#        """ + "--fold None --tomo_name {wildcards.tomo_name}"
