@@ -1,6 +1,8 @@
 import argparse
 import sys
 
+import numpy as np
+
 parser = argparse.ArgumentParser()
 parser.add_argument("-gpu", "--gpu", help="cuda visible devices", type=str)
 parser.add_argument("-pythonpath", "--pythonpath", type=str)
@@ -18,14 +20,18 @@ import ast
 import torch
 import torch.nn as nn
 import warnings
+import pandas as pd
 
 from collections import OrderedDict
 from file_actions.writers.h5 import segment_and_write
 from constants.config import Config, get_model_name, model_descriptor_from_config
 from networks.io import get_device
 from networks.unet import UNet3D
+from constants.dataset_tables import DatasetTableHeader
+from file_actions.readers.tomograms import load_tomogram
 from paths.pipeline_dirs import testing_partition_path
 from networks.utils import get_training_testing_lists
+
 gpu = args.gpu
 if gpu is None:
     print("No CUDA_VISIBLE_DEVICES passed...")
@@ -112,8 +118,20 @@ if run_job:
     model.load_state_dict(checkpoint['model_state_dict'])
     model = model.eval()
 
+    DTHeader = DatasetTableHeader(processing_tomo=config.processing_tomo, filtering_mask=config.region_mask)
+    df = pd.read_csv(config.dataset_table, dtype={"tomo_name": str})
+    df[DTHeader.tomo_name] = df[DTHeader.tomo_name].astype(str)
+    tomo_df = df[df[DTHeader.tomo_name] == tomo_name]
+    path_to_raw = tomo_df.iloc[0][config.processing_tomo]
+    intersecting_mask_path = tomo_df.iloc[0][config.region_mask]
+    raw_dataset = load_tomogram(path_to_dataset=path_to_raw, dtype=float)
+    mean_val = np.mean(raw_dataset)
+    std_val = np.std(raw_dataset)
+    del raw_dataset
+
     print("Segmenting tomo", tomo_name)
-    segment_and_write(data_path=partition_path, model=model, label_name=model_name)
+    segment_and_write(data_path=partition_path, model=model, label_name=model_name, mean_value=mean_val,
+                      std_value=std_val)
     print("The segmentation has finished!")
 
 # For snakemake:

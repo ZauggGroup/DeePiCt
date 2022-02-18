@@ -58,7 +58,7 @@ else:
     raw_dataset = load_tomogram(path_to_dataset=path_to_raw, dtype=float)
     if isinstance(intersecting_mask_path, float):
         print("No region mask file available.")
-        intersecting_mask = np.ones_like(raw_dataset)
+        intersecting_mask = np.ones_like(raw_dataset, dtype=np.int8)
     else:
         intersecting_mask_path = tomo_df.iloc[0][config.region_mask]
         intersecting_mask = load_tomogram(path_to_dataset=intersecting_mask_path)

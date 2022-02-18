@@ -23,7 +23,7 @@ import numpy as np
 from file_actions.readers.tomograms import load_tomogram
 from file_actions.writers.csv import build_tom_motive_list
 from file_actions.writers.tomogram import write_tomogram
-from tomogram_utils.coordinates_toolbox.clustering import get_cluster_centroids, \
+from tomogram_utils.coordinates_toolbox.clustering_slower_version import get_cluster_centroids, \
     get_cluster_centroids_in_contact, get_cluster_centroids_colocalization
 from paths.pipeline_dirs import get_probability_map_path, get_post_processed_prediction_path
 from constants.config import Config
@@ -143,8 +143,8 @@ if run_job:
     clusters_output_path = get_post_processed_prediction_path(output_dir=config.output_dir, model_name=model_name,
                                                               tomo_name=tomo_name, semantic_class=config.pred_class)
     print("clusters_output_path", clusters_output_path)
-    clusters_output = 1*(clusters_labeled_by_size > 0)
-    write_tomogram(output_path=clusters_output_path, tomo_data=clusters_output)
+    clusters_labeled_by_size[clusters_labeled_by_size > 0] = 1
+    write_tomogram(output_path=clusters_output_path, tomo_data=clusters_labeled_by_size)
 
     os.makedirs(tomo_output_dir, exist_ok=True)
     if calculate_motl:
