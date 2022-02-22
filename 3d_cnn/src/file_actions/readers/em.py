@@ -1,5 +1,6 @@
 import numpy as np
 
+
 def read_em(path_to_emfile: str) -> tuple:
     """
     Function that reads a .em dataset (in the tom format).

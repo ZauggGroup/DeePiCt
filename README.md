@@ -1,13 +1,17 @@
-# Convolutional networks for supervised mining of intracellular molecular landscapes.
+# DeePiCt 
+Source code for the paper: 
 
-Manuscript in preparation.
-
-Authors: Irene de Teresa*, Sara K. Goetz*, Alexander Mattausch, Frosina Stojanovska, Christian Zimmerli, Mauricio Toro-Nahuelpan, Dorothy W.C. Cheng, Fergus Tollervey, Constantin Pape, Martin Beck, Anna Kreshuk, Julia Mahamid and Judith Zaugg.
+de Teresa, I.\*, Goetz S.K.\*, Mattausch, A., Stojanovska, F., Zimmerli C., Toro-Nahuelpan M., 
+Cheng, D.W.C., Tollervey, F. , Pape, C., Beck, M., Kreshuk, A., Mahamid, J. and Zaugg, J. 
+Convolutional networks for supervised mining of intracellular molecular landscapes.
+In preparation.
 
 ## Table of Contents
 1. [Introduction](#Introduction)
 2. [Installation](#Installation)
 3. [How to run](#How_to_run)
+4. [Colab Notebooks](#Colab)
+5. [useful_scripts](#useful_scripts)
 ## 1. Introduction <a name="Introduction"></a>
 With improved instrumentation and sample preparation protocols, a large number of high-quality 
 cryo-ET images are rapidly being generated in laboratories, opening the possibility to conduct 
@@ -19,10 +23,13 @@ segmentation and particle localization in cryo-electron tomography. DeePiCt comb
 convolutional networks: a 2D CNN for segmentation of cellular compartments (e.g. organelles or cytosol),
 and a 3D CNN for particle localization and structure segmentation. 
 
-Figure 1. Segmentation of fatty-acid synthases (FAS), 
-ribosomes and membranes in a *S. pombe* cryo-tomogram.
 
-![Segmentation of fatty-acid synthases (FAS), ribosomes and membranes in a cryo-tomogram from S.pombe](./images/repo-image.001.png?raw=true)
+![Segmentation of fatty-acid synthases (FAS), ribosomes and membranes in a cryo-tomogram from S.pombe](./images/workflow.png?raw=true)
+
+__Figure 1 | DeePiCt's Workflow for Segmentation of cellular structures.__ a. Both the 2D CNN and the
+3D CNN for DeePiCt workflow are variations of the U-Net architecture (Ronnenberg et al., 2015). 
+b. An example of DeePict's workflow for the segmentation of membranes and the localization of 
+fatty-acid synthases (FAS) and cytosolic ribosomes in a *S. pombe* cryo-tomogram.
 
 ## 2. Installation<a name="Installation"></a>
 
@@ -98,4 +105,35 @@ configuration file -with the structure given in the examples (see each of the
 (notice that, to run locally the deploy_cluster.sh script can be exchanged by deploy_local.sh).
 
 ### 1. Configuration file structure
-See each of the 2d_cnn/README.md and 2d_cnn/README.md files.
+We refer to the 2d_cnn/README.md and 2d_cnn/README.md files for corresponding specifications.
+
+## 4. Colab notebooks <a name="Colab"></a>
+
+## 5. Useful scripts <a name="useful_scripts"></a>
+
+A number of extra useful scripts can be found in the folder `useful_scripts/`.
+`python useful_scripts/<script_name> --help` to learn how to use it.
+
+Below the list.
+
+- `motl2sph_mask.py`
+
+Script that converts coordinate lists into spherical masks, to produce training data for the
+3D CNN. Example:
+```
+python DeePiCt/useful_scripts/motl2sph_mask.py -r 3 -motl test_motl.csv -o \
+Downloads/test_mask.mrc -shape 10 10 10 -value 1
+```
+
+- `elliptical_distance_constraint.py`
+
+Script to merge several lists of coordinates into a single one, avoiding duplicates and imposing
+elliptical distance constrains to respect (possibly different) minimal distance between points 
+along axis x, y, z. The elliptic coefficients a b and c represent the corresponding 
+minimum distance in voxels. Example:
+```
+python DeePiCt/useful_scripts/elliptical_distance_constraint.py --abc 1 1 1 -f test_motl1.csv test_motl2.csv \
+-o merged_list.csv 
+```
+
+
