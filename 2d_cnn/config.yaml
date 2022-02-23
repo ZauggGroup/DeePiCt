@@ -59,5 +59,5 @@ prediction:
 postprocessing:               # 3D postprocessing of predictions
   active: false
   sigma: 5                    # Sigma for 1D gaussian filter along z-axis
-  threshold: 0.75             # Threshold to apply. Set to 0 to disable.
+  threshold: 0.5             # Threshold to apply. Set to 0 to disable.
 debug: false                  # Print some debugging output
