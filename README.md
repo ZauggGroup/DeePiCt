@@ -1,10 +1,12 @@
 # DeePiCt 
 Source code for the paper: 
 
+Convolutional networks for supervised mining of molecular patterns within cellular context.
+In preparation.
+
 de Teresa, I.\*, Goetz S.K.\*, Mattausch, A., Stojanovska, F., Zimmerli C., Toro-Nahuelpan M., 
 Cheng, D.W.C., Tollervey, F. , Pape, C., Beck, M., Kreshuk, A., Mahamid, J. and Zaugg, J. 
-Convolutional networks for supervised mining of intracellular molecular landscapes.
-In preparation.
+
 
 ## Table of Contents
 1. [Introduction](#Introduction)
