@@ -114,7 +114,7 @@ We refer to the 2d_cnn/README.md and 2d_cnn/README.md files for corresponding sp
 
 ## 5. Trained Models <a name="Models"></a>
 Trained models are available here: https://oc.embl.de/index.php/apps/files/?dir=/DeePiCt_models&fileid=28894500
-All models were trained with data (4-times binned, unbinned pixel size 3.37 A)pre-processed using the spectrum matching filter with spectrum_TS_001.tsv.  
+All models were trained with cryo-ET data (4-times binned, unbinned pixel size 3.37 A) pre-processed using the spectrum matching filter with spectrum_TS_001.tsv.  
 
 ## 6. Useful Scripts <a name="useful_scripts"></a>
 
