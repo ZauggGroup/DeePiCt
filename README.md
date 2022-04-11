@@ -13,7 +13,8 @@ Cheng, D.W.C., Tollervey, F. , Pape, C., Beck, M., Kreshuk, A., Mahamid, J. and 
 2. [Installation](#Installation)
 3. [How to run](#How_to_run)
 4. [Colab Notebooks](#Colab)
-5. [useful_scripts](#useful_scripts)
+5. [Trained Models](#Models)
+6. [Useful_Scripts](#useful_scripts)
 ## 1. Introduction <a name="Introduction"></a>
 With improved instrumentation and sample preparation protocols, a large number of high-quality 
 cryo-ET images are rapidly being generated in laboratories, opening the possibility to conduct 
@@ -109,9 +110,13 @@ configuration file -with the structure given in the examples (see each of the
 ### 1. Configuration file structure
 We refer to the 2d_cnn/README.md and 2d_cnn/README.md files for corresponding specifications.
 
-## 4. Colab notebooks <a name="Colab"></a>
+## 4. Colab Notebooks <a name="Colab"></a>
 
-## 5. Useful scripts <a name="useful_scripts"></a>
+## 5. Trained Models <a name="Models"></a>
+Trained models are available here: https://oc.embl.de/index.php/apps/files/?dir=/DeePiCt_models&fileid=28894500
+All models were trained with data (4-times binned, unbinned pixel size 3.37 A)pre-processed using the spectrum matching filter with spectrum_TS_001.tsv.  
+
+## 6. Useful Scripts <a name="useful_scripts"></a>
 
 A number of extra useful scripts can be found in the folder `useful_scripts/`.
 `python useful_scripts/<script_name> --help` to learn how to use it.
