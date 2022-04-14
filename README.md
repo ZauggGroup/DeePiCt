@@ -108,7 +108,7 @@ configuration file -with the structure given in the examples (see each of the
 (notice that, to run locally the deploy_cluster.sh script can be exchanged by deploy_local.sh).
 
 ### 1. Configuration file structure
-We refer to the 2d_cnn/README.md and 2d_cnn/README.md files for corresponding specifications.
+We refer to the `2d_cnn/README.md` and `2d_cnn/README.md` files for corresponding specifications.
 
 ## 4. Colab Notebooks <a name="Colab"></a>
 
@@ -128,8 +128,8 @@ Below the list.
 Script that converts coordinate lists into spherical masks, to produce training data for the
 3D CNN. Example:
 ```
-python DeePiCt/useful_scripts/motl2sph_mask.py -r 3 -motl test_motl.csv -o \
-Downloads/test_mask.mrc -shape 10 10 10 -value 1
+python DeePiCt/useful_scripts/motl2sph_mask.py -r 8 -motl test_motl.csv -o \
+Downloads/test_mask.mrc -shape 900 900 500 -value 1
 ```
 
 - `elliptical_distance_constraint.py`
@@ -139,7 +139,7 @@ elliptical distance constrains to respect (possibly different) minimal distance 
 along axis x, y, z. The elliptic coefficients a b and c represent the corresponding 
 minimum distance in voxels. Example:
 ```
-python DeePiCt/useful_scripts/elliptical_distance_constraint.py --abc 1 1 1 -f test_motl1.csv test_motl2.csv \
+python DeePiCt/useful_scripts/elliptical_distance_constraint.py --abc 9 9 15 -f test_motl1.csv test_motl2.csv \
 -o merged_list.csv 
 ```
 
