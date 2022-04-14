@@ -139,3 +139,6 @@ evaluation:
     statistics_file: "dice_eval.csv"     # statistics file where the dice coefficient will be stored
 ```
 
+ #### Note
+ 
+ During training, 3D models are saved alog with the parameters set in the configuration file. In this way, it is possible to track training conditions for model comparison and to reload the model for inference.
