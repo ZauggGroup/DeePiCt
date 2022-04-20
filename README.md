@@ -115,11 +115,11 @@ We provide two notebooks to try out the prediction of 2D and 3D CNN trained mode
 
 To predict cytosol or organelles, you can use the 2D trained models: 
 
-### `DeePiCt_predict2d.ipynb` [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ZauggGroup/DeePiCt/blob/colab_notebook/DeePiCt_predict2d.ipynb).
+### `DeePiCt_predict2d.ipynb` [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ZauggGroup/DeePiCt/blob/main/DeePiCt_predict2d.ipynb).
 
 To predict ribosome, membrane, microtubules or FAS, you can use the 3D trained models:
 
-### `DeePiCt_predict3d.ipynb` [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ZauggGroup/DeePiCt/blob/colab_notebook/DeePiCt_predict3d.ipynb).
+### `DeePiCt_predict3d.ipynb` [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ZauggGroup/DeePiCt/blob/main/DeePiCt_predict3d.ipynb).
 
 ## 5. Trained Models <a name="Models"></a>
 Trained models are available [here](https://www.dropbox.com/sh/oavbtcvusi07xbh/AADmnwIIsLUH1DuJ03IdDO7Ta?dl=0). 
