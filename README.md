@@ -36,8 +36,7 @@ fatty-acid synthases (FAS) and cytosolic ribosomes in a *S. pombe* cryo-tomogram
 
 ## 2. Installation<a name="Installation"></a>
 
-Both 2D and 3D CNN pipelines require a conda installation, and are run via the Snakemake workflow management system  
-(https://snakemake.readthedocs.io/en/stable/).
+Both 2D and 3D CNN pipelines require a conda installation, and are run via the [Snakemake workflow management system](https://snakemake.readthedocs.io/en/stable/).
 
 ### Requirements and conda environment
 
@@ -46,7 +45,7 @@ Package Installation (miniconda, Pytorch and Keras).
 #### Miniconda
 
 Download the latest miniconda3 release, according to your OS and processor (modify the Miniconda3-latest-Linux-x86_64.sh
-file according to the instructions at https://docs.conda.io/en/latest/miniconda.html):
+file according to the instructions available [here](https://docs.conda.io/en/latest/miniconda.html)):
 
 ```bash
 cd foldertodownload
@@ -93,7 +92,7 @@ cd /folder/where/the/repository/will/be/cloned
 git clone https://github.com/mrmattuschka/DeePiCt
 ```
 
-## How to run<a name="How_to_run"></a>
+## 3. How to run<a name="How_to_run"></a>
 
 Go to the folder where you plan to run the experiments. Create a
 configuration file -with the structure given in the examples (see each of the 
@@ -107,18 +106,28 @@ configuration file -with the structure given in the examples (see each of the
 
 (notice that, to run locally the deploy_cluster.sh script can be exchanged by deploy_local.sh).
 
-### 1. Configuration file structure
-We refer to the `2d_cnn/README.md` and `2d_cnn/README.md` files for corresponding specifications.
+### Configuration <a name="Configuration"></a>
+We refer to the [2d_cnn/README.md](2d_cnn/README.md) and [3d_cnn/README.md](3d_cnn/README.md) files for corresponding specifications.
 
 ## 4. Colab Notebooks <a name="Colab"></a>
 
+We provide two notebooks to try out the prediction of 2D and 3D CNN trained models on one tomogram. The the spectrum matching filter is not included in the notebooks. This step should be done beforehand, following the instructions [here](spectrum_filter/README.md). 
+
+To predict cytosol or organelles, you can use the 2D trained models: 
+
+### `DeePiCt_predict2d.ipynb` [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ZauggGroup/DeePiCt/blob/colab_notebook/DeePiCt_predict2d.ipynb).
+
+To predict ribosome, membrane, microtubules or FAS, you can use the 3D trained models:
+
+### `DeePiCt_predict3d.ipynb` [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ZauggGroup/DeePiCt/blob/colab_notebook/DeePiCt_predict3d.ipynb).
+
 ## 5. Trained Models <a name="Models"></a>
-Trained models are available here: https://oc.embl.de/index.php/apps/files/?dir=/DeePiCt_models&fileid=28894500
+Trained models are available [here](https://www.dropbox.com/sh/oavbtcvusi07xbh/AADmnwIIsLUH1DuJ03IdDO7Ta?dl=0). 
 All models were trained with cryo-ET data (4-times binned, unbinned pixel size 3.37 A) pre-processed using the spectrum matching filter with spectrum_TS_001.tsv.  
 
 ## 6. Useful Scripts <a name="useful_scripts"></a>
 
-A number of extra useful scripts can be found in the folder `useful_scripts/`.
+A number of extra useful scripts can be found in the folder [`useful_scripts/`](useful_scripts/).
 `python useful_scripts/<script_name> --help` to learn how to use it.
 
 Below the list.
