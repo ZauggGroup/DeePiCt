@@ -1,17 +1,20 @@
 # DeePiCt 
 Source code for the paper: 
 
+Convolutional networks for supervised mining of molecular patterns within cellular context.
+In preparation.
+
 de Teresa, I.\*, Goetz S.K.\*, Mattausch, A., Stojanovska, F., Zimmerli C., Toro-Nahuelpan M., 
 Cheng, D.W.C., Tollervey, F. , Pape, C., Beck, M., Kreshuk, A., Mahamid, J. and Zaugg, J. 
-Convolutional networks for supervised mining of intracellular molecular landscapes.
-In preparation.
+
 
 ## Table of Contents
 1. [Introduction](#Introduction)
 2. [Installation](#Installation)
 3. [How to run](#How_to_run)
 4. [Colab Notebooks](#Colab)
-5. [useful_scripts](#useful_scripts)
+5. [Trained Models](#Models)
+6. [Useful_Scripts](#useful_scripts)
 ## 1. Introduction <a name="Introduction"></a>
 With improved instrumentation and sample preparation protocols, a large number of high-quality 
 cryo-ET images are rapidly being generated in laboratories, opening the possibility to conduct 
@@ -33,8 +36,7 @@ fatty-acid synthases (FAS) and cytosolic ribosomes in a *S. pombe* cryo-tomogram
 
 ## 2. Installation<a name="Installation"></a>
 
-Both 2D and 3D CNN pipelines require a conda installation, and are run via the Snakemake workflow management system  
-(https://snakemake.readthedocs.io/en/stable/).
+Both 2D and 3D CNN pipelines require a conda installation, and are run via the [Snakemake workflow management system](https://snakemake.readthedocs.io/en/stable/).
 
 ### Requirements and conda environment
 
@@ -43,7 +45,7 @@ Package Installation (miniconda, Pytorch and Keras).
 #### Miniconda
 
 Download the latest miniconda3 release, according to your OS and processor (modify the Miniconda3-latest-Linux-x86_64.sh
-file according to the instructions at https://docs.conda.io/en/latest/miniconda.html):
+file according to the instructions available [here](https://docs.conda.io/en/latest/miniconda.html)):
 
 ```bash
 cd foldertodownload
@@ -90,7 +92,7 @@ cd /folder/where/the/repository/will/be/cloned
 git clone https://github.com/mrmattuschka/DeePiCt
 ```
 
-## How to run<a name="How_to_run"></a>
+## 3. How to run<a name="How_to_run"></a>
 
 Go to the folder where you plan to run the experiments. Create a
 configuration file -with the structure given in the examples (see each of the 
@@ -104,14 +106,28 @@ configuration file -with the structure given in the examples (see each of the
 
 (notice that, to run locally the deploy_cluster.sh script can be exchanged by deploy_local.sh).
 
-### 1. Configuration file structure
-We refer to the 2d_cnn/README.md and 2d_cnn/README.md files for corresponding specifications.
+### Configuration <a name="Configuration"></a>
+We refer to the [2d_cnn/README.md](2d_cnn/README.md) and [3d_cnn/README.md](3d_cnn/README.md) files for corresponding specifications.
 
-## 4. Colab notebooks <a name="Colab"></a>
+## 4. Colab Notebooks <a name="Colab"></a>
 
-## 5. Useful scripts <a name="useful_scripts"></a>
+We provide two notebooks to try out the prediction of 2D and 3D CNN trained models on one tomogram. The the spectrum matching filter is not included in the notebooks. This step should be done beforehand, following the instructions [here](spectrum_filter/README.md). 
 
-A number of extra useful scripts can be found in the folder `useful_scripts/`.
+To predict cytosol or organelles, you can use the 2D trained models: 
+
+### `DeePiCt_predict2d.ipynb` [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ZauggGroup/DeePiCt/blob/colab_notebook/DeePiCt_predict2d.ipynb).
+
+To predict ribosome, membrane, microtubules or FAS, you can use the 3D trained models:
+
+### `DeePiCt_predict3d.ipynb` [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ZauggGroup/DeePiCt/blob/colab_notebook/DeePiCt_predict3d.ipynb).
+
+## 5. Trained Models <a name="Models"></a>
+Trained models are available [here](https://www.dropbox.com/sh/oavbtcvusi07xbh/AADmnwIIsLUH1DuJ03IdDO7Ta?dl=0). 
+All models were trained with cryo-ET data (4-times binned, unbinned pixel size 3.37 A) pre-processed using the spectrum matching filter with spectrum_TS_001.tsv.  
+
+## 6. Useful Scripts <a name="useful_scripts"></a>
+
+A number of extra useful scripts can be found in the folder [`useful_scripts/`](useful_scripts/).
 `python useful_scripts/<script_name> --help` to learn how to use it.
 
 Below the list.
@@ -121,8 +137,8 @@ Below the list.
 Script that converts coordinate lists into spherical masks, to produce training data for the
 3D CNN. Example:
 ```
-python DeePiCt/useful_scripts/motl2sph_mask.py -r 3 -motl test_motl.csv -o \
-Downloads/test_mask.mrc -shape 10 10 10 -value 1
+python DeePiCt/useful_scripts/motl2sph_mask.py -r 8 -motl test_motl.csv -o \
+Downloads/test_mask.mrc -shape 900 900 500 -value 1
 ```
 
 - `elliptical_distance_constraint.py`
@@ -132,7 +148,7 @@ elliptical distance constrains to respect (possibly different) minimal distance 
 along axis x, y, z. The elliptic coefficients a b and c represent the corresponding 
 minimum distance in voxels. Example:
 ```
-python DeePiCt/useful_scripts/elliptical_distance_constraint.py --abc 1 1 1 -f test_motl1.csv test_motl2.csv \
+python DeePiCt/useful_scripts/elliptical_distance_constraint.py --abc 9 9 15 -f test_motl1.csv test_motl2.csv \
 -o merged_list.csv 
 ```
 
