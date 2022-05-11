@@ -89,7 +89,7 @@ conda install -c anaconda keras-gpu=2.3.1
 
 ```bash
 cd /folder/where/the/repository/will/be/cloned
-git clone https://github.com/mrmattuschka/DeePiCt
+git clone https://github.com/ZauggGroup/DeePiCt.git
 ```
 
 ## 3. How to run<a name="How_to_run"></a>
