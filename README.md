@@ -125,10 +125,10 @@ To predict ribosome, membrane, microtubules or FAS, you can use the 3D trained m
 Trained models are available [here](https://www.dropbox.com/sh/oavbtcvusi07xbh/AADmnwIIsLUH1DuJ03IdDO7Ta?dl=0). 
 All models were trained with cryo-ET data (4-times binned, unbinned pixel size 3.37 A) pre-processed using the spectrum matching filter with spectrum_TS_001.tsv.  
 
-## 6. Useful Scripts <a name="useful_scripts"></a>
+## 6. Additional Scripts <a name="useful_scripts"></a>
 
-A number of extra useful scripts can be found in the folder [`useful_scripts/`](useful_scripts/).
-`python useful_scripts/<script_name> --help` to learn how to use it.
+A number of useful scripts can be found in the folder [`additional_scripts/`](additional_scripts/).
+`python additional_scripts/<script_name> --help` to learn how to use it.
 
 Below the list.
 
@@ -137,7 +137,7 @@ Below the list.
 Script that converts coordinate lists into spherical masks, to produce training data for the
 3D CNN. Example:
 ```
-python DeePiCt/useful_scripts/motl2sph_mask.py -r 8 -motl test_motl.csv -o \
+python DeePiCt/additional_scripts/motl2sph_mask.py -r 8 -motl test_motl.csv -o \
 Downloads/test_mask.mrc -shape 900 900 500 -value 1
 ```
 
@@ -148,7 +148,7 @@ elliptical distance constrains to respect (possibly different) minimal distance 
 along axis x, y, z. The elliptic coefficients a b and c represent the corresponding 
 minimum distance in voxels. Example:
 ```
-python DeePiCt/useful_scripts/elliptical_distance_constraint.py --abc 9 9 15 -f test_motl1.csv test_motl2.csv \
+python DeePiCt/additional_scripts/elliptical_distance_constraint.py --abc 9 9 15 -f test_motl1.csv test_motl2.csv \
 -o merged_list.csv 
 ```
 

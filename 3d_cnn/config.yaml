@@ -2,7 +2,7 @@
 dataset_table: "yeast_metadata.csv"   # Path to metadata csv file
 output_dir: "memb/out"                     # Output directory
 work_dir: "memb/work"                      # Destination directory of intermediate files
-model_path: "memb_ED_and_WT_first3d_model.pth"               # Output model using .pth extension
+model_path: "memb_model.pth"               # Output model using .pth extension
 
 # When running in the cluster:
 cluster:
@@ -37,6 +37,7 @@ training:
     batch_norm: True                 # boolean value
     encoder_dropout: 0               # dropout for encoder path
     decoder_dropout: 0.2             # dropout for decoder path
+    loss: "Dice"                     # Choose among: Dice (default), GeneralizedDice, Focal
 
   data_augmentation:
     rounds: 0                        # set to 0 to deactivate
