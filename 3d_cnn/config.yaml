@@ -1,5 +1,5 @@
 # General parameters for training and prediction:
-dataset_table: "yeast_metadata.csv"   # Path to metadata csv file
+dataset_table: "metadata.csv"   # Path to metadata csv file
 output_dir: "memb/out"                     # Output directory
 work_dir: "memb/work"                      # Destination directory of intermediate files
 model_path: "memb_model.pth"               # Output model using .pth extension
