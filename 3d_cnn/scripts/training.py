@@ -74,7 +74,7 @@ else:
 
     assert config.loss in {"Focal", "GeneralizedDice", "Dice"}, "Not a valid loss function."
     if config.loss == "Focal":
-        loss = FocalLoss(include_background=False, to_onehot_y=True)
+        loss = FocalLoss(include_background=False, to_onehot_y=False)
     elif config.loss == "GeneralizedDice":
         loss = GeneralizedDiceLoss()
     else:
