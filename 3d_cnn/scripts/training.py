@@ -147,12 +147,11 @@ else:
             save_unet_model(path_to_model=model_path, epoch=current_epoch,
                             net=net, optimizer=optimizer, loss=current_validation_loss,
                             model_descriptor=model_descriptor)
-        else:
-            print("Epoch =", current_epoch, " was not the best.")
-            print("The current best is epoch =", best_epoch)
-            save_unet_model(path_to_model=last_model_path, epoch=current_epoch,
-                            net=net, optimizer=optimizer, loss=current_validation_loss,
-                            model_descriptor=model_descriptor)
+        print("Epoch =", current_epoch, " was not the best.")
+        print("The current best is epoch =", best_epoch)
+        save_unet_model(path_to_model=last_model_path, epoch=current_epoch,
+                        net=net, optimizer=optimizer, loss=current_validation_loss,
+                        model_descriptor=model_descriptor)
     print("We have finished the training!")
     print("Best validation loss: {} of epoch {}".format(validation_loss, best_epoch))
     shutil.copy(src=model_path, dst=best_model_path)
