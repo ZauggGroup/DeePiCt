@@ -130,7 +130,7 @@ else:
     train_loader, val_loader = generate_data_loaders_data_augmentation(config=config,
                                                                        tomo_training_list=tomo_training_list,
                                                                        fold=fold)
-    for epoch in range(config.epochs):
+    for epoch in range(old_epoch, config.epochs):
         current_epoch = epoch + old_epoch
 
         train(model=net, loader=train_loader, optimizer=optimizer, loss_function=loss,
