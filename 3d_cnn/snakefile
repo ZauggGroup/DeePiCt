@@ -125,7 +125,7 @@ rule training_3dunet:
           walltime="2-05:00:00",
           nodes=1,
           cores=4,
-          memory="80G",
+          memory="200G",
           gres='#SBATCH -p gpu\n#SBATCH --gres=gpu:4'
     resources:
              gpu=4
