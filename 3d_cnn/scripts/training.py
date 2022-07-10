@@ -17,6 +17,7 @@ import ast
 
 import numpy as np
 
+import torch
 import torch.nn as nn
 import torch.optim as optim
 
@@ -36,6 +37,29 @@ from networks.visualizers import TensorBoard_multiclass
 from constants.config import Config, record_model
 from constants.config import get_model_name
 
+
+def load_checkpoint(filename: str):
+    device = get_device()
+    checkpoint = torch.load(filename, map_location=device)
+    model_descriptor = checkpoint['model_descriptor']
+    net_conf = {'final_activation': nn.Sigmoid(),
+                'depth': model_descriptor.depth,
+                'initial_features': model_descriptor.initial_features,
+                "out_channels": model_descriptor.output_classes,
+                "BN": model_descriptor.batch_norm,
+                "encoder_dropout": model_descriptor.encoder_dropout,
+                "decoder_dropout": model_descriptor.decoder_dropout}
+    net = UNet3D(**net_conf)
+    net = to_device(net=net, gpu=gpu)
+    start_epoch = checkpoint['epoch']
+    net.load_state_dict(checkpoint['model_state_dict'])
+    optimizer = optim.Adam(net.parameters())
+    optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+    validation_loss = checkpoint['loss']
+    # losslogger = checkpoint['losslogger']
+    return net, optimizer, start_epoch, validation_loss
+
+
 config = Config(args.config_file)
 gpu = args.gpu
 device = get_device()
@@ -43,6 +67,8 @@ fold = ast.literal_eval(args.fold)
 
 # Generate relevant dirs
 model_path, model_name = get_model_name(config, fold)
+last_model_path = model_path[:-4] + "_last.pth"
+best_model_path = model_path[:-4] + "_best.pth"
 print("model_path: ", model_path)
 if fold is None:
     snakemake_pattern = ".done_patterns/" + model_path + "_None.pth.done"
@@ -61,17 +87,6 @@ else:
     os.makedirs(log_path, exist_ok=True)
     os.makedirs(model_dir, exist_ok=True)
 
-    net_conf = {'final_activation': nn.Sigmoid(),
-                'depth': config.depth,
-                'initial_features': config.initial_features,
-                "out_channels": len(config.semantic_classes),
-                "BN": config.batch_norm,
-                "encoder_dropout": config.encoder_dropout,
-                "decoder_dropout": config.decoder_dropout}
-
-    net = UNet3D(**net_conf)
-    net = to_device(net=net, gpu=gpu)
-
     assert config.loss in {"Focal", "GeneralizedDice", "Dice"}, "Not a valid loss function."
     if config.loss == "Focal":
         loss = FocalLoss(include_background=False, to_onehot_y=False)
@@ -80,7 +95,6 @@ else:
     else:
         loss = DiceCoefficientLoss()
     loss = loss.to(device)
-    optimizer = optim.Adam(net.parameters())
     metric = loss
 
     tomo_training_list, tomo_testing_list = get_training_testing_lists(config=config, fold=fold)
@@ -90,9 +104,26 @@ else:
     lr_scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=0.1,
                                                         patience=10, verbose=True)
 
-    validation_loss = np.inf
-    best_epoch = -1
-    old_epoch = 0
+    if config.force_retrain:
+        print("do smthg")
+        net, optimizer, old_epoch, validation_loss = load_checkpoint(filename=model_path)
+        # TODO: save best and final model for distinction
+        best_epoch = old_epoch
+    else:
+        net_conf = {'final_activation': nn.Sigmoid(),
+                    'depth': config.depth,
+                    'initial_features': config.initial_features,
+                    "out_channels": len(config.semantic_classes),
+                    "BN": config.batch_norm,
+                    "encoder_dropout": config.encoder_dropout,
+                    "decoder_dropout": config.decoder_dropout}
+
+        net = UNet3D(**net_conf)
+        net = to_device(net=net, gpu=gpu)
+        validation_loss = np.inf
+        best_epoch = -1
+        old_epoch = 0
+        optimizer = optim.Adam(net.parameters())
 
     logger = TensorBoard_multiclass(log_dir=log_path, log_image_interval=1)
 
@@ -123,10 +154,14 @@ else:
         else:
             print("Epoch =", current_epoch, " was not the best.")
             print("The current best is epoch =", best_epoch)
-
+            save_unet_model(path_to_model=last_model_path, epoch=current_epoch,
+                            net=net, optimizer=optimizer, loss=current_validation_loss,
+                            model_descriptor=model_descriptor)
     print("We have finished the training!")
     print("Best validation loss: {} of epoch {}".format(validation_loss, best_epoch))
-
+    save_unet_model(path_to_model=best_model_path, epoch=current_epoch,
+                    net=net, optimizer=optimizer, loss=current_validation_loss,
+                    model_descriptor=model_descriptor)
 # For snakemake:
 print("snakemake_pattern:", snakemake_pattern)
 os.makedirs(os.path.dirname(snakemake_pattern), exist_ok=True)
