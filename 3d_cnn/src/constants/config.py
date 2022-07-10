@@ -60,6 +60,7 @@ class Config:
         self.encoder_dropout = config["training"]["unet_hyperparameters"]["encoder_dropout"]
         self.decoder_dropout = config["training"]["unet_hyperparameters"]["decoder_dropout"]
         self.model_hyperparameters = config["training"]["unet_hyperparameters"]
+        self.loss = config["training"]["unet_hyperparameters"]["loss"]
 
         self.pred_class = config["prediction"]["semantic_class"]
         self.pred_class_number = -1
@@ -141,5 +142,5 @@ def model_descriptor_from_config(config: Config, training_date=None, fold=None, 
                                        total_folds=config.total_folds, fold=fold, da_rounds=config.da_rounds,
                                        da_rot_angle=config.da_rot_angle, da_elastic_alpha=config.da_elastic_alpha,
                                        da_sigma_gauss=config.da_sigma_gauss, da_salt_pepper_p=config.da_salt_pepper_p,
-                                       da_salt_pepper_ampl=config.da_salt_pepper_ampl)
+                                       da_salt_pepper_ampl=config.da_salt_pepper_ampl, loss=config.loss)
     return model_descriptor

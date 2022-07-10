@@ -149,7 +149,7 @@ class DiceCoefficientLoss(nn.Module):
             channel_target = target[:, channel, ...].float()
             intersection = (channel_prediction * channel_target).sum()
             denominator = (channel_prediction * channel_prediction).sum() + (
-                channel_target * channel_target).sum()
+                    channel_target * channel_target).sum()
             dice_loss += (1 - 2 * intersection / denominator.clamp(
                 min=self.eps))
         dice_loss /= channels  # normalize loss
@@ -175,7 +175,7 @@ class TanhDiceLoss(nn.Module):
             channel_target = target[:, channel, ...].float()
             intersection = (channel_prediction * channel_target).sum()
             denominator = (channel_prediction * channel_prediction).sum() + (
-                channel_target * channel_target).sum()
+                    channel_target * channel_target).sum()
             dice_loss += (1 - 2 * intersection / denominator.clamp(
                 min=self.eps))
         dice_loss /= channels  # normalize loss

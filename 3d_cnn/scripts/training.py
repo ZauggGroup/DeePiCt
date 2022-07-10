@@ -20,6 +20,9 @@ import numpy as np
 import torch.nn as nn
 import torch.optim as optim
 
+from monai.losses.dice import GeneralizedDiceLoss
+from monai.losses.focal_loss import FocalLoss
+
 from networks.io import get_device, to_device
 from networks.utils import get_training_testing_lists, \
     generate_data_loaders_data_augmentation
@@ -69,7 +72,13 @@ else:
     net = UNet3D(**net_conf)
     net = to_device(net=net, gpu=gpu)
 
-    loss = DiceCoefficientLoss()
+    assert config.loss in {"Focal", "GeneralizedDice", "Dice"}, "Not a valid loss function."
+    if config.loss == "Focal":
+        loss = FocalLoss(include_background=False, to_onehot_y=False)
+    elif config.loss == "GeneralizedDice":
+        loss = GeneralizedDiceLoss()
+    else:
+        loss = DiceCoefficientLoss()
     loss = loss.to(device)
     optimizer = optim.Adam(net.parameters())
     metric = loss

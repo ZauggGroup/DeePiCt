@@ -30,6 +30,7 @@ from constants.config import Config, model_descriptor_from_config
 from plotting.statistics import generate_performance_plots
 from constants.config import get_model_name
 from networks.io import get_device
+from networks.utils import get_training_testing_lists
 
 config_file = args.config_file
 config = Config(user_config_file=config_file)
@@ -41,7 +42,6 @@ print("model_name", model_name)
 snakemake_pattern = config.output_dir + "/predictions/" + model_name + "/" + tomo_name + "/" + config.pred_class + \
                     "/pr_radius_" + str(config.pr_tolerance_radius) + \
                     "/detected/.{fold}.done_pp_snakemake".format(fold=str(fold))
-from networks.utils import get_training_testing_lists
 
 if isinstance(fold, int):
     tomo_training_list, tomo_testing_list = get_training_testing_lists(config=config, fold=fold)
@@ -142,6 +142,30 @@ if run_job:
         }, model_path)
 
     print(statistics_file)
+    write_statistics_pp(statistics_file=statistics_file, tomo_name=tomo_name, model_descriptor=model_descriptor,
+                        statistic_variable="tp",
+                        statistic_value=len(tp_true), pr_radius=config.pr_tolerance_radius,
+                        min_cluster_size=config.min_cluster_size, max_cluster_size=config.max_cluster_size,
+                        threshold=config.threshold, prediction_class=config.pred_class,
+                        clustering_connectivity=config.clustering_connectivity, processing_tomo=config.processing_tomo,
+                        region_mask=config.region_mask)
+
+    write_statistics_pp(statistics_file=statistics_file, tomo_name=tomo_name, model_descriptor=model_descriptor,
+                        statistic_variable="fp",
+                        statistic_value=len(fp_pred), pr_radius=config.pr_tolerance_radius,
+                        min_cluster_size=config.min_cluster_size, max_cluster_size=config.max_cluster_size,
+                        threshold=config.threshold, prediction_class=config.pred_class,
+                        clustering_connectivity=config.clustering_connectivity, processing_tomo=config.processing_tomo,
+                        region_mask=config.region_mask)
+
+    write_statistics_pp(statistics_file=statistics_file, tomo_name=tomo_name, model_descriptor=model_descriptor,
+                        statistic_variable="fn",
+                        statistic_value=len(fn), pr_radius=config.pr_tolerance_radius,
+                        min_cluster_size=config.min_cluster_size, max_cluster_size=config.max_cluster_size,
+                        threshold=config.threshold, prediction_class=config.pred_class,
+                        clustering_connectivity=config.clustering_connectivity, processing_tomo=config.processing_tomo,
+                        region_mask=config.region_mask)
+
     write_statistics_pp(statistics_file=statistics_file, tomo_name=tomo_name, model_descriptor=model_descriptor,
                         statistic_variable="auPRC",
                         statistic_value=round(auPRC, 4), pr_radius=config.pr_tolerance_radius,

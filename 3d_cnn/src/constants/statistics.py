@@ -37,6 +37,7 @@ class ModelDescriptor:
     da_sigma_gauss: float
     da_salt_pepper_p: float
     da_salt_pepper_ampl: float
+    loss: str
 
     @staticmethod
     def from_data_frame(df: pd.DataFrame) -> "ModelDescriptor":
