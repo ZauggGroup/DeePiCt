@@ -101,12 +101,11 @@ else:
     model_descriptor = record_model(config=config, training_tomos=tomo_training_list,
                                     testing_tomos=tomo_testing_list, fold=fold)
 
-    lr_scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=0.1,
-                                                        patience=10, verbose=True)
+
 
     if config.force_retrain:
         print("do smthg")
-        net, optimizer, old_epoch, validation_loss = load_checkpoint(filename=model_path)
+        net, optimizer, old_epoch, validation_loss = load_checkpoint(filename=last_model_path)
         # TODO: save best and final model for distinction
         best_epoch = old_epoch
     else:
@@ -126,7 +125,8 @@ else:
         optimizer = optim.Adam(net.parameters())
 
     logger = TensorBoard_multiclass(log_dir=log_path, log_image_interval=1)
-
+    lr_scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=0.1,
+                                                        patience=10, verbose=True)
     train_loader, val_loader = generate_data_loaders_data_augmentation(config=config,
                                                                        tomo_training_list=tomo_training_list,
                                                                        fold=fold)
