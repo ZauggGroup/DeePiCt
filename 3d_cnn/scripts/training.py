@@ -16,7 +16,7 @@ import os
 import ast
 
 import numpy as np
-
+import shutil
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -101,8 +101,6 @@ else:
     model_descriptor = record_model(config=config, training_tomos=tomo_training_list,
                                     testing_tomos=tomo_testing_list, fold=fold)
 
-
-
     if config.force_retrain:
         print("do smthg")
         net, optimizer, old_epoch, validation_loss = load_checkpoint(filename=last_model_path)
@@ -159,9 +157,7 @@ else:
                             model_descriptor=model_descriptor)
     print("We have finished the training!")
     print("Best validation loss: {} of epoch {}".format(validation_loss, best_epoch))
-    save_unet_model(path_to_model=best_model_path, epoch=current_epoch,
-                    net=net, optimizer=optimizer, loss=current_validation_loss,
-                    model_descriptor=model_descriptor)
+    shutil.copy(src=model_path, dst=best_model_path)
 # For snakemake:
 print("snakemake_pattern:", snakemake_pattern)
 os.makedirs(os.path.dirname(snakemake_pattern), exist_ok=True)
