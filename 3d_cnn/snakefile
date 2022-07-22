@@ -41,7 +41,7 @@ model_path = config["model_path"]
 model_name = os.path.basename(config["model_path"])[:-4]
 
 training_part_pattern = work_dir + "/training_data/{tomo_name}/partition.h5"
-done_training_pattern = model_path
+done_training_pattern = model_path[:-4] + "_best.pth"
 testing_part_pattern = work_dir + "/testing_data/{tomo_name}/partition.h5"
 done_testing_part_pattern = work_dir + "/testing_data/{tomo_name}/partition.h5"
 segmented_part_pattern = ".done_patterns/" + model_name + ".{tomo_name}.None.segmentation.done"
@@ -125,7 +125,7 @@ rule training_3dunet:
           walltime="2-05:00:00",
           nodes=1,
           cores=4,
-          memory="80G",
+          memory="200G",
           gres='#SBATCH -p gpu\n#SBATCH --gres=gpu:4'
     resources:
              gpu=4
@@ -216,7 +216,7 @@ rule postprocess_prediction:
           walltime="08:30:00",
           nodes=1,
           cores=4,
-          memory="30G",
+          memory="80G",
           gres=''
     shell:
          f"""

@@ -37,7 +37,7 @@ training:
     batch_norm: True                 # boolean value
     encoder_dropout: 0               # dropout for encoder path
     decoder_dropout: 0.2             # dropout for decoder path
-    loss: "Dice"                     # Choose among: Dice (default), GeneralizedDice, Focal
+    loss: "Dice"                     # Choose among: Dice (default), GeneralizedDice
 
   data_augmentation:
     rounds: 0                        # set to 0 to deactivate
