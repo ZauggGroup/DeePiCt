@@ -88,9 +88,7 @@ else:
     os.makedirs(model_dir, exist_ok=True)
 
     assert config.loss in {"Focal", "GeneralizedDice", "Dice"}, "Not a valid loss function."
-    if config.loss == "Focal":
-        loss = FocalLoss(include_background=False, to_onehot_y=False)
-    elif config.loss == "GeneralizedDice":
+    if config.loss == "GeneralizedDice":
         loss = GeneralizedDiceLoss()
     else:
         loss = DiceCoefficientLoss()
@@ -127,7 +125,8 @@ else:
                                                                        tomo_training_list=tomo_training_list,
                                                                        fold=fold)
     for epoch in range(old_epoch, config.epochs):
-        current_epoch = epoch + old_epoch
+        current_epoch = epoch
+
 
         train(model=net, loader=train_loader, optimizer=optimizer, loss_function=loss,
               epoch=current_epoch, device=device, log_interval=1, tb_logger=logger,

@@ -216,7 +216,7 @@ rule postprocess_prediction:
           walltime="08:30:00",
           nodes=1,
           cores=4,
-          memory="30G",
+          memory="80G",
           gres=''
     shell:
          f"""
