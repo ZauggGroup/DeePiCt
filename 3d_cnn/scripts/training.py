@@ -99,7 +99,7 @@ else:
     model_descriptor = record_model(config=config, training_tomos=tomo_training_list,
                                     testing_tomos=tomo_testing_list, fold=fold)
 
-    if config.force_retrain:
+    if config.force_retrain and os.path.isfile(last_model_path):
         net, optimizer, old_epoch, validation_loss = load_checkpoint(filename=last_model_path)
         best_net, best_optimizer, best_epoch, best_validation_loss = load_checkpoint(filename=model_path)
     else:
