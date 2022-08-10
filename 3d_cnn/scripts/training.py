@@ -22,7 +22,6 @@ import torch.nn as nn
 import torch.optim as optim
 
 from monai.losses.dice import GeneralizedDiceLoss
-from monai.losses.focal_loss import FocalLoss
 
 from networks.io import get_device, to_device
 from networks.utils import get_training_testing_lists, \
@@ -87,7 +86,7 @@ else:
     os.makedirs(log_path, exist_ok=True)
     os.makedirs(model_dir, exist_ok=True)
 
-    assert config.loss in {"Focal", "GeneralizedDice", "Dice"}, "Not a valid loss function."
+    assert config.loss in {"GeneralizedDice", "Dice"}, "Not a valid loss function."
     if config.loss == "GeneralizedDice":
         loss = GeneralizedDiceLoss()
     else:
@@ -115,7 +114,7 @@ else:
         net = to_device(net=net, gpu=gpu)
         validation_loss = np.inf
         best_epoch = -1
-        old_epoch = 0
+        old_epoch = -1
         optimizer = optim.Adam(net.parameters())
 
     logger = TensorBoard_multiclass(log_dir=log_path, log_image_interval=1)
@@ -124,7 +123,7 @@ else:
     train_loader, val_loader = generate_data_loaders_data_augmentation(config=config,
                                                                        tomo_training_list=tomo_training_list,
                                                                        fold=fold)
-    for epoch in range(old_epoch, config.epochs):
+    for epoch in range(old_epoch + 1, config.epochs):
         current_epoch = epoch
 
 

@@ -443,7 +443,7 @@ class SinusoidalElasticTransform3D(Transform):
 class AdditiveGaussianNoise(Transform):
     """Add gaussian noise to the input."""
 
-    def __init__(self, sigma, epsilon=0.1, **super_kwargs):
+    def __init__(self, sigma, epsilon=0.3, **super_kwargs):
         super(AdditiveGaussianNoise, self).__init__(**super_kwargs)
         self.sigma = sigma
         self.epsilon = epsilon

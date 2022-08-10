@@ -126,7 +126,7 @@ rule training_3dunet:
           nodes=1,
           cores=4,
           memory="200G",
-          gres='#SBATCH -p gpu\n#SBATCH --gres=gpu:4'
+          gres='#SBATCH -p gpu-el8\n#SBATCH --gres=gpu:4'
     resources:
              gpu=4
     shell:
@@ -166,11 +166,11 @@ rule segment:
     params:
           config=user_config_file,
           logdir=config["cluster"]["logdir"],
-          walltime="01:20:00",
+          walltime="04:20:00",
           nodes=1,
           cores=4,
-          memory="80G",
-          gres='#SBATCH -p gpu\n#SBATCH --gres=gpu:1'
+          memory="150G",
+          gres='#SBATCH -p gpu-el8\n#SBATCH --gres=gpu:1'
     resources:
              gpu=2
     shell:
@@ -216,7 +216,7 @@ rule postprocess_prediction:
           walltime="08:30:00",
           nodes=1,
           cores=4,
-          memory="80G",
+          memory="140G",
           gres=''
     shell:
          f"""
