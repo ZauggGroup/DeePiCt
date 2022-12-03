@@ -67,7 +67,7 @@ The necessary virtual environment for the installation needs only snakemake and 
 ```bash
 conda install -n base -c conda-forge mamba
 conda activate base
-mamba create -c conda-forge -c bioconda -n snakemake snakemake==5.13.0
+mamba create -c conda-forge -c bioconda -n snakemake snakemake==5.13.0 python=3.8
 conda activate snakemake
 conda install pandas
 ```
@@ -76,13 +76,13 @@ conda install pandas
 Install Pytorch:
 
 ```bash
-conda install -c pytorch pytorch torchvision
+conda install -c pytorch pytorch-gpu torchvision
 ```
 
 Install Keras:
 
 ```
-conda install -c anaconda keras-gpu=2.3.1
+conda install -c conda-forge keras-gpu=2.3.1
 ```
 
 ### Clone this repository
