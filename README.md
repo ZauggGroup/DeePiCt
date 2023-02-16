@@ -67,7 +67,7 @@ The necessary virtual environment for the installation needs only snakemake and 
 ```bash
 conda install -n base -c conda-forge mamba
 conda activate base
-mamba create -c conda-forge -c bioconda -n snakemake snakemake==5.13.0 python=3.8
+mamba create -c conda-forge -c bioconda -n snakemake snakemake==5.13.0 python=3.7
 conda activate snakemake
 conda install pandas
 ```
