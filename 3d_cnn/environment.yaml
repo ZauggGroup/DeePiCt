@@ -1,25 +1,27 @@
 name: 3d-unet
 channels:
+  - pytorch
   - bioconda
-  - anaconda
   - conda-forge
+  - anaconda
   - default
 dependencies:
   - python=3.7
   - jupyter
   - imageio
-  - pytorch
-  - torchvision
   - scikit-learn
   - scikit-image
   - scipy
   - numpy
-  - tensorboardX
   - tqdm
   - pandas
   - pyaml
   - pip
-  - pip:
-      - h5py==2.10.0
-      - mrcfile==1.1.2
-      - monai
+  - h5py==2.10.0
+  - mrcfile==1.1.2
+  - monai
+  - pytorch==1.12.1
+  - torchvision==0.13.1
+  - cudatoolkit=11.6
+  - tensorboardx
+  - crc32c

@@ -1,0 +1,25 @@
+FROM nvidia/cuda:10.0-devel-ubuntu18.04
+
+WORKDIR /app/DeePiCt
+COPY . .
+
+# Install necessary packages
+RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections && \
+    apt-get update -y && apt-get install -y dialog apt-utils && \
+    apt-get install -y build-essential git wget software-properties-common && \
+    apt-get update && rm -rf /var/lib/apt/lists/*
+
+# Install miniconda
+ENV PATH="/usr/local/miniconda3/bin:${PATH}"
+ARG PATH="/usr/local/miniconda3/bin:${PATH}"
+RUN cd /tmp  \
+    && wget \
+    https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O Miniconda3.sh\
+    && bash Miniconda3.sh -b -p /usr/local/miniconda3 \
+    && rm -f Miniconda3.sh
+
+
+# Create environment
+RUN conda init bash && \
+    conda install -c conda-forge mamba --yes && \
+    mamba env create -f /app/DeePiCt/2d_cnn/envs/keras-env.yaml
