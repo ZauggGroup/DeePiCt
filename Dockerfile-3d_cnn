@@ -22,4 +22,4 @@ RUN cd /tmp  \
 # Create environment
 RUN conda init bash && \
     conda install -c conda-forge mamba --yes && \
-    mamba env create -f /app/DeePiCt/3d_cnn/environment.yaml \
+    mamba env create -f /app/DeePiCt/3d_cnn/environment.yaml
