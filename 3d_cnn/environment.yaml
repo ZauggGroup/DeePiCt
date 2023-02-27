@@ -25,3 +25,4 @@ dependencies:
   - cudatoolkit=11.6
   - tensorboardx
   - crc32c
+  - snakemake
