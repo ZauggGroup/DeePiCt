@@ -1,7 +1,10 @@
 FROM nvidia/cuda:11.6.2-devel-ubuntu20.04
 
+COPY DeePiCt /app/DeePiCt
+COPY environment.yaml /app/DeePiCt/3d_cnn
+COPY deploy_config.sh /app/DeePiCt/3d_cnn
+COPY deploy_local_3D_container.sh /app/DeePiCt/3d_cnn
 WORKDIR /app/DeePiCt
-COPY . .
 
 # Install necessary packages
 RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections && \
@@ -23,3 +26,10 @@ RUN cd /tmp  \
 RUN conda init bash && \
     conda install -c conda-forge mamba --yes && \
     mamba env create -f /app/DeePiCt/3d_cnn/environment.yaml
+
+RUN cd 3d_cnn && \
+    ln -s deploy_local_3D_container.sh deepict3D && \
+    ln -s deploy_config.sh deepict3D_config
+
+ENV PATH="${PATH}:/app/DeePiCt/3d_cnn"
+ARG PATH="${PATH}:/app/DeePiCt/3d_cnn"

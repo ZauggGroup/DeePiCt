@@ -1,7 +1,8 @@
 FROM nvidia/cuda:10.0-devel-ubuntu18.04
 
+COPY DeePiCt /app/DeePiCt
+COPY deploy_local_2D_container.sh /app/DeePiCt/2d_cnn
 WORKDIR /app/DeePiCt
-COPY . .
 
 # Install necessary packages
 RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections && \
@@ -23,3 +24,10 @@ RUN cd /tmp  \
 RUN conda init bash && \
     conda install -c conda-forge mamba --yes && \
     mamba env create -f /app/DeePiCt/2d_cnn/envs/keras-env.yaml
+
+RUN cd 2d_cnn && \
+    ln -s deploy_local_2D_container.sh deepict2D && \
+    ln -s deploy_config.sh deepict2D_config
+
+ENV PATH="${PATH}:/app/DeePiCt/2d_cnn"
+ARG PATH="${PATH}:/app/DeePiCt/2d_cnn"
