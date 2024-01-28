@@ -57,8 +57,7 @@ if run_job:
     assert os.path.isfile(prediction_path), "The prediction file does not exist!"
 
     DTHeader = DatasetTableHeader(semantic_classes=config.semantic_classes, filtering_mask=config.region_mask)
-    df = pd.read_csv(config.dataset_table)
-    df[DTHeader.tomo_name] = df[DTHeader.tomo_name].astype(str)
+    df = pd.read_csv(config.dataset_table, dtype={"tomo_name": str})
     clean_mask_name = DTHeader.masks_names[config.pred_class_number]
 
     tomo_df = df[df[DTHeader.tomo_name] == tomo_name]
