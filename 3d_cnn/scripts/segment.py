@@ -67,7 +67,7 @@ if run_job:
     output_classes = len(config.semantic_classes)
 
     device = get_device()
-    checkpoint = torch.load(model_path, map_location=device)
+    checkpoint = torch.load(model_path, map_location=device, weights_only=False)
 
     if 'model_descriptor' not in checkpoint.keys():
         warnings.warn("Model without model descriptor... it will be added")

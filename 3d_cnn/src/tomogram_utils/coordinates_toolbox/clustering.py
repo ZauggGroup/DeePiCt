@@ -18,7 +18,7 @@ def get_clusters_within_size_range(dataset: np.array, min_cluster_size: int,
         max_cluster_size = np.inf
     assert min_cluster_size <= max_cluster_size
 
-    labeled_clusters, num = morph.label(input=dataset,
+    labeled_clusters, num = morph.label(dataset,
                                         background=0,
                                         return_num=True,
                                         connectivity=connectivity)
@@ -49,7 +49,7 @@ def get_cluster_centroids(dataset: np.array, min_cluster_size: int,
     clusters_map_in_range = np.zeros(labeled_clusters.shape)
     clusters_map_in_range[np.isin(labeled_clusters, labels_list_within_range)] = 1
     # Find out the centroids of the labels within range
-    filtered_labeled_clusters = (labeled_clusters * clusters_map_in_range).astype(np.int)
+    filtered_labeled_clusters = (labeled_clusters * clusters_map_in_range).astype(int)
     props = regionprops_table(filtered_labeled_clusters, properties=('label', 'centroid'))
     centroids_list = [np.rint([x, y, z]) for _, x, y, z in sorted(zip(props['label'].tolist(),
                                                                       props['centroid-0'].tolist(),
